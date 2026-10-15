@@ -1,0 +1,53 @@
+[ 2026-10-15T15:32:31+00:00 ][ info ] [ LOG ] INIT File
+info
+[ 2026-10-15T15:32:31+00:00 ][ error ] [1]Uncaught think\exception\ErrorException: think\console\output\formatter\Stack::__construct(): Implicitly marking parameter $emptyStyle as nullable is deprecated, the explicit nullable type must be used instead in /workspace/proj/thinkphp/library/think/console/output/formatter/Stack.php:31
+Stack trace:
+#0 /workspace/proj/thinkphp/library/think/Loader.php(666): think\Error::appError()
+#1 /workspace/proj/thinkphp/library/think/Loader.php(666): include()
+#2 /workspace/proj/thinkphp/library/think/Loader.php(85): think\__include_file()
+#3 /workspace/proj/thinkphp/library/think/console/output/Formatter.php(45): think\Loader::autoload()
+#4 /workspace/proj/thinkphp/library/think/console/output/driver/Console.php(34): think\console\output\Formatter->__construct()
+#5 /workspace/proj/thinkphp/library/think/console/Output.php(71): think\console\output\driver\Console->__construct()
+#6 /workspace/proj/thinkphp/library/think/Error.php(50): think\console\Output->__construct()
+#7 [internal function]: think\Error::appException()
+#8 {main}
+  thrown[/workspace/proj/thinkphp/library/think/console/output/formatter/Stack.php:31]
+error
+[ 2026-10-15T15:32:31+00:00 ][ error ] [8]fwrite(): Write of 294 bytes failed with errno=32 Broken pipe[/workspace/proj/thinkphp/library/think/console/output/driver/Console.php:348]
+error
+[ 2026-10-15T15:33:01+00:00 ][ info ] [ LOG ] INIT File
+info
+[ 2026-10-15T15:33:01+00:00 ][ error ] [1]Uncaught think\exception\ErrorException: think\console\output\formatter\Stack::__construct(): Implicitly marking parameter $emptyStyle as nullable is deprecated, the explicit nullable type must be used instead in /workspace/proj/thinkphp/library/think/console/output/formatter/Stack.php:31
+Stack trace:
+#0 /workspace/proj/thinkphp/library/think/Loader.php(666): think\Error::appError()
+#1 /workspace/proj/thinkphp/library/think/Loader.php(666): include()
+#2 /workspace/proj/thinkphp/library/think/Loader.php(85): think\__include_file()
+#3 /workspace/proj/thinkphp/library/think/console/output/Formatter.php(45): think\Loader::autoload()
+#4 /workspace/proj/thinkphp/library/think/console/output/driver/Console.php(34): think\console\output\Formatter->__construct()
+#5 /workspace/proj/thinkphp/library/think/console/Output.php(71): think\console\output\driver\Console->__construct()
+#6 /workspace/proj/thinkphp/library/think/Error.php(50): think\console\Output->__construct()
+#7 [internal function]: think\Error::appException()
+#8 {main}
+  thrown[/workspace/proj/thinkphp/library/think/console/output/formatter/Stack.php:31]
+error
+[ 2026-10-15T15:33:01+00:00 ][ error ] [8]fwrite(): Write of 17 bytes failed with errno=32 Broken pipe[/workspace/proj/thinkphp/library/think/console/output/driver/Console.php:348]
+error
+[ 2026-10-15T15:44:50+00:00 ][ info ] [ LOG ] INIT File
+info
+[ 2026-10-15T15:44:50+00:00 ][ error ] [1]Uncaught think\exception\ErrorException: think\console\output\formatter\Stack::__construct(): Implicitly marking parameter $emptyStyle as nullable is deprecated, the explicit nullable type must be used instead in /workspace/proj/thinkphp/library/think/console/output/formatter/Stack.php:31
+Stack trace:
+#0 /workspace/proj/thinkphp/library/think/Loader.php(666): think\Error::appError()
+#1 /workspace/proj/thinkphp/library/think/Loader.php(666): include()
+#2 /workspace/proj/thinkphp/library/think/Loader.php(85): think\__include_file()
+#3 /workspace/proj/thinkphp/library/think/console/output/Formatter.php(45): think\Loader::autoload()
+#4 /workspace/proj/thinkphp/library/think/console/output/driver/Console.php(34): think\console\output\Formatter->__construct()
+#5 /workspace/proj/thinkphp/library/think/console/Output.php(71): think\console\output\driver\Console->__construct()
+#6 /workspace/proj/thinkphp/library/think/Error.php(50): think\console\Output->__construct()
+#7 [internal function]: think\Error::appException()
+#8 {main}
+  thrown[/workspace/proj/thinkphp/library/think/console/output/formatter/Stack.php:31]
+error
+[ 2026-10-15T15:44:50+00:00 ][ error ] [8]fwrite(): Write of 294 bytes failed with errno=32 Broken pipe[/workspace/proj/thinkphp/library/think/console/output/driver/Console.php:348]
+error
+[ 2026-10-15T15:45:39+00:00 ][ info ] [ LOG ] INIT File
+info

@@ -25,7 +25,8 @@ class Error
      */
     public static function register()
     {
-        error_reporting(E_ALL);
+        // PHP8.4+ 起弃用告警会升级为致命错误，这里屏蔽弃用类告警以兼容旧框架
+        error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
         set_error_handler([__CLASS__, 'appError']);
         set_exception_handler([__CLASS__, 'appException']);
         register_shutdown_function([__CLASS__, 'appShutdown']);
