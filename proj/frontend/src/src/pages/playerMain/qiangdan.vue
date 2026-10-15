@@ -6,7 +6,7 @@
 			<!-- 导航栏 -->
 			<view class="navbar" :style="{paddingTop: statusBarHeight + 'px'}">
 				<view class="navbar-left" @click="goBack">
-					<up-icon name="arrow-left" size="36" color="#ffffff"></up-icon>
+					<up-icon name="arrow-left" size="36" color="#333333"></up-icon>
 				</view>
 				<text class="navbar-title">智能抢单</text>
 				<view class="navbar-right" @click="gotoSubscribeLog">
@@ -152,14 +152,14 @@
 							</view>
 						</view>
 						<view class="feature-item">
-							<up-icon name="lightning" size="18" color="#3cc51f"></up-icon>
+							<up-icon name="play-right-fill" size="18" color="#3cc51f"></up-icon>
 							<view class="feature-info">
 								<text class="feature-name">毫秒级响应</text>
 								<text class="feature-desc">极速抢单</text>
 							</view>
 						</view>
 						<view class="feature-item">
-							<up-icon name="shield" size="18" color="#3cc51f"></up-icon>
+							<up-icon name="lock-fill" size="18" color="#3cc51f"></up-icon>
 							<view class="feature-info">
 								<text class="feature-name">白名单保护</text>
 								<text class="feature-desc">风控安全保障</text>
@@ -510,8 +510,8 @@ const loadLogs = async () => {
 .navbar { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 20rpx 24rpx; }
 .navbar-left, .navbar-right { width: 120rpx; display: flex; align-items: center; }
 .navbar-right { justify-content: flex-end; }
-.navbar-title { font-size: 34rpx; font-weight: 600; color: #fff; }
-.subscribe-link { font-size: 26rpx; color: rgba(255,255,255,0.8); }
+.navbar-title { font-size: 34rpx; font-weight: 600; color: #1a1a1a; }
+.subscribe-link { font-size: 26rpx; color: #FF7A45; }
 
 .status-circle-wrap { display: flex; justify-content: center; padding: 40rpx 0; position: relative; z-index: 2; }
 .status-circle { width: 320rpx; height: 320rpx; border-radius: 50%; background: linear-gradient(135deg, #2d5a27 0%, #1a3d15 100%); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 60rpx rgba(60, 197, 31, 0.3); }
@@ -524,10 +524,10 @@ const loadLogs = async () => {
 .status-sub { font-size: 24rpx; color: rgba(255,255,255,0.7); }
 
 .expire-bar { display: flex; justify-content: center; align-items: center; padding: 16rpx 0; position: relative; z-index: 2; }
-.expire-label { font-size: 26rpx; color: rgba(255,255,255,0.6); }
+.expire-label { font-size: 26rpx; color: #666; }
 .expire-value { font-size: 26rpx; color: #3cc51f; font-weight: 600; }
 
-.countdown-bar { display: flex; justify-content: space-between; align-items: center; margin: 20rpx 60rpx 0; padding: 20rpx 32rpx; background: rgba(255,255,255,0.1); border-radius: 50rpx; position: relative; z-index: 2; }
+.countdown-bar { display: flex; justify-content: space-between; align-items: center; margin: 20rpx 60rpx 0; padding: 20rpx 32rpx; background: #f5f5f5; border-radius: 50rpx; position: relative; z-index: 2; }
 .countdown-status { display: flex; align-items: center; gap: 8rpx; }
 .countdown-status-text { font-size: 24rpx; color: #3cc51f; }
 .countdown-time { display: flex; align-items: center; gap: 4rpx; }

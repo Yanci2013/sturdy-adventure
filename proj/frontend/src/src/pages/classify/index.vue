@@ -312,7 +312,7 @@
 	.clf-nav-title {
 		font-size: 36rpx;
 		font-weight: 600;
-		color: #ffffff;
+		color: #1a1a1a;
 		text-align: center;
 	}
 

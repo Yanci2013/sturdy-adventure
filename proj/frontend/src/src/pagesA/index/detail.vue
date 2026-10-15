@@ -4,10 +4,10 @@
 		<view class="gd-navbar">
 			<view class="gd-navbar-left">
 				<view class="gd-navbar-btn" @click="navBack">
-					<up-icon name="arrow-left" size="32rpx" color="#fff"></up-icon>
+					<up-icon name="arrow-left" size="32rpx" color="#333"></up-icon>
 				</view>
 				<view class="gd-navbar-btn" @click="goHome">
-					<up-icon name="home" size="32rpx" color="#fff"></up-icon>
+					<up-icon name="home" size="32rpx" color="#333"></up-icon>
 				</view>
 			</view>
 		</view>

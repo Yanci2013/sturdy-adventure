@@ -166,7 +166,7 @@
 								</view>
 								<view class="pay-method-check">
 									<up-icon v-if="payMethod==='yipay'" name="checkmark-circle-fill" color="#07C160" size="40rpx"></up-icon>
-									<up-icon v-else name="circle" color="#999999" size="40rpx"></up-icon>
+									<view v-else class="radio-circle"></view>
 								</view>
 							</view>
 							<view class="pay-method-item" :class="payMethod==='balance'?'active':''" @click="payMethod='balance'">
@@ -179,7 +179,7 @@
 								</view>
 								<view class="pay-method-check">
 									<up-icon v-if="payMethod==='balance'" name="checkmark-circle-fill" color="#07C160" size="40rpx"></up-icon>
-									<up-icon v-else name="circle" color="#999999" size="40rpx"></up-icon>
+									<view v-else class="radio-circle"></view>
 								</view>
 							</view>
 						</view>
@@ -308,7 +308,7 @@
 								</view>
 								<view class="pay-method-check">
 									<up-icon v-if="giftPayMethod==='yipay'" name="checkmark-circle-fill" color="#07C160" size="40rpx"></up-icon>
-									<up-icon v-else name="circle" color="#999999" size="40rpx"></up-icon>
+									<view v-else class="radio-circle"></view>
 								</view>
 							</view>
 							<view class="pay-method-item" :class="giftPayMethod==='balance'?'active':''" @click="giftPayMethod='balance'">
@@ -321,7 +321,7 @@
 								</view>
 								<view class="pay-method-check">
 									<up-icon v-if="giftPayMethod==='balance'" name="checkmark-circle-fill" color="#07C160" size="40rpx"></up-icon>
-									<up-icon v-else name="circle" color="#999999" size="40rpx"></up-icon>
+									<view v-else class="radio-circle"></view>
 								</view>
 							</view>
 						</view>
@@ -1076,6 +1076,15 @@
 
 	.pay-method-check {
 		flex-shrink: 0;
+	}
+
+	.radio-circle {
+		width: 40rpx;
+		height: 40rpx;
+		border: 2rpx solid #dddddd;
+		border-radius: 50%;
+		box-sizing: border-box;
+		display: block;
 	}
 
 	/* ID卡片样式 - 黑色半透明胶囊 */

@@ -1009,8 +1009,8 @@ class Handler(BaseHTTPRequestHandler):
             db.close()
             list_data = [{
                 "id": r['id'], "order_no": r['order_no'], "title": r['title'],
-                "amount": r['amount'], "status": r['status'],
-                "game_id": r.get('game_id', ''), "wz_id": r.get('wz_id', ''),
+                "amount": r['price'], "status": r['status'],
+                "game_id": r['game_id'] or '', "wz_id": r['game_qf'] or '',
                 "createtime": r['createtime']
             } for r in rows]
             self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "total": total}})
@@ -1027,8 +1027,8 @@ class Handler(BaseHTTPRequestHandler):
             db.close()
             list_data = [{
                 "id": r['id'], "order_no": r['order_no'], "title": r['title'],
-                "amount": r['amount'], "status": r['status'],
-                "game_id": r.get('game_id', ''), "wz_id": r.get('wz_id', ''),
+                "amount": r['price'], "status": r['status'],
+                "game_id": r['game_id'] or '', "wz_id": r['game_qf'] or '',
                 "createtime": r['createtime']
             } for r in rows]
             self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "total": len(list_data)}})
@@ -1040,7 +1040,7 @@ class Handler(BaseHTTPRequestHandler):
             if not u:
                 self.send_json({"code": 401, "msg": "未登录"})
                 return
-            self.send_json({"code": 1, "msg": "成功", "data": {"can_grab": True, "can_assign": True}})
+            self.send_json({"code": 1, "msg": "成功", "data": ["王者荣耀-打手", "和平精英-打手", "英雄联盟-打手", "穿越火线-打手"]})
             return
 
         # ===== 打手编辑 =====
@@ -1080,6 +1080,21 @@ class Handler(BaseHTTPRequestHandler):
             db.commit()
             db.close()
             self.send_json({"code": 1, "msg": "客服入驻成功"})
+            return
+
+        # ===== 商品分类（首页/分类/打手专区/工作台共用，返回数组）=====
+        if path == '/api/goods/categoryList':
+            categories = [
+                {"id": 1, "name": "王者荣耀", "image": "/h5/static/images/classify.png",
+                 "children": [{"id": 101, "name": "排位上分"}, {"id": 102, "name": "娱乐陪玩"}]},
+                {"id": 2, "name": "和平精英", "image": "/h5/static/images/classify.png",
+                 "children": [{"id": 201, "name": "经典吃鸡"}, {"id": 202, "name": "娱乐陪玩"}]},
+                {"id": 3, "name": "英雄联盟", "image": "/h5/static/images/classify.png",
+                 "children": [{"id": 301, "name": "排位上分"}, {"id": 302, "name": "云顶之弈"}]},
+                {"id": 4, "name": "穿越火线", "image": "/h5/static/images/classify.png",
+                 "children": [{"id": 401, "name": "排位上分"}, {"id": 402, "name": "娱乐陪玩"}]},
+            ]
+            self.send_json({"code": 1, "msg": "成功", "data": categories})
             return
 
         # ===== 兜底：其他接口返回空数据，避免前端报错 =====

@@ -88,11 +88,11 @@
 					<text class="quick-label">受邀订单</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/ti'})">
-					<view class="quick-icon-wrap money-icon"><uv-icon name="rmb-circle" size="32" color="#FF7A45"></uv-icon></view>
+					<view class="quick-icon-wrap money-icon"><uv-icon name="integral" size="32" color="#FF7A45"></uv-icon></view>
 					<text class="quick-label">佣金提现</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/qiangdan'})">
-					<view class="quick-icon-wrap grab-icon"><uv-icon name="lightning" size="32" color="#FF7A45"></uv-icon></view>
+					<view class="quick-icon-wrap grab-icon"><uv-icon name="play-right-fill" size="32" color="#FF7A45"></uv-icon></view>
 					<text class="quick-label">抢单神器</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/center'})">

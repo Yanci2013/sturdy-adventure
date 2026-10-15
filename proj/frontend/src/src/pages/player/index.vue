@@ -493,7 +493,7 @@
 		font-family: PingFang SC, PingFang SC;
 		font-weight: bold;
 		font-size: 42rpx;
-		color: #ffffff;
+		color: #1a1a1a;
 		text-align: center;
 		margin-bottom: 20rpx;
 	}
@@ -558,7 +558,7 @@
 		font-family: PingFang SC, PingFang SC;
 		font-weight: bold;
 		font-size: 38rpx;
-		color: #ffffff;
+		color: #FF7A45;
 	}
 
 	// 未选中标签的文字样式

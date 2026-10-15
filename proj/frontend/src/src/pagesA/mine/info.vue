@@ -25,7 +25,7 @@
 			<view class="avatar-box" @click="chooseAvatar">
 				<image class="avatar-img" :src="avatarfull || '/static/yun/default_avatar.png'" mode="aspectFill"></image>
 				<view class="avatar-edit-icon">
-					<up-icon name="edit-pen" color="#ffffff" size="26rpx"></up-icon>
+					<up-icon name="edit-pen" color="#333" size="26rpx"></up-icon>
 				</view>
 			</view>
 			<text class="avatar-label">设置头像</text>
