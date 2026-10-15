@@ -11,7 +11,14 @@ const unToken = ['']
 
 let unauthorizedShowing = false
 
+// ==================== 临时开关（⚠️ 正式上线前必须恢复为 true）====================
+// 说明：为便于预览客服端相关页面，暂时关闭 401 自动跳转登录。
+// 正式使用时请把 ENABLE_401_REDIRECT 改回 true，即可恢复「登录过期 → 清登录态 → 弹窗 → 跳登录页」逻辑。
+const ENABLE_401_REDIRECT = false
+// =============================================================================
+
 const handleUnauthorized = () => {
+	if (!ENABLE_401_REDIRECT) return // 临时禁用 401 跳转：不清理登录态、不弹窗、不跳转登录页
 	uni.removeStorageSync('token')
 	uni.removeStorageSync('userId')
 	uni.removeStorageSync('user_id')

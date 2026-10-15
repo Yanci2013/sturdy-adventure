@@ -14,6 +14,12 @@
 				page .page, page .main-container, page .clf-page, page .customer-page {
 					background: transparent !important;
 				}
+				/* 页面根容器统一白底，覆盖任意自定义根类名（.invite-page/.info-page/.gd-container 等） */
+				uni-page-body > :first-child,
+				uni-page-body > uni-view:first-child {
+					background: #FFFFFF !important;
+					background-image: none !important;
+				}
 				page .top-bg, page .header-bg {
 					background: transparent !important;
 					background-image: none !important;
@@ -90,6 +96,12 @@
 	page .clf-page,
 	page .customer-page {
 		background: transparent !important;
+	}
+	/* 页面根容器统一白底，覆盖任意自定义根类名（.invite-page/.info-page/.gd-container 等） */
+	uni-page-body > :first-child,
+	uni-page-body > uni-view:first-child {
+		background: #FFFFFF !important;
+		background-image: none !important;
 	}
 	/* 移除页面顶部装饰性背景色块 */
 	page .top-bg,

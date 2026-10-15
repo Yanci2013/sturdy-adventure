@@ -145,7 +145,7 @@ const onEnter = async () => {
 <style scoped>
 .invite-page {
 	min-height: 100vh;
-	background: #0a0a0a;
+	background: #FFFFFF;
 	display: flex;
 	flex-direction: column;
 	padding: 0 48rpx;
@@ -168,7 +168,7 @@ const onEnter = async () => {
 
 .back-icon {
 	font-size: 56rpx;
-	color: #fff;
+	color: #333;
 	line-height: 1;
 }
 
@@ -190,7 +190,7 @@ const onEnter = async () => {
 .brand-name {
 	font-size: 48rpx;
 	font-weight: 700;
-	color: #fff;
+	color: #1a1a1a;
 	letter-spacing: 4rpx;
 }
 
@@ -201,23 +201,23 @@ const onEnter = async () => {
 .form-label {
 	display: block;
 	font-size: 28rpx;
-	color: #fff;
+	color: #333;
 	margin-bottom: 20rpx;
 }
 
 .form-input {
 	width: 100%;
 	height: 96rpx;
-	background: rgba(255, 255, 255, 0.08);
+	background: #F5F6F8;
 	border-radius: 16rpx;
 	padding: 0 28rpx;
 	font-size: 30rpx;
-	color: #fff;
+	color: #1a1a1a;
 	box-sizing: border-box;
 }
 
 .placeholder {
-	color: rgba(255, 255, 255, 0.3);
+	color: #bbb;
 }
 
 .btn-area {
@@ -237,8 +237,8 @@ const onEnter = async () => {
 }
 
 .btn-enter.disabled {
-	background: rgba(255, 255, 255, 0.15);
-	color: rgba(255, 255, 255, 0.4);
+	background: #F0F0F0;
+	color: #bbb;
 }
 
 .agreement-area {
@@ -252,7 +252,7 @@ const onEnter = async () => {
 .checkbox {
 	width: 32rpx;
 	height: 32rpx;
-	border: 2rpx solid rgba(255, 255, 255, 0.4);
+	border: 2rpx solid #ccc;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -272,7 +272,7 @@ const onEnter = async () => {
 
 .agreement-text {
 	font-size: 24rpx;
-	color: rgba(255, 255, 255, 0.5);
+	color: #999;
 }
 
 .agreement-link {
