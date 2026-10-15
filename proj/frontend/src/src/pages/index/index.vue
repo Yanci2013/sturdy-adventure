@@ -1111,7 +1111,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		left: 0;
 		right: 0;
 		height: 760rpx;
-		background: linear-gradient(180deg, #FF7A45 0%, #FFFFFF 100%);
+		background: transparent;
 		z-index: 0;
 		pointer-events: none;
 	}
@@ -1179,7 +1179,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	.header-title-text {
 		font-size: 32rpx;
 		font-weight: 400;
-		color: #ffffff;
+		color: #1a1a1a;
 		letter-spacing: 2rpx;
 		line-height: 1;
 	}
@@ -1205,6 +1205,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	.search-ball-icon {
 		width: 40rpx;
 		height: 40rpx;
+		filter: invert(1); /* 原为白色图标，白底下反转为深色以保证可见 */
 	}
 
 	/* 客服按钮 */
@@ -1221,6 +1222,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	.service-btn .service-icon {
 		width: 40rpx;
 		height: 40rpx;
+		filter: invert(1); /* 原为白色图标，白底下反转为深色以保证可见 */
 	}
 
 	/* 搜索弹窗 */
