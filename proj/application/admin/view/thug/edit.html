@@ -1,0 +1,192 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('User_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-user_id" data-rule="required" data-source="user/user/index" data-field="nickname" class="form-control selectpage" name="row[user_id]" type="text" value="{$row.user_id|htmlentities}" disabled>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Avatar')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-avatar" class="form-control" size="50" name="row[avatar]" type="text" value="{$row.avatar|htmlentities}">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-avatar" class="btn btn-danger faupload" data-input-id="c-avatar" data-mimetype="image/gif,image/jpeg,image/png,image/jpg,image/bmp,image/webp" data-multiple="false" data-preview-id="p-avatar"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-avatar" class="btn btn-primary fachoose" data-input-id="c-avatar" data-mimetype="image/*" data-multiple="false"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-avatar"></span>
+            </div>
+            <ul class="row list-inline faupload-preview" id="p-avatar"></ul>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Name')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-name" class="form-control" name="row[name]" type="text" value="{$row.name|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Sex')}:</label>
+        <div class="col-xs-12 col-sm-8">
+
+            <select  id="c-sex" class="form-control selectpicker" name="row[sex]">
+                {foreach name="sexList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.sex"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Audio')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-audio" class="form-control" size="50" name="row[audio]" type="text" value="{$row.audio|htmlentities}">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-audio" class="btn btn-danger faupload" data-input-id="c-audio" data-mimetype="audio/*" data-multiple="false"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-audio" class="btn btn-primary fachoose" data-input-id="c-audio" data-mimetype="audio/*" data-multiple="false"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-audio"></span>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Images')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-images" class="form-control" size="50" name="row[images]" type="text" value="{$row.images|htmlentities}">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-images" class="btn btn-danger faupload" data-input-id="c-images" data-mimetype="image/gif,image/jpeg,image/png,image/jpg,image/bmp,image/webp" data-multiple="true" data-preview-id="p-images"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-images" class="btn btn-primary fachoose" data-input-id="c-images" data-mimetype="image/*" data-multiple="true"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-images"></span>
+            </div>
+            <ul class="row list-inline faupload-preview" id="p-images"></ul>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('其他材料')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-material" class="form-control" size="50" name="row[material]" type="text" value="{$row.material|htmlentities}">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-material" class="btn btn-danger faupload" data-input-id="c-material" data-mimetype="image/gif,image/jpeg,image/png,image/jpg,image/bmp,image/webp" data-multiple="true" data-preview-id="p-material"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-material" class="btn btn-primary fachoose" data-input-id="c-material" data-mimetype="image/*" data-multiple="true"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-material"></span>
+            </div>
+            <ul class="row list-inline faupload-preview" id="p-material"></ul>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Synopsis')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-synopsis" class="form-control" name="row[synopsis]" type="text" value="{$row.synopsis|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Grade')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-grade" class="form-control" step="0.1" name="row[grade]" type="number" value="{$row.grade|htmlentities}" disabled>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+
+            <select  id="c-type" class="form-control selectpicker" name="row[type]">
+                {foreach name="typeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.type"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('可用佣金')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-available_money" class="form-control" step="0.01" name="row[available_money]" type="number" value="{$row.available_money|htmlentities}" disabled>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('冻结佣金')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-frozen_money" class="form-control" step="0.01" name="row[frozen_money]" type="number" value="{$row.frozen_money|htmlentities}" disabled>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('累计结算')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-total_settled" class="form-control" step="0.01" name="row[total_settled]" type="number" value="{$row.total_settled|htmlentities}" disabled>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('保证金')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bond" class="form-control" step="0.01" name="row[bond]" type="number" value="{$row.bond|htmlentities}" >
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Jd_status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+            <div class="radio">
+            {foreach name="jdStatusList" item="vo"}
+            <label for="row[jd_status]-{$key}"><input id="row[jd_status]-{$key}" name="row[jd_status]" type="radio" value="{$key}" {in name="key" value="$row.jd_status"}checked{/in} /> {$vo}</label> 
+            {/foreach}
+            </div>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('客服身份')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="radio">
+            {foreach name="isCustomerServiceList" item="vo"}
+            <label for="row[is_customer_service]-{$key}"><input id="row[is_customer_service]-{$key}" name="row[is_customer_service]" type="radio" value="{$key}" {in name="key" value="$row.is_customer_service"}checked{/in} /> {$vo}</label> 
+            {/foreach}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Sh_status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+            <div class="radio">
+            {foreach name="shStatusList" item="vo"}
+            <label for="row[sh_status]-{$key}"><input id="row[sh_status]-{$key}" name="row[sh_status]" type="radio" value="{$key}" {in name="key" value="$row.sh_status"}checked{/in} /> {$vo}</label> 
+            {/foreach}
+            </div>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('接单区服')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-receiving_orders" class="form-control selectpicker" name="row[receiving_orders][]" multiple>
+                {foreach name="receivingOrdersList" item="vo"}
+                    <option value="{$vo}" {in name="vo" value="$row.receiving_orders"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('邀请码')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-superior_uid" class="form-control" name="row[superior_uid]" type="text" value="{$row.superior_uid|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Remarks')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-remarks" class="form-control" name="row[remarks]" type="text" value="{$row.remarks|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

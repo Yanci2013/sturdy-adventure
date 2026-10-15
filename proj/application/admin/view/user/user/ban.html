@@ -1,0 +1,35 @@
+<form id="ban-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+    <input type="hidden" name="ids" value="{$row.id}">
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">当前状态:</label>
+        <div class="col-xs-12 col-sm-8">
+            <p class="form-control-static">
+                {if $row.ban_status == 1}
+                <span class="label label-danger">已封禁</span>
+                {else}
+                <span class="label label-success">正常</span>
+                {/if}
+            </p>
+        </div>
+    </div>
+    {if $row.ban_status == 1 && $row.ban_reason}
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">当前封禁原因:</label>
+        <div class="col-xs-12 col-sm-8">
+            <p class="form-control-static text-danger">{$row.ban_reason}</p>
+        </div>
+    </div>
+    {/if}
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">封禁原因:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-ban_reason" data-rule="required" class="form-control" rows="4" name="ban_reason" placeholder="请输入封禁原因"></textarea>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-danger btn-embossed disabled">确认封禁</button>
+        </div>
+    </div>
+</form>
