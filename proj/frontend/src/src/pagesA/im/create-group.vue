@@ -115,7 +115,7 @@ const createGroup = async () => {
 <style lang="scss" scoped>
 .create-group-page {
 	min-height: 100vh;
-	background: linear-gradient(135deg, #FFF5EF 0%, #FFEDE0 100%);
+	background: #FFFFFF;
 }
 
 .nav-bar {

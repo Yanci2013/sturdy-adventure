@@ -623,7 +623,7 @@ function goBack() {
   height: 88rpx;
   padding: 0 24rpx;
   padding-top: var(--status-bar-height, 0px);
-  background: linear-gradient(90deg, #FF7A45, #FF7A45, #FF9D6E, #FFB38A, #FFD4B8, #FFFFFF, #FFFFFF);
+  background: #FFFFFF;
   position: fixed;
   top: 0;
   left: 0;

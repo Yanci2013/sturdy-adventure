@@ -3,7 +3,7 @@
 		<!-- 顶部导航 -->
 		<view class="chat-header" :style="{paddingTop: statusBarHeight + 'px'}">
 			<view class="chat-back" @click="goBack">
-				<text class="back-icon">‹</text>
+				<up-icon name="arrow-left" size="19" color="#1a1a1a"></up-icon>
 			</view>
 			<view class="chat-peer">
 				<text class="peer-name">{{ peerName }}</text>
@@ -12,13 +12,13 @@
 				</view>
 			</view>
 			<view class="chat-more">
-				<text class="more-icon">⋯</text>
+				<up-icon name="more-dot-fill" size="20" color="#1a1a1a"></up-icon>
 			</view>
 		</view>
 
 		<!-- 警告横幅 -->
 		<view class="warning-banner">
-			<text class="warning-icon">🔊</text>
+			<up-icon name="volume-fill" size="15" color="#E68A00"></up-icon>
 			<text class="warning-text">老板禁止私加打手 私加打手如被骗 本俱乐部概不负责 打手私加老板 老板向客服举报可获得现金奖励</text>
 		</view>
 
@@ -59,16 +59,16 @@
 		<!-- 输入栏 -->
 		<view class="chat-input-bar" :style="{paddingBottom: keyboardHeight + 'px'}" v-if="!sessionEnded">
 			<view class="input-icon" @click="onVoiceClick">
-				<text>🎤</text>
+				<up-icon name="mic" size="21" color="#555"></up-icon>
 			</view>
 			<input class="chat-input" v-model="inputText" :placeholder="placeholder"
 				confirm-type="send" @confirm="sendText" :adjust-position="false" @focus="onInputFocus"
 				@blur="onInputBlur" />
 			<view class="input-icon" @click="toggleEmojiPanel">
-				<text>😊</text>
+				<text class="iconfont icon-emoji"></text>
 			</view>
 			<view class="input-icon" @click="toggleMorePanel">
-				<text>＋</text>
+				<up-icon name="plus" size="21" color="#555"></up-icon>
 			</view>
 			<view class="send-btn" v-if="inputText.trim()" @click="sendText">
 				<text>发送</text>
@@ -77,7 +77,7 @@
 
 		<!-- 会话结束提示栏 -->
 		<view class="chat-ended-bar" v-if="sessionEnded">
-			<text class="ended-icon">🔒</text>
+			<up-icon name="lock" size="15" color="#999"></up-icon>
 			<text class="ended-text">咨询已结束，如需帮助请重新联系客服</text>
 		</view>
 
@@ -96,11 +96,11 @@
 		<view class="more-panel" v-if="showMore">
 			<view class="more-grid">
 				<view class="more-item" @click="chooseImage">
-					<view class="more-icon"><text>🖼</text></view>
+					<view class="more-icon"><text class="iconfont icon-image"></text></view>
 					<text class="more-label">图片</text>
 				</view>
 				<view class="more-item" @click="chooseVideo">
-					<view class="more-icon"><text>🎬</text></view>
+					<view class="more-icon"><text class="iconfont icon-video"></text></view>
 					<text class="more-label">视频</text>
 				</view>
 			</view>
@@ -111,11 +111,11 @@
 			<view class="order-modal" @click.stop>
 				<view class="order-modal-header">
 					<text class="order-modal-title">请选择订单</text>
-					<view class="order-modal-close" @click="showOrderModal = false">×</view>
+					<view class="order-modal-close" @click="showOrderModal = false"><up-icon name="close" size="18" color="#999"></up-icon></view>
 				</view>
 				<view class="order-search">
 					<input class="order-search-input" v-model="orderKeyword" placeholder="请输入关键词" />
-					<view class="order-search-btn"><text>🔍</text></view>
+					<view class="order-search-btn"><up-icon name="search" size="16" color="#fff"></up-icon></view>
 				</view>
 				<scroll-view scroll-x class="order-tabs">
 					<view v-for="(tab, idx) in orderTabs" :key="idx"
@@ -127,7 +127,7 @@
 				<scroll-view scroll-y class="order-list">
 					<view v-if="orderLoading" class="order-empty">加载中...</view>
 					<view v-else-if="filteredOrders.length === 0" class="order-empty">
-						<text class="order-empty-icon">📦</text>
+						<up-icon name="empty-order" size="60" color="#ddd"></up-icon>
 						<text class="order-empty-text">暂无数据</text>
 					</view>
 					<view v-else v-for="order in filteredOrders" :key="order.id" class="order-item"
@@ -464,13 +464,14 @@
 <style lang="scss">
 	.chat-page {
 		min-height: 100vh;
-		background: #f7f7f7;
+		background: #FFFFFF;
 		display: flex;
 		flex-direction: column;
 	}
 
 	.chat-header {
-		background: #FF7A45;
+		background: #FFFFFF;
+		border-bottom: 1rpx solid #F0F0F0;
 		display: flex;
 		flex-direction: row !important;
 		align-items: center;
@@ -479,18 +480,9 @@
 
 	.chat-back, .chat-more {
 		width: 60rpx;
-		text-align: center;
-	}
-
-	.back-icon {
-		font-size: 56rpx;
-		color: #fff;
-		line-height: 1;
-	}
-
-	.more-icon {
-		font-size: 40rpx;
-		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.chat-peer {
@@ -505,33 +497,29 @@
 	.peer-name {
 		font-size: 32rpx;
 		font-weight: 600;
-		color: #fff;
+		color: #1a1a1a;
 	}
 
 	.peer-badge {
-		background: rgba(255,255,255,0.25);
-		color: #fff;
+		background: #FFF3EC;
+		color: #FF7A45;
 		font-size: 20rpx;
 		padding: 4rpx 12rpx;
 		border-radius: 8rpx;
 	}
 
 	.warning-banner {
-		background: linear-gradient(90deg, #FFA940 0%, #FFC53D 100%);
-		padding: 12rpx 24rpx;
+		background: #FFFFFF;
+		padding: 16rpx 24rpx;
 		display: flex;
 		flex-direction: row !important;
 		align-items: center;
 		gap: 12rpx;
 	}
 
-	.warning-icon {
-		font-size: 28rpx;
-	}
-
 	.warning-text {
 		font-size: 22rpx;
-		color: #5A3A00;
+		color: #B7791F;
 		flex: 1;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -541,7 +529,7 @@
 	.chat-content {
 		flex: 1;
 		padding: 24rpx;
-		background: #f7f7f7;
+		background: #FFFFFF;
 	}
 
 	.chat-time-divider {
@@ -551,10 +539,7 @@
 
 	.chat-time-divider text {
 		font-size: 22rpx;
-		color: #999;
-		background: #e5e5e5;
-		padding: 4rpx 16rpx;
-		border-radius: 8rpx;
+		color: #aaa;
 	}
 
 	.sys-msg {
@@ -601,10 +586,9 @@
 	}
 
 	.bubble-other {
-		background: #FFFFFF;
+		background: #F2F3F5;
 		color: #333;
 		border-top-left-radius: 4rpx;
-		box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
 	}
 
 	.msg-text {
@@ -645,20 +629,24 @@
 
 	.input-icon {
 		width: 56rpx;
-		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.input-icon text {
+	.input-icon .iconfont {
 		font-size: 40rpx;
+		color: #555;
 	}
 
 	.chat-input {
 		flex: 1;
-		background: #f5f5f5;
+		background: #FFFFFF;
+		border: 1rpx solid #E8E8E8;
 		border-radius: 999rpx;
-		padding: 16rpx 24rpx;
+		padding: 0 24rpx;
 		font-size: 28rpx;
-		height: 64rpx;
+		height: 68rpx;
 		color: #333;
 	}
 
@@ -714,7 +702,8 @@
 	.more-icon {
 		width: 96rpx;
 		height: 96rpx;
-		background: #f5f5f5;
+		background: #FFFFFF;
+		border: 1rpx solid #EFEFEF;
 		border-radius: 16rpx;
 		display: flex;
 		justify-content: center;
@@ -722,8 +711,9 @@
 		margin: 0 auto 12rpx;
 	}
 
-	.more-icon text {
-		font-size: 48rpx;
+	.more-icon .iconfont {
+		font-size: 44rpx;
+		color: #555;
 	}
 
 	.more-label {
@@ -783,7 +773,8 @@
 
 	.order-search-input {
 		flex: 1;
-		background: #f5f5f5;
+		background: #FFFFFF;
+		border: 1rpx solid #ECECEC;
 		border-radius: 8rpx;
 		padding: 12rpx 24rpx;
 		font-size: 26rpx;

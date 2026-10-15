@@ -4,9 +4,9 @@
 
 		<!-- 顶部导航 -->
 		<view class="nav-bar">
-			<view class="nav-back" @click="goBack"><up-icon name="arrow-left" size="20" color="#fff"></up-icon></view>
+			<view class="nav-back" @click="goBack"><up-icon name="arrow-left" size="20" color="#333"></up-icon></view>
 			<text class="nav-title">客服头像</text>
-			<view class="nav-right"><up-icon name="more-dot-fill" size="20" color="#fff"></up-icon></view>
+			<view class="nav-right"><up-icon name="more-dot-fill" size="20" color="#333"></up-icon></view>
 		</view>
 
 		<!-- 内容区 -->
@@ -154,14 +154,14 @@ const uploadAvatar = (tempPath) => {
 <style scoped>
 .cs-avatar-page {
 	min-height: 100vh;
-	background: linear-gradient(180deg, #FFF1E8 0%, #FFFFFF 40%, #FFFFFF 100%);
+	background: #FFFFFF;
 	display: flex;
 	flex-direction: column;
 }
 
 .status-bar {
 	width: 100%;
-	background: linear-gradient(180deg, #FF7A45 0%, #FF7A45 100%);
+	background: #FFFFFF;
 }
 
 .nav-bar {
@@ -170,7 +170,8 @@ const uploadAvatar = (tempPath) => {
 	align-items: center;
 	justify-content: space-between;
 	padding: 0 24rpx;
-	background: linear-gradient(180deg, #FF7A45 0%, #FF8E5A 100%);
+	background: #FFFFFF;
+	border-bottom: 1rpx solid #F0F0F0;
 }
 
 .nav-back, .nav-right {
@@ -184,7 +185,7 @@ const uploadAvatar = (tempPath) => {
 .nav-title {
 	font-size: 34rpx;
 	font-weight: 700;
-	color: #fff;
+	color: #1a1a1a;
 	letter-spacing: 2rpx;
 }
 

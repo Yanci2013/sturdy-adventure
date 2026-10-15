@@ -1,33 +1,32 @@
 <template>
 	<view class="msg-page">
 		<commonTabbar :current="3" :placeholder="false"></commonTabbar>
+		<view class="msg-header">
+			<text class="msg-title">消息</text>
+		</view>
 		<view class="msg-box">
-			<!-- 顶部入口卡片：系统通知 / 平台人工客服 -->
-			<view class="entry-card">
+			<!-- 顶部入口：系统通知 / 平台人工客服 -->
+			<view class="entry-list">
 				<view class="entry-item" @click="gotoNoticeList">
-					<view class="entry-icon notice-icon">
-						<text class="iconfont">🔔</text>
+					<view class="entry-icon">
+						<up-icon name="bell" size="20" color="#FF7A45"></up-icon>
 					</view>
 					<view class="entry-info">
 						<text class="entry-name">系统通知</text>
 						<text class="entry-desc">{{ noticeUnreadText }}</text>
 					</view>
-					<view class="entry-arrow">
-						<text class="arrow-text">›</text>
-					</view>
+					<up-icon name="arrow-right" size="15" color="#c8c8c8"></up-icon>
 				</view>
-				<view class="entry-divider"></view>
+				<view class="entry-line"></view>
 				<view class="entry-item" @click="contactCustomerService">
-					<view class="entry-icon cs-icon">
-						<text class="iconfont">🎧</text>
+					<view class="entry-icon">
+						<up-icon name="server-man" size="20" color="#FF7A45"></up-icon>
 					</view>
 					<view class="entry-info">
 						<text class="entry-name">平台人工客服</text>
-						<text class="entry-desc">有问题点我联系人工客服!</text>
+						<text class="entry-desc">有问题点我联系人工客服</text>
 					</view>
-					<view class="entry-arrow">
-						<text class="arrow-text">›</text>
-					</view>
+					<up-icon name="arrow-right" size="15" color="#c8c8c8"></up-icon>
 				</view>
 			</view>
 
@@ -73,7 +72,7 @@
 				<!-- 空状态 -->
 				<view class="chat-empty" v-if="!orderLoading && filteredChatList.length === 0">
 					<view class="chat-empty-icon">
-						<text class="iconfont">💬</text>
+						<up-icon name="chat" size="30" color="#c8c8c8"></up-icon>
 					</view>
 					<text class="chat-empty-text">暂无聊天对话</text>
 				</view>
@@ -322,57 +321,53 @@
 <style lang="scss">
 	.msg-page {
 		min-height: 100vh;
-		background: linear-gradient(180deg, #FF7A45 0%, #FFFFFF 35%);
+		background: #FFFFFF;
+	}
+
+	.msg-header {
+		padding: 80rpx 32rpx 8rpx;
+	}
+
+	.msg-title {
+		font-size: 44rpx;
+		font-weight: 700;
+		color: #1a1a1a;
 	}
 
 	.msg-box {
-		padding: 20rpx;
-		padding-top: 80rpx;
+		padding: 0 24rpx;
 	}
 
-	/* 顶部入口卡片 */
-	.entry-card {
+	/* 顶部入口列表 */
+	.entry-list {
 		background: #FFFFFF;
-		border-radius: 24rpx;
-		padding: 8rpx 24rpx;
-		box-shadow: 0 4rpx 20rpx rgba(255, 122, 69, 0.12);
+		border: 1rpx solid #F0F0F0;
+		border-radius: 20rpx;
+		padding: 2rpx 24rpx;
 	}
 
 	.entry-item {
 		display: flex;
 		flex-direction: row !important;
 		align-items: center;
-		padding: 24rpx 0;
+		padding: 26rpx 0;
 		gap: 20rpx;
 	}
 
-	.entry-divider {
+	.entry-line {
 		height: 1rpx;
-		background: #f0f0f0;
-		margin: 0;
+		background: #F2F2F2;
 	}
 
 	.entry-icon {
-		width: 80rpx;
-		height: 80rpx;
-		border-radius: 50%;
+		width: 72rpx;
+		height: 72rpx;
+		border-radius: 18rpx;
+		background: #FFF3EC;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		flex-shrink: 0;
-	}
-
-	.notice-icon {
-		background: linear-gradient(135deg, #FF7A45 0%, #FFA07A 100%);
-	}
-
-	.cs-icon {
-		background: linear-gradient(135deg, #FF7A45 0%, #FFA07A 100%);
-	}
-
-	.entry-icon .iconfont {
-		font-size: 40rpx;
-		color: #fff;
 	}
 
 	.entry-info {
@@ -386,7 +381,7 @@
 	.entry-name {
 		font-size: 30rpx;
 		font-weight: 600;
-		color: #333;
+		color: #1a1a1a;
 	}
 
 	.entry-desc {
@@ -397,31 +392,17 @@
 		white-space: nowrap;
 	}
 
-	.entry-arrow {
-		flex-shrink: 0;
-		margin-left: 12rpx;
-	}
-
-	.arrow-text {
-		font-size: 36rpx;
-		color: #ccc;
-		line-height: 1;
-	}
-
 	/* 咨询状态切换 */
 	.state-toggle {
 		display: flex;
 		flex-direction: row !important;
 		justify-content: center;
-		margin: 32rpx 0 20rpx;
-		gap: 0;
+		margin: 32rpx auto 20rpx;
 		background: #FFFFFF;
+		border: 1rpx solid #ECECEC;
 		border-radius: 999rpx;
 		padding: 4rpx;
 		width: 320rpx;
-		margin-left: auto;
-		margin-right: auto;
-		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.06);
 	}
 
 	.toggle-item {
@@ -429,7 +410,7 @@
 		text-align: center;
 		padding: 12rpx 0;
 		font-size: 26rpx;
-		color: #999;
+		color: #888;
 		border-radius: 999rpx;
 		transition: all 0.2s;
 	}
@@ -444,15 +425,15 @@
 	.filter-tabs {
 		white-space: nowrap;
 		padding: 12rpx 0;
-		margin-bottom: 16rpx;
+		margin-bottom: 8rpx;
 	}
 
 	.filter-tab {
 		display: inline-block;
 		padding: 12rpx 28rpx;
-		margin-right: 8rpx;
+		margin-right: 4rpx;
 		font-size: 26rpx;
-		color: #999;
+		color: #888;
 		position: relative;
 	}
 
@@ -473,22 +454,19 @@
 		border-radius: 2rpx;
 	}
 
-	/* 订单聊天列表 */
+	/* 会话列表 */
 	.chat-list-box {
-		background: transparent;
-		padding: 0;
+		background: #FFFFFF;
+		padding: 0 4rpx;
 	}
 
 	.chat-item {
 		display: flex;
 		flex-direction: row !important;
 		align-items: center;
-		padding: 24rpx 24rpx;
-		background: #FFFFFF;
-		border-radius: 20rpx;
-		margin-bottom: 16rpx;
+		padding: 26rpx 4rpx;
 		gap: 20rpx;
-		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+		border-bottom: 1rpx solid #F2F2F2;
 	}
 
 	.chat-avatar-wrap {
@@ -499,7 +477,7 @@
 	.chat-avatar {
 		width: 88rpx;
 		height: 88rpx;
-		border-radius: 24rpx;
+		border-radius: 20rpx;
 	}
 
 	.chat-unread {
@@ -547,7 +525,7 @@
 	.chat-name {
 		font-size: 28rpx;
 		font-weight: 600;
-		color: #333;
+		color: #1a1a1a;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -573,7 +551,7 @@
 	.chat-tag {
 		font-size: 18rpx;
 		color: #FF7A45;
-		background: rgba(255, 122, 69, 0.12);
+		background: #FFF3EC;
 		padding: 4rpx 12rpx;
 		border-radius: 8rpx;
 		flex-shrink: 0;
@@ -594,15 +572,10 @@
 		width: 120rpx;
 		height: 120rpx;
 		border-radius: 24rpx;
-		background: #f5f5f5;
+		background: #F7F8FA;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-	}
-
-	.chat-empty-icon .iconfont {
-		font-size: 56rpx;
-		color: #ccc;
 	}
 
 	.chat-empty-text {

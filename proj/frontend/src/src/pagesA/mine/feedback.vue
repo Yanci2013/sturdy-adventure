@@ -153,7 +153,7 @@ const goHome = () => uni.reLaunch({ url: '/pages/index/index' });
 	background: rgba(255,255,255,0.6);
 	margin: 0 8rpx;
 }
-.navbar-title { font-size: 34rpx; font-weight: 600; color: #ffffff; }
+.navbar-title { font-size: 34rpx; font-weight: 600; color: #1a1a1a; }
 .navbar-placeholder { width: 120rpx; }
 .content {
 	flex: 1;

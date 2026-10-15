@@ -154,7 +154,7 @@ const goBack = () => {
 <style scoped>
 .page {
 	min-height: 100vh;
-	background: #0a0a0a;
+	background: #FFFFFF;
 	display: flex;
 	flex-direction: column;
 }
@@ -168,15 +168,15 @@ const goBack = () => {
 	justify-content: space-between;
 	padding: 0 24rpx;
 	padding-top: calc(var(--status-bar-height, 0px) + 16rpx);
-	background: #0a0a0a;
+	background: #FFFFFF;
 }
 .navbar-capsule {
 	display: flex;
 	align-items: center;
-	border: 1rpx solid rgba(255,255,255,0.15);
+	border: 1rpx solid #E5E5E5;
 	border-radius: 100px;
 	padding: 8rpx 20rpx;
-	background: rgba(255, 255, 255, 0.06);
+	background: #F7F7F7;
 }
 .navbar-btn {
 	padding: 4rpx 8rpx;
@@ -184,7 +184,7 @@ const goBack = () => {
 .navbar-title {
 	font-size: 34rpx;
 	font-weight: 600;
-	color: #fff;
+	color: #1a1a1a;
 }
 .navbar-placeholder {
 	width: 120rpx;
@@ -212,7 +212,7 @@ const goBack = () => {
 .brand-name {
 	font-size: 44rpx;
 	font-weight: 700;
-	color: #fff;
+	color: #1a1a1a;
 	letter-spacing: 4rpx;
 }
 
@@ -226,7 +226,7 @@ const goBack = () => {
 .form-label {
 	display: block;
 	font-size: 30rpx;
-	color: #fff;
+	color: #333;
 	font-weight: 500;
 	margin-bottom: 16rpx;
 }
@@ -234,14 +234,14 @@ const goBack = () => {
 	width: 100%;
 	height: 96rpx;
 	padding: 0 32rpx;
-	background: rgba(255,255,255,0.08);
+	background: #F7F7F7;
 	border-radius: 16rpx;
 	font-size: 30rpx;
-	color: #fff;
+	color: #333;
 	box-sizing: border-box;
 }
 .placeholder {
-	color: rgba(255,255,255,0.3);
+	color: #bbb;
 }
 
 /* 提交按钮 */
@@ -277,7 +277,7 @@ const goBack = () => {
 .agree-checkbox {
 	width: 32rpx;
 	height: 32rpx;
-	border: 2rpx solid rgba(255,255,255,0.3);
+	border: 2rpx solid #CCCCCC;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -296,7 +296,7 @@ const goBack = () => {
 }
 .agree-text {
 	font-size: 26rpx;
-	color: rgba(255,255,255,0.5);
+	color: #999;
 }
 .agree-link {
 	font-size: 26rpx;

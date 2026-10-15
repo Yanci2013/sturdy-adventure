@@ -131,14 +131,14 @@ const goBack = () => {
 </script>
 
 <style scoped>
-.cs-settings-page { min-height: 100vh; background: #f5f7fa; display: flex; flex-direction: column; }
+.cs-settings-page { min-height: 100vh; background: #ffffff; display: flex; flex-direction: column; }
 .status-bar { background: #fff; }
 .nav-bar { height: 88rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: space-between; background: #fff; }
 .nav-back { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
 .nav-title { font-size: 32rpx; font-weight: 600; color: #111; }
 .nav-right { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
 
-.sub-header { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 24rpx; background: linear-gradient(180deg, #E6F4FF 0%, #ffffff 100%); }
+.sub-header { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 24rpx; background: #ffffff; }
 .sub-close { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
 .close-icon { font-size: 40rpx; color: #333; line-height: 1; }
 .sub-title { font-size: 30rpx; font-weight: 600; color: #111; }

@@ -10,7 +10,7 @@
 			</view>
 			<text class="nav-title">{{ navTitle }}</text>
 			<view class="nav-right">
-				<up-icon name="more-dot-fill" size="20" color="#fff"></up-icon>
+				<up-icon name="more-dot-fill" size="20" color="#333"></up-icon>
 			</view>
 		</view>
 
@@ -639,12 +639,12 @@ const selectIdentity = async (item) => {
 </script>
 
 <style scoped>
-.cs-page { min-height: 100vh; background: linear-gradient(180deg, #FF7A45 0%, #FF8E5A 15%, #FFE0C8 35%, #FFF5EC 55%, #FFFFFF 100%); display: flex; flex-direction: column; }
-.status-bar { background: transparent; }
-.nav-bar { height: 88rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: space-between; background: transparent; }
+.cs-page { min-height: 100vh; background: #FFFFFF; display: flex; flex-direction: column; }
+.status-bar { background: #FFFFFF; }
+.nav-bar { height: 88rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: space-between; background: #FFFFFF; border-bottom: 1rpx solid #F0F0F0; }
 .nav-back { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
-.close-icon { font-size: 44rpx; color: #fff; line-height: 1; }
-.nav-title { font-size: 34rpx; font-weight: 700; color: #fff; letter-spacing: 2rpx; }
+.close-icon { font-size: 44rpx; color: #333; line-height: 1; }
+.nav-title { font-size: 34rpx; font-weight: 700; color: #1a1a1a; letter-spacing: 2rpx; }
 .nav-right { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
 
 .cs-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-bottom: 180rpx; }

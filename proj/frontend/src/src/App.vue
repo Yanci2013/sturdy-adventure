@@ -3,16 +3,20 @@
 	import { syncPendingPayment } from '@/utils/pay.js'
 	export default {
 		onLaunch: function() {
-			// 暖珊瑚橘到纯白渐变背景 - 运行时注入确保生效
+			// 纯白背景 - 运行时注入确保生效
 			// #ifdef H5
 			const style = document.createElement('style')
 			style.textContent = `
 				page, uni-page-body, body {
-					background: linear-gradient(180deg, #FF7A45 0%, #FFFFFF 100%) !important;
+					background: #FFFFFF !important;
 					background-attachment: fixed !important;
 				}
 				page .page, page .main-container, page .clf-page, page .customer-page {
 					background: transparent !important;
+				}
+				page .top-bg, page .header-bg {
+					background: transparent !important;
+					background-image: none !important;
 				}
 				button:active, .u-button:active, .btn:active, .service-btn:active,
 				.classify_fixed_button:active, .sort-btn:active, .action-btn:active,
@@ -71,21 +75,27 @@
 	@import url("./static/css/iconfont.css");
 	/* 引入全局样式库 */
 
-	/* 全局页面背景 - 暖珊瑚橘到纯白渐变 */
+	/* 全局页面背景 - 纯白 */
 	page {
-		background: linear-gradient(180deg, #FF7A45 0%, #FFFFFF 100%) !important;
+		background: #FFFFFF !important;
 		background-attachment: fixed !important;
 	}
 	uni-page-body, body {
-		background: linear-gradient(180deg, #FF7A45 0%, #FFFFFF 100%) !important;
+		background: #FFFFFF !important;
 		background-attachment: fixed !important;
 	}
-	/* 让页面容器背景透明，露出全局渐变背景图 */
+	/* 让页面容器背景透明，露出全局白色背景 */
 	page .page,
 	page .main-container,
 	page .clf-page,
 	page .customer-page {
 		background: transparent !important;
+	}
+	/* 移除页面顶部装饰性背景色块 */
+	page .top-bg,
+	page .header-bg {
+		background: transparent !important;
+		background-image: none !important;
 	}
 
 	/* 全局按钮点击态 - 暖珊瑚橘 */
