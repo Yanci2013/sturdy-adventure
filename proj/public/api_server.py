@@ -209,6 +209,19 @@ def init_db():
         ('app_bg_image', 'basic', '页面背景图片', '前端全局背景图 URL（通过背景图上传接口设置）', 'string', '', '', '', '', '', ''),
         ('loading_name', 'basic', '加载页名称', '加载页展示的品牌名称', 'string', '', '创世网络', '', '', '', ''),
         ('loading_logo', 'basic', '加载页 Logo', '加载页展示的 Logo 图片 URL', 'string', '', '/static/eon.png', '', '', '', ''),
+        # 前端主题样式
+        ('theme_primary', 'basic', '主色', '前端主色调（HEX）', 'string', '', '#FF7A45', '', '', '', ''),
+        ('theme_secondary', 'basic', '辅助色', '前端辅助色调（HEX）', 'string', '', '#FFB199', '', '', '', ''),
+        # 底部导航栏
+        ('tabbar_bg', 'basic', '底部导航背景色', '底部导航胶囊背景色（HEX 或 CSS 渐变，留空用默认）', 'string', '', '', '', '', '', ''),
+        ('tabbar_active_color', 'basic', '底部导航选中颜色', '选中项图标/文字颜色', 'string', '', '#FF7A45', '', '', '', ''),
+        ('tabbar_inactive_color', 'basic', '底部导航默认颜色', '未选中项文字颜色', 'string', '', 'rgba(60,40,30,.55)', '', '', '', ''),
+        ('tabbar_style', 'basic', '底部导航选中效果', 'ellipse=点击出现小椭圆高亮；color=点击仅图标/文字变色', 'radio', '', 'ellipse', '{"ellipse":"大椭圆+小椭圆","color":"大椭圆+图标变色"}', '', '', ''),
+        ('tabbar_ellipse_color', 'basic', '底部导航椭圆颜色', '选中项椭圆高亮颜色，留空跟随选中颜色', 'string', '', '', '', '', '', ''),
+        # 功能标识（角标）
+        ('badge_color', 'basic', '功能标识颜色', '角标/标识颜色（HEX）', 'string', '', '#FF3B30', '', '', '', ''),
+        # 发布控制
+        ('publish_mode', 'basic', '发布模式', '前端装修发布方式', 'radio', '', 'admin', '{"admin":"仅管理员发布","auto":"立即发布"}', '', '', ''),
     ]
     for item in extra_items:
         cur.execute('INSERT OR IGNORE INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
@@ -650,6 +663,14 @@ class Handler(BaseHTTPRequestHandler):
             app_bg_image = get_config('app_bg_image', '')
             loading_name = get_config('loading_name', '创世网络')
             loading_logo = get_config('loading_logo', '/static/eon.png')
+            theme_primary = get_config('theme_primary', '#FF7A45') or '#FF7A45'
+            theme_secondary = get_config('theme_secondary', '#FFB199') or '#FFB199'
+            tabbar_bg = get_config('tabbar_bg', '')
+            tabbar_active_color = get_config('tabbar_active_color', theme_primary) or theme_primary
+            tabbar_inactive_color = get_config('tabbar_inactive_color', 'rgba(60,40,30,.55)') or 'rgba(60,40,30,.55)'
+            tabbar_style = get_config('tabbar_style', 'ellipse') or 'ellipse'
+            tabbar_ellipse_color = get_config('tabbar_ellipse_color', '')
+            badge_color = get_config('badge_color', '#FF3B30') or '#FF3B30'
             self.send_json({
                 "code": 1,
                 "msg": "成功",
@@ -666,7 +687,15 @@ class Handler(BaseHTTPRequestHandler):
                     "app_bg_color": app_bg_color,
                     "app_bg_image": app_bg_image,
                     "loading_name": loading_name,
-                    "loading_logo": loading_logo
+                    "loading_logo": loading_logo,
+                    "theme_primary": theme_primary,
+                    "theme_secondary": theme_secondary,
+                    "tabbar_bg": tabbar_bg,
+                    "tabbar_active_color": tabbar_active_color,
+                    "tabbar_inactive_color": tabbar_inactive_color,
+                    "tabbar_style": tabbar_style,
+                    "tabbar_ellipse_color": tabbar_ellipse_color,
+                    "badge_color": badge_color
                 }
             })
             return

@@ -3,122 +3,464 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>前端UI装修 - 创世网络</title>
+<title>前端装修配置 - 创世网络</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, "PingFang SC", Arial, sans-serif; background: #f5f6fa; color: #1f1f1f; }
-  .wrap { max-width: 680px; margin: 40px auto; background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
-  h1 { font-size: 20px; margin: 0 0 6px; }
-  .tip { color: #8a92a6; font-size: 13px; margin-bottom: 22px; }
-  .row { display: flex; align-items: center; margin-bottom: 18px; gap: 12px; }
-  .row label { width: 120px; font-size: 14px; color: #444; flex-shrink: 0; }
-  .row input[type=text], .row input[type=color] { padding: 8px 10px; border: 1px solid #dcdfe6; border-radius: 8px; font-size: 14px; }
-  .row input[type=color] { width: 56px; height: 38px; padding: 2px; cursor: pointer; }
-  .row input[type=text] { flex: 1; }
-  .btn { background: #4f7cff; color: #fff; border: 0; border-radius: 8px; padding: 10px 22px; font-size: 14px; cursor: pointer; margin-right: 10px; }
-  .btn.secondary { background: #909399; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; color: #e6ecff; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 15% -10%, #17244a 0%, #0b1020 55%, #080c18 100%);
+    min-height: 100vh;
+  }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ===== 左侧导航 ===== */
+  .rail {
+    width: 168px; flex-shrink: 0; background: linear-gradient(180deg, #101833, #0a0f1f);
+    border-right: 1px solid rgba(0,212,255,.18); padding: 18px 12px;
+  }
+  .rail .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; letter-spacing: 1px; padding: 4px 6px 18px; }
+  .rail .brand .logo { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #00D4FF, #7B6CFF); box-shadow: 0 0 14px rgba(0,212,255,.6); }
+  .rail .items { display: flex; flex-direction: column; gap: 6px; }
+  .rail .item {
+    display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    color: #9aa6d0; font-size: 13px; border: 1px solid transparent; transition: .18s;
+  }
+  .rail .item:hover { color: #dfe8ff; background: rgba(0,212,255,.06); }
+  .rail .item.on { color: #fff; background: linear-gradient(90deg, rgba(0,212,255,.20), rgba(123,108,255,.12)); border-color: rgba(0,212,255,.45); box-shadow: inset 0 0 12px rgba(0,212,255,.15); }
+  .rail .item .dot { width: 7px; height: 7px; border-radius: 50%; background: #5b668f; }
+  .rail .item.on .dot { background: #00D4FF; box-shadow: 0 0 8px #00D4FF; }
+
+  /* ===== 主区 ===== */
+  .main { flex: 1; min-width: 0; padding: 22px 26px 40px; }
+  .main h1 { font-size: 19px; margin: 0 0 4px; letter-spacing: 1px; }
+  .main .sub { color: #8a93b8; font-size: 12.5px; margin-bottom: 18px; }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .tabs .tab {
+    padding: 9px 18px; border-radius: 9px; cursor: pointer; font-size: 13.5px; color: #aab4d8;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(120,140,200,.22); transition: .18s;
+  }
+  .tabs .tab:hover { color: #e6ecff; border-color: rgba(0,212,255,.5); }
+  .tabs .tab.on { color: #06101f; font-weight: 700; background: linear-gradient(135deg, #00D4FF, #5ad0ff); border-color: transparent; box-shadow: 0 6px 18px rgba(0,212,255,.35); }
+
+  .cols { display: flex; gap: 22px; align-items: flex-start; }
+  .form { flex: 1; min-width: 0; }
+  .panel { display: none; }
+  .panel.on { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .field { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .field > label { width: 138px; flex-shrink: 0; color: #c7d0f0; font-size: 13.5px; }
+  .field .ctl { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .inp, .sel {
+    width: 100%; padding: 9px 12px; border-radius: 9px; font-size: 13.5px; color: #e9efff;
+    background: rgba(8,14,30,.85); border: 1px solid rgba(120,140,200,.3); outline: none; transition: .18s;
+  }
+  .inp:focus, .sel:focus { border-color: #00D4FF; box-shadow: 0 0 0 3px rgba(0,212,255,.15); }
+  .inp.small { width: 130px; }
+  input[type=color] {
+    width: 44px; height: 38px; padding: 2px; border-radius: 9px; cursor: pointer;
+    background: rgba(8,14,30,.85); border: 1px solid rgba(120,140,200,.3);
+  }
+  .hint { color: #7d87ad; font-size: 12px; }
+
+  /* 选中效果 选项卡片 */
+  .opts { display: flex; gap: 12px; }
+  .opt {
+    flex: 1; border: 1px solid rgba(120,140,200,.3); border-radius: 12px; padding: 12px; cursor: pointer;
+    background: rgba(8,14,30,.6); transition: .18s; text-align: center;
+  }
+  .opt:hover { border-color: rgba(0,212,255,.55); }
+  .opt.on { border-color: #00D4FF; background: rgba(0,212,255,.10); box-shadow: 0 0 0 2px rgba(0,212,255,.22) inset; }
+  .opt .demo { height: 46px; border-radius: 999px; background: rgba(255,255,255,.9); position: relative; margin-bottom: 9px; display: flex; align-items: center; justify-content: space-around; }
+  .opt .demo i { display: block; }
+  .opt .demo .ic { width: 16px; height: 16px; border-radius: 5px; background: #b7c0d8; }
+  .opt .demo .bigEll { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 74px; height: 40px; border-radius: 50%; background: rgba(255,122,69,.22); }
+  .opt .demo .smEll { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 46px; height: 30px; border-radius: 50%; background: rgba(255,122,69,.35); }
+  .opt .demo .ic.on { background: #FF7A45; box-shadow: 0 0 8px rgba(255,122,69,.8); }
+  .opt .t { font-size: 13px; color: #cfd8f5; }
+  .opt .d { font-size: 11.5px; color: #8a93b8; margin-top: 3px; }
+
+  /* ===== 预览卡 ===== */
+  .previewCard {
+    width: 300px; flex-shrink: 0; position: sticky; top: 22px;
+    background: linear-gradient(180deg, #131c38, #0d1428);
+    border: 1px solid rgba(0,212,255,.28); border-radius: 16px; padding: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45), inset 0 0 24px rgba(0,212,255,.05);
+  }
+  .previewCard .phead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .previewCard .phead .pt { font-size: 14px; font-weight: 700; letter-spacing: .5px; }
+  .previewCard .phead .badge { font-size: 11px; color: #06101f; background: #00D4FF; border-radius: 6px; padding: 2px 8px; font-weight: 700; }
+  .pvTabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .pvTabs button { flex: 1; padding: 6px 0; font-size: 12px; border-radius: 8px; cursor: pointer; color: #9aa6d0; background: rgba(255,255,255,.04); border: 1px solid rgba(120,140,200,.25); }
+  .pvTabs button.on { color: #06101f; background: #00D4FF; border-color: transparent; font-weight: 700; }
+
+  .phone { position: relative; width: 258px; height: 452px; margin: 0 auto; border-radius: 22px; overflow: hidden; border: 6px solid #05080f; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .phone iframe { width: 375px; height: 660px; border: 0; transform: scale(.657); transform-origin: top left; display: block; background: #fff; }
+  .phone .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 96px; height: 16px; background: #05080f; border-radius: 0 0 12px 12px; z-index: 3; }
+
+  .saveRow { margin-top: 14px; display: flex; align-items: center; gap: 10px; }
+  .btn { flex: 1; padding: 11px 18px; border: 0; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; color: #06101f; background: linear-gradient(135deg, #00D4FF, #5ad0ff); box-shadow: 0 8px 22px rgba(0,212,255,.35); }
+  .btn.ghost { flex: 0 0 auto; color: #c7d0f0; background: rgba(255,255,255,.05); border: 1px solid rgba(120,140,200,.3); box-shadow: none; font-weight: 500; }
   .btn:disabled { opacity: .6; cursor: not-allowed; }
-  .preview { margin-top: 10px; padding: 14px; border: 1px dashed #dcdfe6; border-radius: 10px; background: #fafbfd; min-height: 90px; display: flex; align-items: center; justify-content: center; color: #909399; font-size: 13px; background-size: cover; background-position: center; }
-  .msg { margin-top: 16px; font-size: 13px; min-height: 20px; }
-  .ok { color: #34c759; } .err { color: #f56c6c; }
+  .msg { margin-top: 10px; font-size: 12.5px; min-height: 18px; text-align: center; }
+  .msg.ok { color: #2ee6a6; } .msg.err { color: #ff6b6b; }
+
+  /* ===== 操作日志 ===== */
+  .logs { margin-top: 26px; }
+  .logs .lt { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .logs .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .logs .chip {
+    display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px; font-size: 12.5px; color: #cfd8f5;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(120,140,200,.22);
+  }
+  .logs .chip .d { width: 8px; height: 8px; border-radius: 2px; }
+  @media (max-width: 900px) {
+    .rail { display: none; }
+    .cols { flex-direction: column; }
+    .previewCard { width: 100%; position: static; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>前端 UI 装修</h1>
-  <div class="tip">配置前端全局背景色、背景图以及加载页品牌信息。保存后刷新前端 H5 生效。</div>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand"><span class="logo"></span>创世网络</div>
+    <div class="items">
+      <div class="item on" data-tab="base"><span class="dot"></span>基础信息</div>
+      <div class="item" data-tab="theme"><span class="dot"></span>主题样式</div>
+      <div class="item" data-tab="image"><span class="dot"></span>全局图片设置</div>
+      <div class="item" data-tab="publish"><span class="dot"></span>发布控制</div>
+    </div>
+  </aside>
 
-  <div class="row">
-    <label>页面背景颜色</label>
-    <input type="color" id="bgColor" value="#FF7A45">
-    <input type="text" id="bgColorText" value="#FF7A45" placeholder="留空使用默认渐变">
-    <button class="btn secondary" onclick="clearColor()">清除</button>
-  </div>
+  <main class="main">
+    <h1>前端装修配置</h1>
+    <div class="sub">实时预览前端页面效果，所见即所得；底部导航颜色与点击动效、功能标识均可自定义。</div>
 
-  <div class="row">
-    <label>页面背景图片</label>
-    <input type="file" id="bgFile" accept="image/*">
-    <button class="btn secondary" onclick="clearImage()">清除图片</button>
-  </div>
+    <div class="tabs">
+      <div class="tab on" data-tab="base">基础信息</div>
+      <div class="tab" data-tab="theme">主题样式</div>
+      <div class="tab" data-tab="image">全局图片设置</div>
+      <div class="tab" data-tab="publish">发布控制</div>
+    </div>
 
-  <div class="preview" id="preview">背景预览（上方选择颜色或上传图片后显示）</div>
+    <div class="cols">
+      <div class="form">
+        <!-- 基础信息 -->
+        <div class="panel on" data-panel="base">
+          <div class="field">
+            <label>系统名称</label>
+            <div class="ctl"><input class="inp" id="loadingName" value="创世网络"></div>
+          </div>
+          <div class="field">
+            <label>主色</label>
+            <div class="ctl">
+              <input type="color" id="primary" value="#FF7A45">
+              <input class="inp small" id="primaryText" value="#FF7A45">
+              <span class="hint">主导航、加载进度条等</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>辅助色</label>
+            <div class="ctl">
+              <input type="color" id="secondary" value="#FFB199">
+              <input class="inp small" id="secondaryText" value="#FFB199">
+            </div>
+          </div>
+        </div>
 
-  <div class="row" style="margin-top:22px">
-    <label>加载页名称</label>
-    <input type="text" id="loadingName" value="创世网络">
-  </div>
+        <!-- 主题样式 -->
+        <div class="panel" data-panel="theme">
+          <div class="field">
+            <label>页面背景颜色</label>
+            <div class="ctl">
+              <input type="color" id="bgColor" value="#FFFFFF">
+              <input class="inp small" id="bgColorText" value="#FFFFFF">
+              <button class="btn ghost" type="button" onclick="clearBgColor()">清除</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>底部导航背景色</label>
+            <div class="ctl">
+              <input type="color" id="tabbarBg" value="#FFFFFF">
+              <input class="inp small" id="tabbarBgText" value="" placeholder="留空用默认">
+            </div>
+          </div>
+          <div class="field">
+            <label>底部导航选中颜色</label>
+            <div class="ctl">
+              <input type="color" id="tabbarActive" value="#FF7A45">
+              <input class="inp small" id="tabbarActiveText" value="#FF7A45">
+            </div>
+          </div>
+          <div class="field">
+            <label>底部导航默认颜色</label>
+            <div class="ctl">
+              <input class="inp" id="tabbarInactive" value="rgba(60,40,30,.55)" placeholder="支持 rgba() 或 HEX">
+            </div>
+          </div>
+          <div class="field">
+            <label>底部导航椭圆颜色</label>
+            <div class="ctl">
+              <input type="color" id="tabbarEllipse" value="#FF7A45">
+              <input class="inp small" id="tabbarEllipseText" value="" placeholder="留空跟随选中色">
+            </div>
+          </div>
+          <div class="field" style="align-items:flex-start">
+            <label style="padding-top:6px">选中效果</label>
+            <div class="ctl" style="flex-direction:column;align-items:stretch;gap:8px">
+              <div class="opts">
+                <div class="opt on" data-style="ellipse">
+                  <div class="demo"><span class="bigEll"></span><span class="smEll"></span></div>
+                  <div class="t">大椭圆 + 小椭圆</div>
+                  <div class="d">点击后出现小椭圆高亮</div>
+                </div>
+                <div class="opt" data-style="color">
+                  <div class="demo"><span class="bigEll"></span><span class="ic"></span><span class="ic on"></span></div>
+                  <div class="t">大椭圆 + 图标变色</div>
+                  <div class="d">点击后仅图标/文字变色</div>
+                </div>
+              </div>
+              <div class="hint">点击底部导航时：先弹出一个大椭圆，再收成小椭圆；或仅图标变色。</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>功能标识颜色</label>
+            <div class="ctl">
+              <input type="color" id="badgeColor" value="#FF3B30">
+              <input class="inp small" id="badgeColorText" value="#FF3B30">
+              <span class="hint">角标/标识</span>
+            </div>
+          </div>
+        </div>
 
-  <div class="row">
-    <label>加载页 Logo URL</label>
-    <input type="text" id="loadingLogo" value="/static/eon.png" placeholder="/static/xxx.png 或 http(s)://...">
-  </div>
+        <!-- 全局图片设置 -->
+        <div class="panel" data-panel="image">
+          <div class="field">
+            <label>页面背景图片</label>
+            <div class="ctl">
+              <input type="file" id="bgFile" accept="image/*">
+              <button class="btn ghost" type="button" onclick="clearImage()">清除图片</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>加载页 Logo</label>
+            <div class="ctl"><input class="inp" id="loadingLogo" value="/static/eon.png" placeholder="/static/xxx.png 或 http(s)://..."></div>
+          </div>
+          <div class="hint">背景图建议尺寸 750×1624，上传后自动保存并实时预览。</div>
+        </div>
 
-  <div style="margin-top:24px">
-    <button class="btn" id="saveBtn" onclick="saveAll()">保存配置</button>
-    <span class="msg" id="msg"></span>
-  </div>
+        <!-- 发布控制 -->
+        <div class="panel" data-panel="publish">
+          <div class="field">
+            <label>发布模式</label>
+            <div class="ctl">
+              <select class="sel" id="publishMode">
+                <option value="admin">仅管理员发布</option>
+                <option value="auto">立即发布</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>发布说明</label>
+            <div class="ctl"><span class="hint">点击右侧「保存配置」即发布当前装修到前端 H5，用户刷新后生效。</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 预览卡 -->
+      <div class="previewCard">
+        <div class="phead"><span class="pt">配置预览</span><span class="badge">实时</span></div>
+        <div class="pvTabs">
+          <button class="on" data-pv="index">首页导航</button>
+          <button data-pv="loading">加载页</button>
+          <button id="replayBtn" style="flex:0 0 66px">重播</button>
+        </div>
+        <div class="phone">
+          <div class="notch"></div>
+          <iframe id="pvFrame" src="/h5/index.html?preview=1" title="preview"></iframe>
+        </div>
+        <div class="saveRow">
+          <button class="btn" id="saveBtn" onclick="saveAll()">保存配置</button>
+        </div>
+        <div class="msg" id="msg"></div>
+      </div>
+    </div>
+
+    <div class="logs">
+      <div class="lt">最近操作日志</div>
+      <div class="chips" id="logChips"></div>
+    </div>
+  </main>
 </div>
 
 <script>
 const API = '';
 const $ = id => document.getElementById(id);
+const CHIP_COLORS = ['#00D4FF', '#7B6CFF', '#FF7A45', '#2ee6a6'];
 
-function showMsg(t, ok) {
-  const m = $('msg');
-  m.textContent = t;
-  m.className = 'msg ' + (ok ? 'ok' : 'err');
+/* ===== 预览 iframe 通信 ===== */
+const frame = $('pvFrame');
+let curTab = 'base';
+let curStyle = 'ellipse';
+let selectedFile = null;      // 新上传的文件
+let serverImage = '';         // 服务器上的背景图 URL
+let objectUrl = '';           // 本地预览用的临时 URL
+
+function postDraft() {
+  try {
+    if (!frame.contentWindow) return;
+    frame.contentWindow.postMessage({ type: 'cs-preview', config: buildDraft() }, '*');
+  } catch (e) {}
+}
+frame.addEventListener('load', postDraft);
+
+function buildDraft() {
+  var bgImage = objectUrl || serverImage || '';
+  return {
+    app_bg_color: $('bgColorText').value.trim(),
+    app_bg_image: bgImage,
+    loading_name: $('loadingName').value.trim(),
+    loading_logo: $('loadingLogo').value.trim(),
+    theme_primary: $('primaryText').value.trim(),
+    theme_secondary: $('secondaryText').value.trim(),
+    tabbar_bg: $('tabbarBgText').value.trim(),
+    tabbar_active_color: $('tabbarActiveText').value.trim(),
+    tabbar_inactive_color: $('tabbarInactive').value.trim(),
+    tabbar_style: curStyle,
+    tabbar_ellipse_color: $('tabbarEllipseText').value.trim(),
+    badge_color: $('badgeColorText').value.trim()
+  };
+}
+function refreshPreview() { postDraft(); }
+
+/* ===== 页签切换 ===== */
+function switchTab(tab) {
+  curTab = tab;
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.dataset.tab === tab); });
+  document.querySelectorAll('.rail .item').forEach(function (t) { t.classList.toggle('on', t.dataset.tab === tab); });
+  document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.dataset.panel === tab); });
+}
+document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); }); });
+document.querySelectorAll('.rail .item').forEach(function (t) { t.addEventListener('click', function () { switchTab(t.dataset.tab); }); });
+
+/* ===== 预览页面切换（首页导航 / 加载页） ===== */
+let pvMode = 'index';
+document.querySelectorAll('.pvTabs button[data-pv]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.pvTabs button[data-pv]').forEach(function (x) { x.classList.remove('on'); });
+    b.classList.add('on');
+    pvMode = b.dataset.pv;
+    frame.src = pvMode === 'loading' ? '/h5/index.html' : '/h5/index.html?preview=1';
+  });
+});
+$('replayBtn').addEventListener('click', function () {
+  var src = pvMode === 'loading' ? '/h5/index.html' : '/h5/index.html?preview=1';
+  frame.src = 'about:blank';
+  setTimeout(function () { frame.src = src; }, 60);
+});
+
+/* ===== 选中效果选项 ===== */
+document.querySelectorAll('.opt').forEach(function (o) {
+  o.addEventListener('click', function () {
+    document.querySelectorAll('.opt').forEach(function (x) { x.classList.remove('on'); });
+    o.classList.add('on');
+    curStyle = o.dataset.style;
+    refreshPreview();
+  });
+});
+
+/* ===== 颜色 色块<->文本 联动 ===== */
+function linkColor(colorId, textId, defaultVal) {
+  var c = $(colorId), t = $(textId);
+  if (!c || !t) return;
+  c.addEventListener('input', function () { t.value = c.value; refreshPreview(); });
+  t.addEventListener('input', function () {
+    var v = t.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) c.value = v;
+    refreshPreview();
+  });
+  if (defaultVal) { t.value = defaultVal; }
+}
+linkColor('primary', 'primaryText');
+linkColor('secondary', 'secondaryText');
+linkColor('bgColor', 'bgColorText');
+linkColor('tabbarBg', 'tabbarBgText');
+linkColor('tabbarActive', 'tabbarActiveText');
+linkColor('tabbarEllipse', 'tabbarEllipseText');
+linkColor('badgeColor', 'badgeColorText');
+
+['loadingName', 'loadingLogo', 'tabbarInactive', 'bgColorText', 'tabbarBgText', 'tabbarEllipseText'].forEach(function (id) {
+  $(id).addEventListener('input', refreshPreview);
+});
+$('publishMode').addEventListener('change', function () {});
+
+/* ===== 背景图选择 ===== */
+$('bgFile').addEventListener('change', function () {
+  var f = this.files[0];
+  selectedFile = f || null;
+  if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ''; }
+  if (f) { objectUrl = URL.createObjectURL(f); }
+  refreshPreview();
+});
+
+function clearBgColor() { $('bgColorText').value = ''; $('bgColor').value = '#ffffff'; refreshPreview(); }
+function clearImage() {
+  $('bgFile').value = '';
+  selectedFile = null;
+  if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ''; }
+  serverImage = '';
+  refreshPreview();
+  saveConfig([{ name: 'app_bg_image', value: '' }]);
 }
 
-// 颜色联动
-$('bgColor').addEventListener('input', e => { $('bgColorText').value = e.target.value; updatePreview(); });
-$('bgColorText').addEventListener('input', e => { $('bgColor').value = e.target.value || '#ffffff'; updatePreview(); });
-
-function updatePreview() {
-  const c = $('bgColorText').value.trim();
-  const img = $('bgFile').files[0];
-  const p = $('preview');
-  if (img) {
-    const r = new FileReader();
-    r.onload = () => { p.style.background = (c ? c + ' ' : '') + `url(${r.result}) center/cover no-repeat`; p.textContent = ''; };
-    r.readAsDataURL(img);
-  } else if (c) {
-    p.style.background = c; p.textContent = '';
-  } else {
-    p.style.background = ''; p.textContent = '背景预览（上方选择颜色或上传图片后显示）';
-  }
-}
-$('bgFile').addEventListener('change', updatePreview);
-
-function clearColor() { $('bgColorText').value = ''; $('bgColor').value = '#ffffff'; updatePreview(); }
-function clearImage() { $('bgFile').value = ''; updatePreview(); saveConfig([{name:'app_bg_image', value:''}]); }
-
+/* ===== 保存 ===== */
 function saveConfig(items) {
   return fetch(API + '/api/config/save', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ items })
-  }).then(r => r.json());
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: items })
+  }).then(function (r) { return r.json(); });
 }
 
+function showMsg(t, ok) { var m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); }
+
 async function saveAll() {
-  const btn = $('saveBtn');
+  var btn = $('saveBtn');
   btn.disabled = true;
   showMsg('保存中...', true);
   try {
-    const items = [
+    if (selectedFile) {
+      var fd = new FormData();
+      fd.append('file', selectedFile);
+      var up = await fetch(API + '/api/config/uploadBg', { method: 'POST', body: fd }).then(function (r) { return r.json(); });
+      if (up.code !== 1) throw new Error(up.msg || '背景图上传失败');
+      serverImage = (up.data && up.data.url) || '';
+      selectedFile = null;
+      if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = ''; }
+      $('bgFile').value = '';
+      pushLog('上传背景图', CHIP_COLORS[3]);
+    }
+    var res = await saveConfig([
       { name: 'app_bg_color', value: $('bgColorText').value.trim() },
       { name: 'loading_name', value: $('loadingName').value.trim() || '创世网络' },
-      { name: 'loading_logo', value: $('loadingLogo').value.trim() || '/static/eon.png' }
-    ];
-    const file = $('bgFile').files[0];
-    if (file) {
-      const fd = new FormData();
-      fd.append('file', file);
-      const up = await fetch(API + '/api/config/uploadBg', { method: 'POST', body: fd }).then(r => r.json());
-      if (up.code !== 1) throw new Error(up.msg || '上传失败');
-    }
-    const res = await saveConfig(items);
+      { name: 'loading_logo', value: $('loadingLogo').value.trim() || '/static/eon.png' },
+      { name: 'theme_primary', value: $('primaryText').value.trim() },
+      { name: 'theme_secondary', value: $('secondaryText').value.trim() },
+      { name: 'tabbar_bg', value: $('tabbarBgText').value.trim() },
+      { name: 'tabbar_active_color', value: $('tabbarActiveText').value.trim() },
+      { name: 'tabbar_inactive_color', value: $('tabbarInactive').value.trim() },
+      { name: 'tabbar_style', value: curStyle },
+      { name: 'tabbar_ellipse_color', value: $('tabbarEllipseText').value.trim() },
+      { name: 'badge_color', value: $('badgeColorText').value.trim() },
+      { name: 'publish_mode', value: $('publishMode').value }
+    ]);
     if (res.code !== 1) throw new Error(res.msg || '保存失败');
-    showMsg('保存成功！请刷新前端 H5 页面查看效果。', true);
+    pushLog(curStyle === 'ellipse' ? '底部导航·大椭圆+小椭圆' : '底部导航·图标变色', CHIP_COLORS[1]);
+    pushLog('修改主题色', CHIP_COLORS[0]);
+    pushLog('发布首页', CHIP_COLORS[2]);
+    showMsg('保存成功！前端刷新后生效', true);
   } catch (e) {
     showMsg('保存失败：' + e.message, false);
   } finally {
@@ -126,14 +468,44 @@ async function saveAll() {
   }
 }
 
-// 回填当前配置
-fetch(API + '/api/index/configure').then(r=>r.json()).then(res=>{
-  const d = res.data || {};
-  if (d.app_bg_color) { $('bgColorText').value = d.app_bg_color; $('bgColor').value = d.app_bg_color; }
-  if (d.loading_name) $('loadingName').value = d.loading_name;
-  if (d.loading_logo) $('loadingLogo').value = d.loading_logo;
-  updatePreview();
-}).catch(()=>{});
+/* ===== 操作日志 ===== */
+function pushLog(text, color) {
+  var logs = readLogs();
+  logs.unshift({ t: new Date().toTimeString().slice(0, 5), text: text, color: color || CHIP_COLORS[0] });
+  logs = logs.slice(0, 6);
+  try { localStorage.setItem('cs_decorate_log', JSON.stringify(logs)); } catch (e) {}
+  renderLogs();
+}
+function readLogs() { try { return JSON.parse(localStorage.getItem('cs_decorate_log')) || []; } catch (e) { return []; } }
+function renderLogs() {
+  var logs = readLogs();
+  var box = $('logChips');
+  if (!logs.length) { box.innerHTML = '<span class="hint">暂无操作记录</span>'; return; }
+  box.innerHTML = logs.map(function (l) {
+    return '<span class="chip"><span class="d" style="background:' + l.color + '"></span>' + l.text + '<span class="hint">' + l.t + '</span></span>';
+  }).join('');
+}
+renderLogs();
+
+/* ===== 回填当前配置 ===== */
+fetch(API + '/api/index/configure').then(function (r) { return r.json(); }).then(function (res) {
+  var d = res.data || {};
+  var set = function (id, v) { if (v !== undefined && v !== null && $(id)) $(id).value = v; };
+  set('bgColor', d.app_bg_color || '#ffffff'); set('bgColorText', d.app_bg_color || '');
+  set('loadingName', d.loading_name || '创世网络');
+  set('loadingLogo', d.loading_logo || '/static/eon.png');
+  set('primary', d.theme_primary || '#FF7A45'); set('primaryText', d.theme_primary || '#FF7A45');
+  set('secondary', d.theme_secondary || '#FFB199'); set('secondaryText', d.theme_secondary || '#FFB199');
+  set('tabbarActive', d.tabbar_active_color || '#FF7A45'); set('tabbarActiveText', d.tabbar_active_color || '#FF7A45');
+  set('tabbarInactive', d.tabbar_inactive_color || 'rgba(60,40,30,.55)');
+  set('badgeColor', d.badge_color || '#FF3B30'); set('badgeColorText', d.badge_color || '#FF3B30');
+  if (d.tabbar_bg) { set('tabbarBgText', d.tabbar_bg); if (/^#[0-9a-fA-F]{6}$/.test(d.tabbar_bg)) set('tabbarBg', d.tabbar_bg); }
+  if (d.tabbar_ellipse_color) { set('tabbarEllipseText', d.tabbar_ellipse_color); if (/^#[0-9a-fA-F]{6}$/.test(d.tabbar_ellipse_color)) set('tabbarEllipse', d.tabbar_ellipse_color); }
+  serverImage = d.app_bg_image || '';
+  curStyle = d.tabbar_style || 'ellipse';
+  document.querySelectorAll('.opt').forEach(function (o) { o.classList.toggle('on', o.dataset.style === curStyle); });
+  refreshPreview();
+}).catch(function () { refreshPreview(); });
 </script>
 </body>
 </html>
