@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>前端UI装修 - 创世网络</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "PingFang SC", Arial, sans-serif; background: #f5f6fa; color: #1f1f1f; }
+  .wrap { max-width: 680px; margin: 40px auto; background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 6px 24px rgba(0,0,0,.06); }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  .tip { color: #8a92a6; font-size: 13px; margin-bottom: 22px; }
+  .row { display: flex; align-items: center; margin-bottom: 18px; gap: 12px; }
+  .row label { width: 120px; font-size: 14px; color: #444; flex-shrink: 0; }
+  .row input[type=text], .row input[type=color] { padding: 8px 10px; border: 1px solid #dcdfe6; border-radius: 8px; font-size: 14px; }
+  .row input[type=color] { width: 56px; height: 38px; padding: 2px; cursor: pointer; }
+  .row input[type=text] { flex: 1; }
+  .btn { background: #4f7cff; color: #fff; border: 0; border-radius: 8px; padding: 10px 22px; font-size: 14px; cursor: pointer; margin-right: 10px; }
+  .btn.secondary { background: #909399; }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .preview { margin-top: 10px; padding: 14px; border: 1px dashed #dcdfe6; border-radius: 10px; background: #fafbfd; min-height: 90px; display: flex; align-items: center; justify-content: center; color: #909399; font-size: 13px; background-size: cover; background-position: center; }
+  .msg { margin-top: 16px; font-size: 13px; min-height: 20px; }
+  .ok { color: #34c759; } .err { color: #f56c6c; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>前端 UI 装修</h1>
+  <div class="tip">配置前端全局背景色、背景图以及加载页品牌信息。保存后刷新前端 H5 生效。</div>
+
+  <div class="row">
+    <label>页面背景颜色</label>
+    <input type="color" id="bgColor" value="#FF7A45">
+    <input type="text" id="bgColorText" value="#FF7A45" placeholder="留空使用默认渐变">
+    <button class="btn secondary" onclick="clearColor()">清除</button>
+  </div>
+
+  <div class="row">
+    <label>页面背景图片</label>
+    <input type="file" id="bgFile" accept="image/*">
+    <button class="btn secondary" onclick="clearImage()">清除图片</button>
+  </div>
+
+  <div class="preview" id="preview">背景预览（上方选择颜色或上传图片后显示）</div>
+
+  <div class="row" style="margin-top:22px">
+    <label>加载页名称</label>
+    <input type="text" id="loadingName" value="创世网络">
+  </div>
+
+  <div class="row">
+    <label>加载页 Logo URL</label>
+    <input type="text" id="loadingLogo" value="/static/eon.png" placeholder="/static/xxx.png 或 http(s)://...">
+  </div>
+
+  <div style="margin-top:24px">
+    <button class="btn" id="saveBtn" onclick="saveAll()">保存配置</button>
+    <span class="msg" id="msg"></span>
+  </div>
+</div>
+
+<script>
+const API = '';
+const $ = id => document.getElementById(id);
+
+function showMsg(t, ok) {
+  const m = $('msg');
+  m.textContent = t;
+  m.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+// 颜色联动
+$('bgColor').addEventListener('input', e => { $('bgColorText').value = e.target.value; updatePreview(); });
+$('bgColorText').addEventListener('input', e => { $('bgColor').value = e.target.value || '#ffffff'; updatePreview(); });
+
+function updatePreview() {
+  const c = $('bgColorText').value.trim();
+  const img = $('bgFile').files[0];
+  const p = $('preview');
+  if (img) {
+    const r = new FileReader();
+    r.onload = () => { p.style.background = (c ? c + ' ' : '') + `url(${r.result}) center/cover no-repeat`; p.textContent = ''; };
+    r.readAsDataURL(img);
+  } else if (c) {
+    p.style.background = c; p.textContent = '';
+  } else {
+    p.style.background = ''; p.textContent = '背景预览（上方选择颜色或上传图片后显示）';
+  }
+}
+$('bgFile').addEventListener('change', updatePreview);
+
+function clearColor() { $('bgColorText').value = ''; $('bgColor').value = '#ffffff'; updatePreview(); }
+function clearImage() { $('bgFile').value = ''; updatePreview(); saveConfig([{name:'app_bg_image', value:''}]); }
+
+function saveConfig(items) {
+  return fetch(API + '/api/config/save', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ items })
+  }).then(r => r.json());
+}
+
+async function saveAll() {
+  const btn = $('saveBtn');
+  btn.disabled = true;
+  showMsg('保存中...', true);
+  try {
+    const items = [
+      { name: 'app_bg_color', value: $('bgColorText').value.trim() },
+      { name: 'loading_name', value: $('loadingName').value.trim() || '创世网络' },
+      { name: 'loading_logo', value: $('loadingLogo').value.trim() || '/static/eon.png' }
+    ];
+    const file = $('bgFile').files[0];
+    if (file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      const up = await fetch(API + '/api/config/uploadBg', { method: 'POST', body: fd }).then(r => r.json());
+      if (up.code !== 1) throw new Error(up.msg || '上传失败');
+    }
+    const res = await saveConfig(items);
+    if (res.code !== 1) throw new Error(res.msg || '保存失败');
+    showMsg('保存成功！请刷新前端 H5 页面查看效果。', true);
+  } catch (e) {
+    showMsg('保存失败：' + e.message, false);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 回填当前配置
+fetch(API + '/api/index/configure').then(r=>r.json()).then(res=>{
+  const d = res.data || {};
+  if (d.app_bg_color) { $('bgColorText').value = d.app_bg_color; $('bgColor').value = d.app_bg_color; }
+  if (d.loading_name) $('loadingName').value = d.loading_name;
+  if (d.loading_logo) $('loadingLogo').value = d.loading_logo;
+  updatePreview();
+}).catch(()=>{});
+</script>
+</body>
+</html>

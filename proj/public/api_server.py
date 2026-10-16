@@ -193,9 +193,25 @@ def init_db():
             ('small_lunbo', 'basic', '小轮播图', '首页图片导航上方小轮播图', 'images', '', '', '', '', '', ''),
             # 商品卡片每行数量
             ('goods_card_col', 'basic', '商品卡片每行数量', '控制前端商品卡片每行显示的数量', 'radio', '', '2', '{"2":"2列","3":"3列"}', 'required', '', ''),
+            # 前端 UI 装修 - 背景
+            ('app_bg_color', 'basic', '页面背景颜色', '前端全局背景色（HEX，如 #FF7A45），留空使用默认渐变', 'string', '', '', '', '', '', ''),
+            ('app_bg_image', 'basic', '页面背景图片', '前端全局背景图 URL（通过背景图上传接口设置）', 'string', '', '', '', '', '', ''),
+            # 前端加载页配置
+            ('loading_name', 'basic', '加载页名称', '加载页展示的品牌名称', 'string', '', '创世网络', '', '', '', ''),
+            ('loading_logo', 'basic', '加载页 Logo', '加载页展示的 Logo 图片 URL', 'string', '', '/static/eon.png', '', '', '', ''),
         ]
         for item in config_items:
             cur.execute('INSERT INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
+    db.commit()
+    # 补齐后续新增的配置项（兼容已有数据库）
+    extra_items = [
+        ('app_bg_color', 'basic', '页面背景颜色', '前端全局背景色（HEX，如 #FF7A45），留空使用默认渐变', 'string', '', '', '', '', '', ''),
+        ('app_bg_image', 'basic', '页面背景图片', '前端全局背景图 URL（通过背景图上传接口设置）', 'string', '', '', '', '', '', ''),
+        ('loading_name', 'basic', '加载页名称', '加载页展示的品牌名称', 'string', '', '创世网络', '', '', '', ''),
+        ('loading_logo', 'basic', '加载页 Logo', '加载页展示的 Logo 图片 URL', 'string', '', '/static/eon.png', '', '', '', ''),
+    ]
+    for item in extra_items:
+        cur.execute('INSERT OR IGNORE INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
     db.commit()
     db.close()
 
@@ -630,6 +646,10 @@ class Handler(BaseHTTPRequestHandler):
             # 从数据库读取系统配置
             small_lunbo = get_config('small_lunbo', '')
             goods_card_col = get_config('goods_card_col', '2')
+            app_bg_color = get_config('app_bg_color', '')
+            app_bg_image = get_config('app_bg_image', '')
+            loading_name = get_config('loading_name', '创世网络')
+            loading_logo = get_config('loading_logo', '/static/eon.png')
             self.send_json({
                 "code": 1,
                 "msg": "成功",
@@ -642,7 +662,11 @@ class Handler(BaseHTTPRequestHandler):
                     "site_logo": "/static/eon.png",
                     "site_name": "创世网络",
                     "small_lunbo": small_lunbo.split(',') if small_lunbo else [],
-                    "goods_card_col": int(goods_card_col) if goods_card_col.isdigit() else 2
+                    "goods_card_col": int(goods_card_col) if goods_card_col.isdigit() else 2,
+                    "app_bg_color": app_bg_color,
+                    "app_bg_image": app_bg_image,
+                    "loading_name": loading_name,
+                    "loading_logo": loading_logo
                 }
             })
             return
@@ -678,6 +702,38 @@ class Handler(BaseHTTPRequestHandler):
             db.commit()
             db.close()
             self.send_json({"code": 1, "msg": "保存成功"})
+            return
+
+        if path == '/api/config/uploadBg':
+            # 上传前端背景图，保存后自动写入 app_bg_image 配置
+            files = files or {}
+            f = files.get('file') or files.get('image') or files.get('bg')
+            if not f or not f.get('filename'):
+                self.send_json({"code": 0, "msg": "未上传文件"})
+                return
+            ext = os.path.splitext(f['filename'])[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp'):
+                self.send_json({"code": 0, "msg": "图片格式不支持"})
+                return
+            if len(f['data']) > 5 * 1024 * 1024:
+                self.send_json({"code": 0, "msg": "图片大小不能超过5MB"})
+                return
+            uploads_dir = os.path.join(WEB_ROOT, 'uploads')
+            os.makedirs(uploads_dir, exist_ok=True)
+            filename = f"bg_{int(time.time())}_{secrets.token_hex(6)}{ext}"
+            filepath = os.path.join(uploads_dir, filename)
+            with open(filepath, 'wb') as fp:
+                fp.write(f['data'])
+            url = '/uploads/' + filename
+            db = get_db()
+            db.execute("INSERT INTO fa_config (name, group_name, title, value) VALUES ('app_bg_image','basic','页面背景图片',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", (url,))
+            db.commit()
+            db.close()
+            self.send_json({
+                "code": 1,
+                "msg": "上传成功",
+                "data": {"url": url, "full_url": '/h5' + url}
+            })
             return
 
         # ===== 系统通知 =====

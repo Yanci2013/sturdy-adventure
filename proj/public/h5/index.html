@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 	<head>
 		<link rel="stylesheet" href="/h5/assets/uni.b4ab26bd.css">
 
@@ -21,8 +21,193 @@
 		<!--app-context-->
 		<script type="module" crossorigin src="/h5/assets/index-BoZ5LyYT.js"></script>
 		<link rel="stylesheet" crossorigin href="/h5/assets/index-tN4KgB7k.css">
+
+		<style>
+			/* ===== 前端背景装修（由 configure 配置驱动，颜色/图片可在后台设置） ===== */
+			html, body, #app { height: 100%; margin: 0; padding: 0; }
+			body {
+				background: #eef4ff;
+				background-attachment: fixed;
+				background-size: cover;
+				background-position: center;
+			}
+
+			/* ===== 加载页（创世网络 1→100%） ===== */
+			#cs-loader {
+				position: fixed; inset: 0; z-index: 99999;
+				background: linear-gradient(180deg, #eef4ff 0%, #ffffff 100%);
+				display: flex; flex-direction: column; align-items: center;
+				font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+				transition: opacity .4s ease;
+			}
+			#cs-loader.cs-hide { opacity: 0; pointer-events: none; }
+
+			.cs-loader-title {
+				margin-top: 14vh; font-size: 20px; font-weight: 600; color: #1f1f1f; letter-spacing: 1px;
+			}
+			.cs-logo-wrap {
+				margin-top: 6vh; width: 132px; height: 132px; border-radius: 30px; overflow: hidden;
+				box-shadow: 0 12px 32px rgba(0,0,0,.12); background: #fff;
+				display: flex; align-items: center; justify-content: center;
+			}
+			.cs-logo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+			.cs-brand-name {
+				margin-top: 22px; font-size: 26px; font-weight: 800; color: #1f1f1f; letter-spacing: 1px;
+			}
+			.cs-brand-sub {
+				margin-top: 8px; font-size: 14px; color: #9aa3b2;
+			}
+
+			.cs-progress-card {
+				margin-top: 38px; width: 82%; max-width: 360px; background: #fff;
+				border-radius: 16px; padding: 18px 18px 14px;
+				box-shadow: 0 6px 24px rgba(0,0,0,.06);
+			}
+			.cs-progress-head { display: flex; justify-content: space-between; align-items: baseline; }
+			.cs-progress-status { font-size: 16px; font-weight: 600; color: #1f1f1f; }
+			.cs-progress-step { font-size: 12px; color: #9aa3b2; margin-top: 2px; }
+			.cs-progress-percent { font-size: 26px; font-weight: 700; color: #1f1f1f; }
+			.cs-progress-bar {
+				margin-top: 14px; width: 100%; height: 8px; border-radius: 999px;
+				background: #eef1f6; overflow: hidden;
+			}
+			.cs-progress-bar i {
+				display: block; height: 100%; width: 0%; border-radius: 999px;
+				background: linear-gradient(90deg, #4f7cff, #6aa0ff);
+				transition: width .25s ease;
+			}
+			.cs-progress-foot {
+				margin-top: 12px; display: flex; justify-content: space-between; align-items: center;
+				font-size: 13px; color: #9aa3b2;
+			}
+			.cs-dot { width: 9px; height: 9px; border-radius: 50%; background: #34c759; display: inline-block; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 0 3px rgba(52,199,89,.18); }
+
+			.cs-footer {
+				position: absolute; bottom: 6vh; left: 0; right: 0; text-align: center;
+				font-size: 13px; color: #9aa3b2;
+			}
+			.cs-footer .cs-check { color: #34c759; font-weight: 600; margin-right: 4px; }
+		</style>
 	</head>
 	<body>
-		<div id="app"><!--app-html--></div>
+		<!-- 加载页 -->
+		<div id="cs-loader">
+			<div class="cs-loader-title">正在加载</div>
+			<div class="cs-logo-wrap"><img id="cs-logo" src="/h5/static/eon.png" alt="logo"></div>
+			<div class="cs-brand-name" id="cs-brand">创世网络</div>
+			<div class="cs-brand-sub">正在为你准备服务</div>
+
+			<div class="cs-progress-card">
+				<div class="cs-progress-head">
+					<div>
+						<div class="cs-progress-status" id="cs-status">正在加载俱乐部信息</div>
+						<div class="cs-progress-step" id="cs-step">0/17</div>
+					</div>
+					<div class="cs-progress-percent" id="cs-percent">0%</div>
+				</div>
+				<div class="cs-progress-bar"><i id="cs-bar"></i></div>
+				<div class="cs-progress-foot">
+					<span><span class="cs-dot"></span>安全连接</span>
+					<span>请稍候</span>
+				</div>
+			</div>
+
+			<div class="cs-footer"><span class="cs-check">✓</span>正在加载页面资源</div>
+		</div>
+
+		<div id="app"><!--app-html--></div>
+
+		<script>
+			/* ===== 读取后台装修配置：背景色/背景图/加载页名称与Logo ===== */
+			(function () {
+				var statuses = [
+					'正在加载俱乐部信息', '正在初始化资源', '正在加载页面资源',
+					'正在预热页面', '正在连接服务器', '即将进入'
+				];
+				var percent = 0;
+				var bar = document.getElementById('cs-bar');
+				var pct = document.getElementById('cs-percent');
+				var st  = document.getElementById('cs-status');
+				var step = document.getElementById('cs-step');
+				var brand = document.getElementById('cs-brand');
+				var logo = document.getElementById('cs-logo');
+				var loader = document.getElementById('cs-loader');
+
+				function applyBg(cfg) {
+					var color = (cfg && cfg.app_bg_color) ? cfg.app_bg_color : '';
+					var image = (cfg && cfg.app_bg_image) ? cfg.app_bg_image : '';
+					if (!color && !image) return;
+
+					var imgUrl = image ? (image.indexOf('http') === 0 ? image : image) : '';
+					var bgValue = color
+						? (image ? color + ' url("' + imgUrl + '") center/cover fixed no-repeat' : color)
+						: ('url("' + imgUrl + '") center/cover fixed no-repeat');
+
+					// 内联 + important，优先级高于 uni-app App.vue 注入的 !important 样式表
+					document.body.style.setProperty('background', bgValue, 'important');
+					document.documentElement.style.setProperty('background', bgValue, 'important');
+
+					// 注入并保持 page/uni-page-body 背景透明（露出 body 背景图/色）
+					var id = 'cs-bg-override';
+					var s = document.getElementById(id);
+					if (!s) {
+						s = document.createElement('style');
+						s.id = id;
+						document.head.appendChild(s);
+					}
+					s.textContent = 'html,body,#app,page,uni-page-body,.page,.main-container{background:' + bgValue + ' !important;background-size:cover !important;background-position:center !important;background-attachment:fixed !important;}';
+
+					// uni-app App.vue 在 onLaunch 会再次注入渐变样式，用 MutationObserver 保持我们的样式在最后
+					var mo = new MutationObserver(function () {
+						if (s.parentNode !== document.head) document.head.appendChild(s);
+						else if (document.head.lastChild !== s) document.head.appendChild(s);
+					});
+					mo.observe(document.head, { childList: true });
+				}
+
+				function tick() {
+					if (percent >= 100) { percent = 100; update(); finish(); return; }
+					var inc = Math.random() * 9 + 3;
+					percent = Math.min(100, percent + inc);
+					update();
+					var idx = Math.min(statuses.length - 1, Math.floor(percent / (100 / statuses.length)));
+					st.textContent = statuses[idx];
+					step.textContent = Math.floor(percent / (100 / 17)) + '/17';
+					setTimeout(tick, 140);
+				}
+				function update() {
+					var p = Math.floor(percent);
+					pct.textContent = p + '%';
+					bar.style.width = p + '%';
+				}
+				function finish() {
+					st.textContent = '即将进入';
+					step.textContent = '17/17';
+					setTimeout(function () {
+						loader.classList.add('cs-hide');
+						setTimeout(function () { loader.style.display = 'none'; }, 450);
+					}, 350);
+				}
+
+				// 拉取配置（失败则用默认值）
+				fetch('/api/index/configure', { cache: 'no-store' })
+					.then(function (r) { return r.json(); })
+					.then(function (res) {
+						var d = (res && res.data) || {};
+						if (d.loading_name) brand.textContent = d.loading_name;
+						if (d.loading_logo) logo.src = d.loading_logo.indexOf('http') === 0 ? d.loading_logo : (d.loading_logo.charAt(0) === '/' ? '/h5' + d.loading_logo : d.loading_logo);
+						applyBg(d);
+					})
+					.catch(function () { applyBg({}); });
+
+				// 启动进度动画
+				tick();
+
+				// 资源加载完成则加速到 100
+				window.addEventListener('load', function () {
+					if (percent < 92) percent = 92;
+				});
+			})();
+		</script>
 	</body>
 </html>
