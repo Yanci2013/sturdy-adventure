@@ -365,10 +365,42 @@ async function renderModule(key){
 }
 function doSearch(key){ current.kw=document.getElementById('mkw').value.trim(); current.page=1; loadList(key); }
 
+/* ================= 分类级联（区服 / 一二级分类） ================= */
+let CATS=null;
+async function loadCats(){
+  if(CATS) return CATS;
+  const j=await req('admin/Category/categoryList',{page:1,limit:999});
+  CATS=(j.code===200&&j.data&&j.data.list)?j.data.list:[];
+  return CATS;
+}
+function catsTop(){ return (CATS||[]).filter(c=>!c.category_pid||String(c.category_pid)==='0'); }
+function catsChild(pid){ return (CATS||[]).filter(c=>String(c.category_pid)===String(pid)); }
+function catNameById(id){ const c=(CATS||[]).filter(x=>String(x.category_id)===String(id))[0]; return c?c.category_name:''; }
+function needsCats(cfg){
+  const col=(cfg.columns||[]).some(c=>c.type==='catparentname');
+  const frm=(cfg.form||[]).some(f=>f.type==='catparent'||f.type==='catselect'||f.type==='subcatselect');
+  return col||frm;
+}
+function csOnParentChange(pid){
+  const sEl=document.getElementById('fld_category_id');
+  if(sEl){
+    sEl.innerHTML='<option value="0">请选择二级分类</option>'+catsChild(pid).map(c=>`<option value="${c.category_id}">${c.category_name}</option>`).join('');
+    sEl.value='0';
+  }
+  csSyncCatName();
+}
+function csSyncCatName(){
+  const h=document.getElementById('fld_category_name'); if(!h) return;
+  const p=document.getElementById('fld_category_pid'), s=document.getElementById('fld_category_id');
+  const pn=catNameById(p?p.value:'0'), sn=catNameById(s?s.value:'0');
+  h.value=pn&&sn?(pn+' / '+sn):(pn||sn||'');
+}
+
 async function loadList(key){
   const cfg=MODULES[key];
   const wrap=document.getElementById('mtable');
   wrap.innerHTML='<div class="loading">加载中...</div>';
+  if(needsCats(cfg)) await loadCats();
   const q={page:current.page,limit:10};
   if(current.kw) q[cfg.search.field]=current.kw;
   const j=await req(cfg.apis.list,q);
@@ -401,6 +433,7 @@ function cell(col,r){
   if(t==='pay_type'){const m=PAY_MAP[v]; return m?`<span class="badge ${m[1]}">${m[0]}</span>`:String(v);}
   if(t==='flow_type'){const m=FLOW_MAP[v]; return m?`<span class="badge ${m[1]}">${m[0]}</span>`:String(v);}
   if(t==='noticetype') return v==1?'<span class="badge blue">公告</span>':'<span class="badge gray">规则</span>';
+  if(t==='catparentname'){ if(!v||String(v)==='0') return '<span class="badge gray">顶级分类</span>'; return catNameById(v)||String(v); }
   if(t==='map'){const m=col.map&&col.map[v]; return m?`<span class="badge ${m[1]}">${m[0]}</span>`:String(v);}
   const s=String(v);
   return s.length>36?`<span title="${s.replace(/"/g,'')}">${s.slice(0,36)}…</span>`:s;
@@ -423,13 +456,13 @@ function gotoPage(key,p){ current.page=p; loadList(key); }
 async function toggleDisable(key,id,isDisable){
   const cfg=MODULES[key];
   const j=await req(cfg.apis.disable,{[cfg.idField]:id,'is_disable':isDisable},'POST');
-  if(j.code===200){toast(isDisable?'已禁用':'已启用');loadList(key);} else toast(j.msg||'操作失败',true);
+  if(j.code===200){toast(isDisable?'已禁用':'已启用');if(key==='category')CATS=null;loadList(key);} else toast(j.msg||'操作失败',true);
 }
 async function doDele(key,id){
   if(!confirm('确定删除该记录？')) return;
   const cfg=MODULES[key];
   const j=await req(cfg.apis.dele,{[cfg.idField]:id},'POST');
-  if(j.code===200){toast('删除成功');loadList(key);} else toast(j.msg||'删除失败',true);
+  if(j.code===200){toast('删除成功');if(key==='category')CATS=null;loadList(key);} else toast(j.msg||'删除失败',true);
 }
 
 /* ================= 表单弹窗 ================= */
@@ -442,12 +475,17 @@ async function openForm(key,mode,id){
     row=j.data||{};
   }
   const fields=cfg.form.filter(f=>!(f.only==='add'&&mode==='edit'));
+  if(needsCats(cfg)) await loadCats();
   const html=fields.map(f=>{
     const val=row[f.f]!==undefined&&row[f.f]!==null?row[f.f]:'';
     let input;
     if(f.type==='textarea') input=`<textarea id="fld_${f.f}">${val}</textarea>`;
     else if(f.type==='select') input=`<select id="fld_${f.f}">${f.opts.map(o=>`<option value="${o[0]}" ${String(val)===String(o[0])?'selected':''}>${o[1]}</option>`).join('')}</select>`;
     else if(f.type==='number') input=`<input id="fld_${f.f}" type="number" value="${val}">`;
+    else if(f.type==='hidden') input=`<input type="hidden" id="fld_${f.f}" value="${String(val).replace(/"/g,'&quot;')}">`;
+    else if(f.type==='catparent') input=`<select id="fld_${f.f}"><option value="0" ${!val||String(val)==='0'?'selected':''}>顶级分类</option>${catsTop().map(c=>`<option value="${c.category_id}" ${String(val)===String(c.category_id)?'selected':''}>${c.category_name}</option>`).join('')}</select>`;
+    else if(f.type==='catselect') input=`<select id="fld_${f.f}" onchange="csOnParentChange(this.value)"><option value="0">请选择一级分类</option>${catsTop().map(c=>`<option value="${c.category_id}" ${String(val)===String(c.category_id)?'selected':''}>${c.category_name}</option>`).join('')}</select>`;
+    else if(f.type==='subcatselect') input=`<select id="fld_${f.f}" onchange="csSyncCatName()"><option value="0">请选择二级分类</option>${catsChild(row['category_pid']||0).map(c=>`<option value="${c.category_id}" ${String(val)===String(c.category_id)?'selected':''}>${c.category_name}</option>`).join('')}</select>`;
     else input=`<input id="fld_${f.f}" value="${String(val).replace(/"/g,'&quot;')}">`;
     return `<div class="form-row"><label>${f.t}${f.req?' <span class="req">*</span>':''}</label>${input}${f.f==='image'||f.f==='avatar'?'<div class="hint">填写图片完整地址，如 https://... 或 /storage/...</div>':''}</div>`;
   }).join('');
@@ -462,6 +500,7 @@ async function openForm(key,mode,id){
     </div></div>`;
   mask.addEventListener('click',e=>{if(e.target===mask)mask.remove();});
   document.body.appendChild(mask);
+  if(document.getElementById('fld_category_name')) csSyncCatName();
 }
 
 async function submitForm(key,mode,id){
@@ -476,6 +515,7 @@ async function submitForm(key,mode,id){
   if(j.code===200){
     toast(mode==='add'?'新增成功':'保存成功');
     document.querySelector('.mask')&&document.querySelector('.mask').remove();
+    if(key==='category') CATS=null;
     loadList(key);
   }else{
     toast(j.msg||'保存失败',true);

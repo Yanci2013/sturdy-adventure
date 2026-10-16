@@ -15,7 +15,7 @@ class CategoryService
     public static function list($where = [], $page = 1, $limit = 10, $order = [], $field = '')
     {
         if (empty($field)) {
-            $field = 'category_id,category_name,image,remark,sort,is_disable,create_time';
+            $field = 'category_id,category_name,category_pid,image,remark,sort,is_disable,create_time';
         }
 
         $where[] = ['is_delete', '=', 0];

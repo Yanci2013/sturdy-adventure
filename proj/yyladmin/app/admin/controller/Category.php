@@ -57,6 +57,7 @@ class Category
             $data = CategoryService::add();
         } else {
             $param['category_name'] = Request::param('category_name/s', '');
+            $param['category_pid'] = Request::param('category_pid/d', 0);
             $param['image'] = Request::param('image/s', '');
             $param['remark'] = Request::param('remark/s', '');
 
@@ -77,6 +78,7 @@ class Category
             $data = CategoryService::edit($param);
         } else {
             $param['category_name'] = Request::param('category_name/s', '');
+            $param['category_pid'] = Request::param('category_pid/d', 0);
             $param['image'] = Request::param('image/s', '');
             $param['remark'] = Request::param('remark/s', '');
 

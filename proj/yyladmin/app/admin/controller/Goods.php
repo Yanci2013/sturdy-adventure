@@ -58,6 +58,9 @@ class Goods
         } else {
             $param['goods_name'] = Request::param('goods_name/s', '');
             $param['category_name'] = Request::param('category_name/s', '');
+            $param['category_pid'] = Request::param('category_pid/d', 0);
+            $param['category_id'] = Request::param('category_id/d', 0);
+            $param['area'] = Request::param('area/s', '');
             $param['image'] = Request::param('image/s', '');
             $param['price'] = Request::param('price/d', 0);
             $param['stock'] = Request::param('stock/d', 0);
@@ -82,6 +85,9 @@ class Goods
         } else {
             $param['goods_name'] = Request::param('goods_name/s', '');
             $param['category_name'] = Request::param('category_name/s', '');
+            $param['category_pid'] = Request::param('category_pid/d', 0);
+            $param['category_id'] = Request::param('category_id/d', 0);
+            $param['area'] = Request::param('area/s', '');
             $param['image'] = Request::param('image/s', '');
             $param['price'] = Request::param('price/d', 0);
             $param['stock'] = Request::param('stock/d', 0);

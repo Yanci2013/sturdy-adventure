@@ -117,24 +117,29 @@ MODULES = [
                ('打手小美', '', '13900000003', 'mei', '普通打手', 4.5, 60, 1, 1, '')]),
 
     dict(key='goods', cls='Goods', prefix='goods', table='goods', id='goods_id', name='商品', group='商品管理',
-         cols=[('goods_name', 's'), ('category_name', 's'), ('image', 's'), ('price', 'd'), ('stock', 'd'), ('unit', 's'), ('remark', 's')],
+         cols=[('goods_name', 's'), ('category_name', 's'), ('category_pid', 'd'), ('category_id', 'd'), ('area', 's'),
+               ('image', 's'), ('price', 'd'), ('stock', 'd'), ('unit', 's'), ('remark', 's')],
          search='goods_name', sort_default=300,
-         colsJS=[C('image', '图片', 'image'), C('goods_name', '商品名称'), C('category_name', '分类'),
+         colsJS=[C('image', '图片', 'image'), C('goods_name', '商品名称'), C('area', '区服'), C('category_name', '分类'),
                  C('price', '价格'), C('stock', '库存'), C('unit', '单位')],
-         formJS=[C('goods_name', '商品名称', 1), C('category_name', '分类'), C('image', '图片URL'),
+         formJS=[C('goods_name', '商品名称', 1), C('area', '区服（自由填写）'),
+                 C('category_pid', '一级分类', 0, 'catselect'), C('category_id', '二级分类', 0, 'subcatselect'),
+                 C('category_name', '分类名称', 0, 'hidden'), C('image', '图片URL'),
                  C('price', '价格', 0, 'number'), C('stock', '库存', 0, 'number'), C('unit', '单位'),
                  C('sort', '排序', 0, 'number'), C('remark', '备注', 0, 'textarea')],
-         seed=[('王者荣耀代练', '游戏代练', '', 100, 999, '单', ''),
-               ('和平精英陪玩', '游戏陪玩', '', 50, 999, '小时', ''),
-               ('英雄联盟上分', '游戏代练', '', 150, 999, '单', '')]),
+         seed=[('王者荣耀代练', '游戏代练 / 王者荣耀', 1, 4, '微信区', '', 100, 999, '单', ''),
+               ('和平精英陪玩', '游戏陪玩 / 和平精英', 2, 5, 'QQ区', '', 50, 999, '小时', ''),
+               ('英雄联盟上分', '游戏代练 / 英雄联盟', 1, 6, '全区', '', 150, 999, '单', '')]),
 
     dict(key='category', cls='Category', prefix='category', table='category', id='category_id', name='分类管理', group='商品管理',
-         cols=[('category_name', 's'), ('image', 's'), ('remark', 's')],
+         cols=[('category_name', 's'), ('category_pid', 'd'), ('image', 's'), ('remark', 's')],
          search='category_name', sort_default=300,
-         colsJS=[C('image', '图标', 'image'), C('category_name', '分类名称'), C('sort', '排序')],
-         formJS=[C('category_name', '分类名称', 1), C('image', '图标URL'), C('sort', '排序', 0, 'number'),
-                 C('remark', '备注', 0, 'textarea')],
-         seed=[('游戏代练', '', ''), ('游戏陪玩', '', ''), ('游戏账号', '', '')]),
+         colsJS=[C('image', '图标', 'image'), C('category_name', '分类名称'), C('category_pid', '上级分类', 'catparentname'),
+                 C('sort', '排序')],
+         formJS=[C('category_name', '分类名称', 1), C('category_pid', '上级分类', 0, 'catparent'),
+                 C('image', '图标URL'), C('sort', '排序', 0, 'number'), C('remark', '备注', 0, 'textarea')],
+         seed=[('游戏代练', 0, '', ''), ('游戏陪玩', 0, '', ''), ('游戏账号', 0, '', ''),
+               ('王者荣耀代练', 1, '', ''), ('和平精英陪玩', 2, '', ''), ('英雄联盟代练', 1, '', '')]),
 
     dict(key='prize', cls='Prize', prefix='prize', table='prize', id='prize_id', name='奖池', group='商品管理',
          cols=[('prize_name', 's'), ('goods_name', 's'), ('image', 's'), ('rate', 'd'), ('stock', 'd'), ('remark', 's')],
@@ -827,6 +832,20 @@ for m in MODULES:
             rows.append(tuple(r) + (0, 0, now, now, None))
         cur.executemany("INSERT INTO ya_%s (%s) VALUES (%s)" % (m['table'], ','.join(names), ph), rows)
 
+# 兼容旧库：为已存在的表补充新增字段（子分类 / 区服）
+migrate_cols = {
+    'category': [('category_pid', 'INTEGER NOT NULL DEFAULT 0')],
+    'goods': [('category_pid', 'INTEGER NOT NULL DEFAULT 0'),
+              ('category_id', 'INTEGER NOT NULL DEFAULT 0'),
+              ('area', "TEXT NOT NULL DEFAULT ''")],
+}
+for table, extra in migrate_cols.items():
+    exists = [r[1] for r in cur.execute("PRAGMA table_info(ya_%s)" % table).fetchall()]
+    for col, decl in extra:
+        if col not in exists:
+            cur.execute("ALTER TABLE ya_%s ADD COLUMN `%s` %s" % (table, col, decl))
+            print('migrate: ya_%s += %s' % (table, col))
+
 # 菜单：每个模块 1 个父级 + 6 个子项
 cur.execute("DELETE FROM ya_admin_menu WHERE admin_menu_id >= 300")
 menu_rows = []
@@ -877,6 +896,9 @@ CUSTOM_INPUT = {
     'select_flow': ('select', FLOW),
 }
 
+# 前端自定义控件类型（原样保留 type，由 adminui/index.html 渲染）
+PASSTHROUGH_TYPES = ('catparent', 'catselect', 'subcatselect', 'hidden')
+
 JS_MODULES = []
 
 
@@ -907,6 +929,8 @@ def js_module(m):
         elif t == 'number':
             pass
         elif t == 'textarea':
+            pass
+        elif t in PASSTHROUGH_TYPES:
             pass
         else:
             f.pop('type', None)

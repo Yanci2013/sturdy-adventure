@@ -15,7 +15,7 @@ class GoodsService
     public static function list($where = [], $page = 1, $limit = 10, $order = [], $field = '')
     {
         if (empty($field)) {
-            $field = 'goods_id,goods_name,category_name,image,price,stock,unit,remark,sort,is_disable,create_time';
+            $field = 'goods_id,goods_name,category_name,category_pid,category_id,area,image,price,stock,unit,remark,sort,is_disable,create_time';
         }
 
         $where[] = ['is_delete', '=', 0];

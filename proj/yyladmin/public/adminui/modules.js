@@ -1120,6 +1120,11 @@ window.MODULES = {
 "req": 0
 },
 {
+"f": "area",
+"t": "区服",
+"req": 0
+},
+{
 "f": "category_name",
 "t": "分类",
 "req": 0
@@ -1147,9 +1152,27 @@ window.MODULES = {
 "req": 1
 },
 {
-"f": "category_name",
-"t": "分类",
+"f": "area",
+"t": "区服（自由填写）",
 "req": 0
+},
+{
+"f": "category_pid",
+"t": "一级分类",
+"req": 0,
+"type": "catselect"
+},
+{
+"f": "category_id",
+"t": "二级分类",
+"req": 0,
+"type": "subcatselect"
+},
+{
+"f": "category_name",
+"t": "分类名称",
+"req": 0,
+"type": "hidden"
 },
 {
 "f": "image",
@@ -1216,6 +1239,12 @@ window.MODULES = {
 "req": 0
 },
 {
+"f": "category_pid",
+"t": "上级分类",
+"req": 0,
+"type": "catparentname"
+},
+{
 "f": "sort",
 "t": "排序",
 "req": 0
@@ -1226,6 +1255,12 @@ window.MODULES = {
 "f": "category_name",
 "t": "分类名称",
 "req": 1
+},
+{
+"f": "category_pid",
+"t": "上级分类",
+"req": 0,
+"type": "catparent"
 },
 {
 "f": "image",
