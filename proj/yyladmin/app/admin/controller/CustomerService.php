@@ -61,6 +61,7 @@ class CustomerService
             $data = CustomerServiceService::add();
         } else {
             $param['name']     = Request::param('name/s', '');
+            $param['type']     = Request::param('type/s', 'im');
             $param['avatar']   = Request::param('avatar/s', '');
             $param['phone']    = Request::param('phone/s', '');
             $param['wechat']   = Request::param('wechat/s', '');
@@ -86,6 +87,7 @@ class CustomerService
             $data = CustomerServiceService::edit($param);
         } else {
             $param['name']     = Request::param('name/s', '');
+            $param['type']     = Request::param('type/s', 'im');
             $param['avatar']   = Request::param('avatar/s', '');
             $param['phone']    = Request::param('phone/s', '');
             $param['wechat']   = Request::param('wechat/s', '');

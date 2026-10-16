@@ -196,8 +196,23 @@ class AdminSettingService
                 $admin_token['exp'] = 12;          //有效时间（小时）
             }
 
+            // 主题颜色（后台界面 + 前端 H5）
+            $admin_theme = unserialize($admin_setting['admin_theme']);
+            if (empty($admin_theme)) {
+                $admin_theme['primary']   = '#3b7cff';  //主色
+                $admin_theme['secondary'] = '#2f66d6';  //辅助色（深色）
+            }
+
+            // 客服设置
+            $admin_cs = unserialize($admin_setting['admin_cs']);
+            if (empty($admin_cs)) {
+                $admin_cs['builtin_enabled'] = 1;  //内置客服开关：1开启 0关闭
+            }
+
             $admin_setting['admin_verify'] = serialize($admin_verify);
             $admin_setting['admin_token']  = serialize($admin_token);
+            $admin_setting['admin_theme']  = serialize($admin_theme);
+            $admin_setting['admin_cs']     = serialize($admin_cs);
             $admin_setting['update_time']  = date('Y-m-d H:i:s');
             Db::name('admin_setting')
                 ->where('admin_setting_id', $admin_setting_id)
@@ -207,12 +222,95 @@ class AdminSettingService
 
             $admin_setting['admin_verify'] = $admin_verify;
             $admin_setting['admin_token']  = $admin_token;
+            $admin_setting['admin_theme']  = $admin_theme;
+            $admin_setting['admin_cs']     = $admin_cs;
         } else {
             $admin_setting['admin_verify'] = unserialize($admin_setting['admin_verify']);
             $admin_setting['admin_token']  = unserialize($admin_setting['admin_token']);
+            $admin_setting['admin_theme']  = unserialize($admin_setting['admin_theme']);
+            $admin_setting['admin_cs']     = unserialize($admin_setting['admin_cs']);
+        }
+
+        // 兜底默认值（旧数据可能缺失）
+        if (empty($admin_setting['admin_theme']) || !is_array($admin_setting['admin_theme'])) {
+            $admin_setting['admin_theme'] = ['primary' => '#3b7cff', 'secondary' => '#2f66d6'];
+        }
+        if (empty($admin_setting['admin_cs']) || !is_array($admin_setting['admin_cs'])) {
+            $admin_setting['admin_cs'] = ['builtin_enabled' => 1];
         }
 
         return $admin_setting;
+    }
+
+    /**
+     * 主题颜色设置
+     *
+     * @param array  $param  主题参数
+     * @param string $method 请求方式
+     *
+     * @return array
+     */
+    public static function settingTheme($param = [], $method = 'get')
+    {
+        if ($method == 'get') {
+            $admin_setting = self::admin_setting();
+            return $admin_setting['admin_theme'];
+        } else {
+            $admin_setting_id = self::$admin_setting_id;
+
+            $admin_theme['primary']   = $param['primary'];
+            $admin_theme['secondary'] = $param['secondary'];
+
+            $update['admin_theme'] = serialize($admin_theme);
+            $update['update_time'] = date('Y-m-d H:i:s');
+
+            $res = Db::name('admin_setting')
+                ->where('admin_setting_id', $admin_setting_id)
+                ->update($update);
+
+            if ($res === false) {
+                exception();
+            } else {
+                AdminSettingCache::del($admin_setting_id);
+            }
+
+            return $admin_theme;
+        }
+    }
+
+    /**
+     * 客服设置
+     *
+     * @param array  $param  客服参数
+     * @param string $method 请求方式
+     *
+     * @return array
+     */
+    public static function settingCustomerService($param = [], $method = 'get')
+    {
+        if ($method == 'get') {
+            $admin_setting = self::admin_setting();
+            return $admin_setting['admin_cs'];
+        } else {
+            $admin_setting_id = self::$admin_setting_id;
+
+            $admin_cs['builtin_enabled'] = (int) $param['builtin_enabled'];
+
+            $update['admin_cs']    = serialize($admin_cs);
+            $update['update_time'] = date('Y-m-d H:i:s');
+
+            $res = Db::name('admin_setting')
+                ->where('admin_setting_id', $admin_setting_id)
+                ->update($update);
+
+            if ($res === false) {
+                exception();
+            } else {
+                AdminSettingCache::del($admin_setting_id);
+            }
+
+            return $admin_cs;
+        }
     }
 
     /**

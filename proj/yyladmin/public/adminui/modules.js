@@ -97,6 +97,21 @@ window.MODULES = {
 "t": "客服名称"
 },
 {
+"f": "type",
+"t": "客服类型",
+"type": "map",
+"map": {
+"im": [
+"内置客服",
+"blue"
+],
+"external": [
+"外置客服",
+"purple"
+]
+}
+},
+{
 "f": "phone",
 "t": "手机"
 },
@@ -124,6 +139,21 @@ window.MODULES = {
 "f": "name",
 "t": "客服名称",
 "req": 1
+},
+{
+"f": "type",
+"t": "客服类型",
+"type": "select",
+"opts": [
+[
+"im",
+"内置客服"
+],
+[
+"external",
+"外置客服"
+]
+]
 },
 {
 "f": "avatar",
@@ -2253,7 +2283,8 @@ window.MODULES = {
 "req": 0,
 "type": "number"
 }
-]
+],
+"nodele": 1
 },
 "orderStat": {
 "group": "数据统计",
@@ -2328,7 +2359,8 @@ window.MODULES = {
 "req": 0,
 "type": "number"
 }
-]
+],
+"nodele": 1
 },
 "financeReport": {
 "group": "数据统计",
@@ -2403,7 +2435,8 @@ window.MODULES = {
 "req": 0,
 "type": "number"
 }
-]
+],
+"nodele": 1
 },
 "inviteChannel": {
 "group": "数据统计",
@@ -2478,7 +2511,8 @@ window.MODULES = {
 "req": 0,
 "type": "number"
 }
-]
+],
+"nodele": 1
 },
 "loginSecurity": {
 "group": "权限管理",
@@ -3115,7 +3149,8 @@ window.MODULES = {
 {
 "f": "code",
 "t": "邀请码",
-"req": 1
+"req": 1,
+"type": "codegen"
 },
 {
 "f": "member_name",

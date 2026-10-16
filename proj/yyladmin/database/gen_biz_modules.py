@@ -236,7 +236,7 @@ MODULES = [
                ('微信支付', 'wx_pay', '1.2.0', '砚世易游pro', 1, '')]),
 
     # ================= 数据统计 =================
-    dict(key='memberStat', cls='MemberStat', prefix='memberStat', table='member_stat', id='stat_id', name='会员统计', group='数据统计',
+    dict(key='memberStat', cls='MemberStat', prefix='memberStat', table='member_stat', id='stat_id', name='会员统计', group='数据统计', nodele=1,
          cols=[('stat_date', 's'), ('total_member', 'd'), ('new_member', 'd'), ('active_member', 'd'), ('growth_rate', 'd')],
          search='stat_date', sort_default=300,
          colsJS=[C('stat_date', '日期'), C('total_member', '会员总数'), C('new_member', '新增会员'),
@@ -247,7 +247,7 @@ MODULES = [
          seed=[('2026-10-13', 1120, 28, 260, 2.5), ('2026-10-14', 1160, 40, 288, 3.6),
                ('2026-10-15', 1210, 50, 305, 4.3)]),
 
-    dict(key='orderStat', cls='OrderStat', prefix='orderStat', table='order_stat', id='stat_id', name='订单统计', group='数据统计',
+    dict(key='orderStat', cls='OrderStat', prefix='orderStat', table='order_stat', id='stat_id', name='订单统计', group='数据统计', nodele=1,
          cols=[('stat_date', 's'), ('order_count', 'd'), ('order_amount', 'd'), ('finish_count', 'd'), ('cancel_count', 'd')],
          search='stat_date', sort_default=300,
          colsJS=[C('stat_date', '日期'), C('order_count', '订单数'), C('order_amount', '订单金额'),
@@ -258,7 +258,7 @@ MODULES = [
          seed=[('2026-10-13', 120, 9600, 110, 5), ('2026-10-14', 150, 12000, 140, 6),
                ('2026-10-15', 180, 15600, 170, 4)]),
 
-    dict(key='financeReport', cls='FinanceReport', prefix='financeReport', table='finance_report', id='report_id', name='财务报表', group='数据统计',
+    dict(key='financeReport', cls='FinanceReport', prefix='financeReport', table='finance_report', id='report_id', name='财务报表', group='数据统计', nodele=1,
          cols=[('report_date', 's'), ('income', 'd'), ('expense', 'd'), ('refund', 'd'), ('profit', 'd')],
          search='report_date', sort_default=300,
          colsJS=[C('report_date', '日期'), C('income', '收入'), C('expense', '支出'),
@@ -268,7 +268,7 @@ MODULES = [
          seed=[('2026-10-13', 9600, 3200, 200, 6200), ('2026-10-14', 12000, 4000, 300, 7700),
                ('2026-10-15', 15600, 5200, 150, 10250)]),
 
-    dict(key='inviteChannel', cls='InviteChannel', prefix='inviteChannel', table='invite_channel', id='channel_id', name='邀请渠道统计', group='数据统计',
+    dict(key='inviteChannel', cls='InviteChannel', prefix='inviteChannel', table='invite_channel', id='channel_id', name='邀请渠道统计', group='数据统计', nodele=1,
          cols=[('channel_name', 's'), ('invite_count', 'd'), ('register_count', 'd'), ('order_count', 'd'), ('amount', 'd')],
          search='channel_name', sort_default=300,
          colsJS=[C('channel_name', '渠道'), C('invite_count', '邀请数'), C('register_count', '注册数'),
@@ -345,10 +345,10 @@ MODULES = [
     # ================= 会员管理 =================
     dict(key='inviteCode', cls='InviteCode', prefix='inviteCode', table='invite_code', id='code_id', name='邀请码管理', group='会员管理',
          cols=[('code', 's'), ('member_name', 's'), ('used_num', 'd'), ('max_num', 'd'), ('status', 'd'), ('remark', 's')],
-         search='code', sort_default=300,
+         search='code', sort_default=300, autogen='code',
          colsJS=[C('code', '邀请码'), C('member_name', '所属会员'), C('used_num', '已使用'),
                  C('max_num', '可用次数'), C('status', '状态', 'status')],
-         formJS=[C('code', '邀请码', 1), C('member_name', '所属会员'), C('used_num', '已使用', 0, 'number'),
+         formJS=[C('code', '邀请码', 1, 'codegen'), C('member_name', '所属会员'), C('used_num', '已使用', 0, 'number'),
                  C('max_num', '可用次数', 0, 'number'), C('status', '状态', 0, 'select_status'),
                  C('remark', '备注', 0, 'textarea')],
          seed=[('XT888', '小明', 3, 10, 2, ''), ('XT999', '小红', 10, 10, 3, '已用完')]),
@@ -639,6 +639,26 @@ def build_service(m):
     idf = m['id']
     all_cols = [c[0] for c in m['cols']]
     field = ','.join([idf] + all_cols + ['sort', 'is_disable', 'create_time'])
+
+    autogen = ''
+    extra   = ''
+    if m.get('autogen'):
+        af = m['autogen']
+        autogen = ("        if (empty($param['%s'])) {\n            $param['%s'] = self::randCode();\n        }\n" % (af, af))
+        extra = """
+    /**
+     * 生成随机标识（大小写字母+数字混合）
+     */
+    public static function randCode($len = 8)
+    {
+        $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $code  = '';
+        for ($i = 0; $i < $len; $i++) {
+            $code .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $code;
+    }
+"""
     return """<?php
 /*
  * @Description  : {name}
@@ -710,7 +730,7 @@ class {cls}
 
         unset($param['{idf}']);
         $param['create_time'] = date('Y-m-d H:i:s');
-
+{autogen}
         $id = Db::name('{table}')->insertGetId($param);
 
         if (empty($id)) {{
@@ -780,8 +800,8 @@ class {cls}
 
         return $param;
     }}
-}}
-""".format(name=m['name'], cls=cls, table=table, idf=idf, field=field)
+{extra}}}
+""".format(name=m['name'], cls=cls, table=table, idf=idf, field=field, autogen=autogen, extra=extra)
 
 
 def sql_type(t):
@@ -846,6 +866,21 @@ for table, extra in migrate_cols.items():
             cur.execute("ALTER TABLE ya_%s ADD COLUMN `%s` %s" % (table, col, decl))
             print('migrate: ya_%s += %s' % (table, col))
 
+# 兼容旧库：客服表补充「客服类型」字段（im=内置客服，external=外置客服）
+_cs_exists = [r[1] for r in cur.execute("PRAGMA table_info(ya_customer_service)").fetchall()]
+if 'type' not in _cs_exists:
+    cur.execute("ALTER TABLE ya_customer_service ADD COLUMN `type` TEXT NOT NULL DEFAULT 'im'")
+    print('migrate: ya_customer_service += type')
+
+# 兼容旧库：系统设置表补充「主题颜色」「客服设置」字段
+_set_exists = [r[1] for r in cur.execute("PRAGMA table_info(ya_admin_setting)").fetchall()]
+if 'admin_theme' not in _set_exists:
+    cur.execute("ALTER TABLE ya_admin_setting ADD COLUMN `admin_theme` TEXT NULL DEFAULT ''")
+    print('migrate: ya_admin_setting += admin_theme')
+if 'admin_cs' not in _set_exists:
+    cur.execute("ALTER TABLE ya_admin_setting ADD COLUMN `admin_cs` TEXT NULL DEFAULT ''")
+    print('migrate: ya_admin_setting += admin_cs')
+
 # 菜单：每个模块 1 个父级 + 6 个子项
 cur.execute("DELETE FROM ya_admin_menu WHERE admin_menu_id >= 300")
 menu_rows = []
@@ -866,6 +901,20 @@ cur.executemany(
     "INSERT INTO ya_admin_menu (admin_menu_id,menu_pid,menu_name,menu_url,menu_sort,is_disable,is_unauth,is_delete,create_time) VALUES (?,?,?,?,?,0,0,0,?)",
     [r + (now,) for r in menu_rows],
 )
+
+# 系统设置：主题颜色、客服设置菜单（供后台权限校验）
+for _name, _url in [
+    ('主题颜色设置', 'admin/AdminSetting/settingTheme'),
+    ('客服设置', 'admin/AdminSetting/settingCustomerService'),
+]:
+    _exists = cur.execute("SELECT admin_menu_id FROM ya_admin_menu WHERE menu_url=?", (_url,)).fetchone()
+    if not _exists:
+        _mid = cur.execute("SELECT COALESCE(MAX(admin_menu_id),0)+1 FROM ya_admin_menu WHERE admin_menu_id < 300").fetchone()[0]
+        cur.execute(
+            "INSERT INTO ya_admin_menu (admin_menu_id,menu_pid,menu_name,menu_url,menu_sort,is_disable,is_unauth,is_delete,create_time) VALUES (?,?,?,?,?,0,0,0,?)",
+            (_mid, 53, _name, _url, 200, now),
+        )
+        print('menu +=', _url)
 
 # 角色权限：把全部菜单授予 角色1(管理员)、角色2(演示，admin 账号使用)
 all_ids = [str(r[0]) for r in cur.execute("SELECT admin_menu_id FROM ya_admin_menu WHERE is_delete=0 ORDER BY admin_menu_id")]
@@ -897,7 +946,7 @@ CUSTOM_INPUT = {
 }
 
 # 前端自定义控件类型（原样保留 type，由 adminui/index.html 渲染）
-PASSTHROUGH_TYPES = ('catparent', 'catselect', 'subcatselect', 'hidden')
+PASSTHROUGH_TYPES = ('catparent', 'catselect', 'subcatselect', 'hidden', 'codegen')
 
 JS_MODULES = []
 
@@ -919,6 +968,9 @@ def js_module(m):
         'columns': [dict(c) for c in m['colsJS']],
         'form': [dict(c) for c in m['formJS']],
     }
+    # 系统统计/报表类模块：只读，不显示编辑/禁用/删除按钮
+    if m.get('nodele'):
+        cfg['nodele'] = 1
     # 表单输入控件类型
     for f in cfg['form']:
         t = f.get('type')
@@ -951,8 +1003,8 @@ base_modules = {
     'cs': {'group': '客服管理', 'name': '客服管理',
            'apis': {'list': 'admin/CustomerService/csList', 'add': 'admin/CustomerService/csAdd', 'edit': 'admin/CustomerService/csEdit', 'info': 'admin/CustomerService/csInfo', 'dele': 'admin/CustomerService/csDele', 'disable': 'admin/CustomerService/csDisable'},
            'idField': 'cs_id', 'search': {'field': 'name', 'ph': '客服名称/手机'},
-           'columns': [{'f': 'avatar', 't': '头像', 'type': 'image'}, {'f': 'name', 't': '客服名称'}, {'f': 'phone', 't': '手机'}, {'f': 'wechat', 't': '微信号'}, {'f': 'account', 't': '账号'}, {'f': 'is_online', 't': '在线', 'type': 'online'}, {'f': 'is_disable', 't': '状态', 'type': 'disable'}],
-           'form': [{'f': 'name', 't': '客服名称', 'req': 1}, {'f': 'avatar', 't': '头像URL'}, {'f': 'phone', 't': '手机号'}, {'f': 'wechat', 't': '微信号'}, {'f': 'account', 't': '登录账号'}, {'f': 'is_online', 't': '在线状态', 'type': 'select', 'opts': ONLINE}, {'f': 'sort', 't': '排序', 'type': 'number'}, {'f': 'remark', 't': '备注'}]},
+           'columns': [{'f': 'avatar', 't': '头像', 'type': 'image'}, {'f': 'name', 't': '客服名称'}, {'f': 'type', 't': '客服类型', 'type': 'map', 'map': {'im': ['内置客服', 'blue'], 'external': ['外置客服', 'purple']}}, {'f': 'phone', 't': '手机'}, {'f': 'wechat', 't': '微信号'}, {'f': 'account', 't': '账号'}, {'f': 'is_online', 't': '在线', 'type': 'online'}, {'f': 'is_disable', 't': '状态', 'type': 'disable'}],
+           'form': [{'f': 'name', 't': '客服名称', 'req': 1}, {'f': 'type', 't': '客服类型', 'type': 'select', 'opts': [['im', '内置客服'], ['external', '外置客服']]}, {'f': 'avatar', 't': '头像URL'}, {'f': 'phone', 't': '手机号'}, {'f': 'wechat', 't': '微信号'}, {'f': 'account', 't': '登录账号'}, {'f': 'is_online', 't': '在线状态', 'type': 'select', 'opts': ONLINE}, {'f': 'sort', 't': '排序', 'type': 'number'}, {'f': 'remark', 't': '备注'}]},
     'banner': {'group': '自定义UI', 'name': '轮播图',
                'apis': {'list': 'admin/Banner/bannerList', 'add': 'admin/Banner/bannerAdd', 'edit': 'admin/Banner/bannerEdit', 'info': 'admin/Banner/bannerInfo', 'dele': 'admin/Banner/bannerDele', 'disable': 'admin/Banner/bannerDisable'},
                'idField': 'banner_id', 'search': {'field': 'title', 'ph': '标题'},

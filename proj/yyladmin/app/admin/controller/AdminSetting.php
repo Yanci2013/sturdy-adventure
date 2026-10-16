@@ -85,6 +85,47 @@ class AdminSetting
     }
 
     /**
+     * 主题颜色设置（作用于后台界面 + 前端 H5）
+     *
+     * @method GET|POST
+     *
+     * @return json
+     */
+    public function settingTheme()
+    {
+        if (Request::isGet()) {
+            $data = AdminSettingService::settingTheme();
+        } else {
+            $param['primary']   = Request::param('primary/s', '#3b7cff');
+            $param['secondary'] = Request::param('secondary/s', '#2f66d6');
+
+            $data = AdminSettingService::settingTheme($param, 'post');
+        }
+
+        return success($data);
+    }
+
+    /**
+     * 客服设置（内置客服开关）
+     *
+     * @method GET|POST
+     *
+     * @return json
+     */
+    public function settingCustomerService()
+    {
+        if (Request::isGet()) {
+            $data = AdminSettingService::settingCustomerService();
+        } else {
+            $param['builtin_enabled'] = Request::param('builtin_enabled/d', 1);
+
+            $data = AdminSettingService::settingCustomerService($param, 'post');
+        }
+
+        return success($data);
+    }
+
+    /**
      * 服务器信息
      *
      * @method GET

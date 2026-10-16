@@ -15,7 +15,7 @@ class CustomerServiceService
     public static function list($where = [], $page = 1, $limit = 10, $order = [], $field = '')
     {
         if (empty($field)) {
-            $field = 'cs_id,name,avatar,phone,wechat,account,is_online,sort,remark,is_disable,create_time';
+            $field = 'cs_id,name,type,avatar,phone,wechat,account,is_online,sort,remark,is_disable,create_time';
         }
 
         $where[] = ['is_delete', '=', 0];

@@ -69,6 +69,9 @@ class InviteCodeService
 
         unset($param['code_id']);
         $param['create_time'] = date('Y-m-d H:i:s');
+        if (empty($param['code'])) {
+            $param['code'] = self::randCode();
+        }
 
         $id = Db::name('invite_code')->insertGetId($param);
 
@@ -138,5 +141,18 @@ class InviteCodeService
         }
 
         return $param;
+    }
+
+    /**
+     * 生成随机标识（大小写字母+数字混合）
+     */
+    public static function randCode($len = 8)
+    {
+        $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $code  = '';
+        for ($i = 0; $i < $len; $i++) {
+            $code .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $code;
     }
 }

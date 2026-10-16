@@ -407,13 +407,13 @@ async function loadList(key){
   if(j.code!==200){wrap.innerHTML=`<div class="empty">加载失败：${j.msg||''}</div>`;return;}
   const d=j.data||{}; const rows=d.list||[];
   if(!rows.length){wrap.innerHTML='<div class="empty">暂无数据</div>'; document.getElementById('mpager').innerHTML=''; return;}
-  wrap.innerHTML=`<table><thead><tr>${cfg.columns.map(c=>`<th>${c.t}</th>`).join('')}<th style="width:${cfg.readonly?'90':'170'}px">操作</th></tr></thead>
+  wrap.innerHTML=`<table><thead><tr>${cfg.columns.map(c=>`<th>${c.t}</th>`).join('')}<th style="width:${(cfg.readonly||cfg.nodele)?'90':'170'}px">操作</th></tr></thead>
     <tbody>${rows.map(r=>`<tr>
       ${cfg.columns.map(col=>`<td>${cell(col,r)}</td>`).join('')}
       <td>
-        ${cfg.readonly?'':`<button class="mini" onclick="openForm('${key}','edit',${r[cfg.idField]})">编辑</button>
+        ${cfg.nodele?'<span class="badge gray">只读</span>':`${cfg.readonly?'':`<button class="mini" onclick="openForm('${key}','edit',${r[cfg.idField]})">编辑</button>
         <button class="mini" onclick="toggleDisable('${key}',${r[cfg.idField]},${r.is_disable?0:1})">${r.is_disable?'启用':'禁用'}</button>`}
-        <button class="mini danger" onclick="doDele('${key}',${r[cfg.idField]})">删除</button>
+        <button class="mini danger" onclick="doDele('${key}',${r[cfg.idField]})">删除</button>`}
       </td></tr>`).join('')}</tbody></table>`;
   renderPager(key,d);
 }
@@ -465,6 +465,37 @@ async function doDele(key,id){
   if(j.code===200){toast('删除成功');if(key==='category')CATS=null;loadList(key);} else toast(j.msg||'删除失败',true);
 }
 
+/* ================= 邀请码随机生成 ================= */
+function genCode(fid){
+  const s='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<8;i++) c+=s[Math.floor(Math.random()*s.length)];
+  const el=document.getElementById('fld_'+fid); if(el){el.value=c;}
+}
+
+/* ================= 自定义颜色（后台界面 + 前端 H5 同源） ================= */
+function hexToRgba(hex,a){
+  hex=String(hex||'').replace('#','');
+  if(hex.length===3) hex=hex.split('').map(x=>x+x).join('');
+  if(hex.length!==6) return '';
+  const r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function applyThemeVars(t){
+  if(!t) return;
+  const root=document.documentElement.style;
+  if(t.primary){
+    root.setProperty('--brand',t.primary);
+    const weak=hexToRgba(t.primary,.12); if(weak) root.setProperty('--brand-weak',weak);
+  }
+  if(t.secondary) root.setProperty('--brand-deep',t.secondary);
+}
+async function applyTheme(){
+  try{
+    const j=await req('admin/AdminSetting/settingTheme');
+    if(j.code===200) applyThemeVars(j.data||{});
+  }catch(e){}
+}
+
 /* ================= 表单弹窗 ================= */
 async function openForm(key,mode,id){
   const cfg=MODULES[key];
@@ -486,6 +517,7 @@ async function openForm(key,mode,id){
     else if(f.type==='catparent') input=`<select id="fld_${f.f}"><option value="0" ${!val||String(val)==='0'?'selected':''}>顶级分类</option>${catsTop().map(c=>`<option value="${c.category_id}" ${String(val)===String(c.category_id)?'selected':''}>${c.category_name}</option>`).join('')}</select>`;
     else if(f.type==='catselect') input=`<select id="fld_${f.f}" onchange="csOnParentChange(this.value)"><option value="0">请选择一级分类</option>${catsTop().map(c=>`<option value="${c.category_id}" ${String(val)===String(c.category_id)?'selected':''}>${c.category_name}</option>`).join('')}</select>`;
     else if(f.type==='subcatselect') input=`<select id="fld_${f.f}" onchange="csSyncCatName()"><option value="0">请选择二级分类</option>${catsChild(row['category_pid']||0).map(c=>`<option value="${c.category_id}" ${String(val)===String(c.category_id)?'selected':''}>${c.category_name}</option>`).join('')}</select>`;
+    else if(f.type==='codegen') input=`<div style="display:flex;gap:8px"><input id="fld_${f.f}" value="${String(val).replace(/"/g,'&quot;')}" placeholder="留空保存时自动生成"><button type="button" class="mini" onclick="genCode('${f.f}')">随机生成</button></div>`;
     else input=`<input id="fld_${f.f}" value="${String(val).replace(/"/g,'&quot;')}">`;
     return `<div class="form-row"><label>${f.t}${f.req?' <span class="req">*</span>':''}</label>${input}${f.f==='image'||f.f==='avatar'?'<div class="hint">填写图片完整地址，如 https://... 或 /storage/...</div>':''}</div>`;
   }).join('');
@@ -527,14 +559,19 @@ async function renderSetting(){
   document.getElementById('crumb').innerHTML='常规管理 <span>· 系统配置</span>';
   const c=document.getElementById('content');
   c.innerHTML='<div class="loading">加载中...</div>';
-  const [info,verify,token]=await Promise.all([
+  const [info,verify,token,theme,cs]=await Promise.all([
     req('admin/AdminSetting/serverInfo'),
     req('admin/AdminSetting/settingVerify'),
     req('admin/AdminSetting/settingToken'),
+    req('admin/AdminSetting/settingTheme'),
+    req('admin/AdminSetting/settingCustomerService'),
   ]);
   const si=(info.data||{});
   const vf=(verify.data||{});
   const tk=(token.data||{});
+  const th=(theme.data||{});
+  const csf=(cs.data||{});
+  const csOn=String(csf.builtin_enabled)==='1'||csf.builtin_enabled==='';
   const kv=k=>`<div class="k">${k[0]}</div><div class="v">${k[1]}</div>`;
   c.innerHTML=`
     <div class="panel">
@@ -583,6 +620,39 @@ async function renderSetting(){
     </div>
 
     <div class="panel">
+      <div class="panel-hd"><h3>自定义颜色（主题色）</h3></div>
+      <div class="panel-bd" style="padding:16px 18px">
+        <p style="color:#8a94a6;font-size:13px;margin-bottom:12px">主题色同时作用于<b>后台管理界面</b>与<b>前端 H5 页面</b>，保存后刷新即生效。</p>
+        <div class="form-row" style="max-width:420px"><label>主色</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="th_primary" value="${th.primary||'#3b7cff'}" oninput="document.getElementById('th_primary_t').value=this.value" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+            <input id="th_primary_t" value="${th.primary||'#3b7cff'}" style="flex:1">
+          </div></div>
+        <div class="form-row" style="max-width:420px"><label>辅助色</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="th_secondary" value="${th.secondary||'#2f66d6'}" oninput="document.getElementById('th_secondary_t').value=this.value" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+            <input id="th_secondary_t" value="${th.secondary||'#2f66d6'}" style="flex:1">
+          </div></div>
+        <button class="mini primary" onclick="saveSetting('theme')">保存主题颜色</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><h3>客服设置</h3></div>
+      <div class="panel-bd" style="padding:16px 18px">
+        <p style="color:#8a94a6;font-size:13px;margin-bottom:12px">内置客服指 App 内的 IM 在线聊天客服入口；关闭后前端不再展示内置客服入口，可改用外置客服。</p>
+        <div class="form-row" style="max-width:420px"><label>内置客服</label>
+          <select id="cs_builtin">
+            <option value="1" ${csOn?'selected':''}>开启</option>
+            <option value="0" ${!csOn?'selected':''}>关闭</option>
+          </select></div>
+        <div class="form-row" style="max-width:560px"><label>外置客服</label>
+          <div style="color:#48505f;font-size:13px;line-height:1.7">可在左侧「客服管理」中新增多条客服，将「客服类型」选为<b>外置客服</b>即可添加多个外置客服（支持手机号 / 微信号 / 账号等联系方式）。</div></div>
+        <button class="mini primary" onclick="saveSetting('cs')">保存客服设置</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="panel-hd"><h3>缓存操作</h3></div>
       <div class="panel-bd" style="padding:16px 18px">
         <p style="color:#8a94a6;font-size:13px;margin-bottom:12px">清空系统缓存（菜单、角色、用户等缓存将重新生成）。</p>
@@ -599,6 +669,16 @@ async function saveSetting(type){
       length:document.getElementById('vf_length').value,
       expire:document.getElementById('vf_expire').value,
       switch:document.getElementById('vf_switch').value,
+    },'POST');
+  }else if(type==='theme'){
+    j=await req('admin/AdminSetting/settingTheme',{
+      primary:document.getElementById('th_primary_t').value.trim(),
+      secondary:document.getElementById('th_secondary_t').value.trim(),
+    },'POST');
+    if(j.code===200) applyThemeVars(j.data||{});
+  }else if(type==='cs'){
+    j=await req('admin/AdminSetting/settingCustomerService',{
+      builtin_enabled:document.getElementById('cs_builtin').value,
     },'POST');
   }else{
     j=await req('admin/AdminSetting/settingToken',{
@@ -850,6 +930,7 @@ async function deleMenu(id){
   const hashKey=location.hash.replace('#/','')||'dashboard';
   if(state.token){
     current.key=(MODULES[hashKey]||SPECIAL.includes(hashKey))?hashKey:'dashboard';
+    applyTheme();
     renderApp();
   }else renderLogin();
 })();

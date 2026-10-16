@@ -220,6 +220,8 @@ def init_db():
         ('tabbar_ellipse_color', 'basic', '底部导航椭圆颜色', '选中项椭圆高亮颜色，留空跟随选中颜色', 'string', '', '', '', '', '', ''),
         # 功能标识（角标）
         ('badge_color', 'basic', '功能标识颜色', '角标/标识颜色（HEX）', 'string', '', '#FF3B30', '', '', '', ''),
+        # 客服设置
+        ('builtin_cs_enabled', 'basic', '内置客服开关', '开启/关闭 App 内置 IM 客服入口（1开启 0关闭）', 'radio', '', '1', '{"1":"开启","0":"关闭"}', '', '', ''),
         # 发布控制
         ('publish_mode', 'basic', '发布模式', '前端装修发布方式', 'radio', '', 'admin', '{"admin":"仅管理员发布","auto":"立即发布"}', '', '', ''),
     ]
@@ -671,6 +673,21 @@ class Handler(BaseHTTPRequestHandler):
             tabbar_style = get_config('tabbar_style', 'ellipse') or 'ellipse'
             tabbar_ellipse_color = get_config('tabbar_ellipse_color', '')
             badge_color = get_config('badge_color', '#FF3B30') or '#FF3B30'
+            builtin_cs_enabled = get_config('builtin_cs_enabled', '1')
+            builtin_cs_enabled = 0 if str(builtin_cs_enabled) == '0' else 1
+            # 客服列表（内置 + 外置，仅在线的）
+            db = get_db()
+            cs_rows = db.execute('SELECT * FROM customer_services WHERE online = 1 ORDER BY id ASC').fetchall()
+            db.close()
+            customer_services = [{
+                "id": r['id'],
+                "name": r['name'],
+                "user_id": r['user_id'],
+                "type": r['type'] or 'im',
+                "avatar": r['avatar'],
+                "online": r['online']
+            } for r in cs_rows]
+            external_services = [c for c in customer_services if c['type'] == 'external']
             self.send_json({
                 "code": 1,
                 "msg": "成功",
@@ -695,7 +712,10 @@ class Handler(BaseHTTPRequestHandler):
                     "tabbar_inactive_color": tabbar_inactive_color,
                     "tabbar_style": tabbar_style,
                     "tabbar_ellipse_color": tabbar_ellipse_color,
-                    "badge_color": badge_color
+                    "badge_color": badge_color,
+                    "builtin_cs_enabled": builtin_cs_enabled,
+                    "customer_services": customer_services,
+                    "external_services": external_services
                 }
             })
             return
@@ -869,13 +889,13 @@ class Handler(BaseHTTPRequestHandler):
         # ===== 客服列表 =====
         if path == '/api/index/customerServiceList':
             db = get_db()
-            rows = db.execute('SELECT * FROM customer_services WHERE online = 1').fetchall()
+            rows = db.execute('SELECT * FROM customer_services WHERE online = 1 ORDER BY id ASC').fetchall()
             db.close()
             list_data = [{
                 "id": r['id'],
                 "name": r['name'],
                 "user_id": r['user_id'],
-                "type": r['type'],
+                "type": r['type'] or 'im',
                 "avatar": r['avatar'],
                 "online": r['online']
             } for r in rows]
@@ -884,6 +904,82 @@ class Handler(BaseHTTPRequestHandler):
                 "msg": "成功",
                 "data": list_data
             })
+            return
+
+        # ===== 客服管理（后台：内置/外置客服，可添加多个外置客服） =====
+        if path == '/api/config/csList':
+            db = get_db()
+            rows = db.execute('SELECT * FROM customer_services ORDER BY id ASC').fetchall()
+            db.close()
+            data = [{
+                "id": r['id'],
+                "name": r['name'],
+                "user_id": r['user_id'],
+                "type": r['type'] or 'im',
+                "avatar": r['avatar'],
+                "online": r['online']
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        if path == '/api/config/csAdd':
+            name = (body.get('name') or '').strip()
+            if not name:
+                self.send_json({"code": 0, "msg": "客服名称不能为空"})
+                return
+            cs_type = body.get('type') or 'external'
+            if cs_type not in ('im', 'external'):
+                cs_type = 'external'
+            avatar = body.get('avatar') or ''
+            online = 1 if str(body.get('online', 1)) not in ('0', 'false', 'False') else 0
+            user_id = int(body.get('user_id') or 0)
+            db = get_db()
+            cur = db.execute(
+                'INSERT INTO customer_services (name, user_id, type, avatar, online) VALUES (?,?,?,?,?)',
+                (name, user_id, cs_type, avatar, online)
+            )
+            db.commit()
+            new_id = cur.lastrowid
+            db.close()
+            self.send_json({"code": 1, "msg": "添加成功", "data": {"id": new_id}})
+            return
+
+        if path == '/api/config/csEdit':
+            cs_id = int(body.get('id') or 0)
+            if not cs_id:
+                self.send_json({"code": 0, "msg": "参数错误"})
+                return
+            fields, args = [], []
+            if 'name' in body:
+                fields.append('name = ?'); args.append((body.get('name') or '').strip())
+            if 'type' in body:
+                t = body.get('type') or 'external'
+                fields.append('type = ?'); args.append('im' if t == 'im' else 'external')
+            if 'avatar' in body:
+                fields.append('avatar = ?'); args.append(body.get('avatar') or '')
+            if 'online' in body:
+                fields.append('online = ?'); args.append(1 if str(body.get('online')) != '0' else 0)
+            if not fields:
+                self.send_json({"code": 0, "msg": "无更新内容"})
+                return
+            args.append(cs_id)
+            db = get_db()
+            db.execute('UPDATE customer_services SET ' + ', '.join(fields) + ' WHERE id = ?', tuple(args))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "保存成功"})
+            return
+
+        if path == '/api/config/csDele':
+            cs_id = int(body.get('id') or 0)
+            if not cs_id:
+                self.send_json({"code": 0, "msg": "参数错误"})
+                return
+            db = get_db()
+            db.execute('DELETE FROM customer_services WHERE id = ?', (cs_id,))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已删除"})
             return
 
         # ===== IM 会话列表（mock：返回空，因为没有真实 IM） =====

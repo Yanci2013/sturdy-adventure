@@ -132,6 +132,7 @@
       <div class="item" data-tab="theme"><span class="dot"></span>主题样式</div>
       <div class="item" data-tab="image"><span class="dot"></span>全局图片设置</div>
       <div class="item" data-tab="publish"><span class="dot"></span>发布控制</div>
+      <div class="item" data-tab="cs"><span class="dot"></span>客服设置</div>
     </div>
   </aside>
 
@@ -144,6 +145,7 @@
       <div class="tab" data-tab="theme">主题样式</div>
       <div class="tab" data-tab="image">全局图片设置</div>
       <div class="tab" data-tab="publish">发布控制</div>
+      <div class="tab" data-tab="cs">客服设置</div>
     </div>
 
     <div class="cols">
@@ -268,6 +270,36 @@
             <div class="ctl"><span class="hint">点击右侧「保存配置」即发布当前装修到前端 H5，用户刷新后生效。</span></div>
           </div>
         </div>
+
+        <!-- 客服设置 -->
+        <div class="panel" data-panel="cs">
+          <div class="field">
+            <label>内置客服</label>
+            <div class="ctl">
+              <select class="sel" id="builtinCs">
+                <option value="1">开启（显示 App 内 IM 客服入口）</option>
+                <option value="0">关闭（改用外置客服）</option>
+              </select>
+              <span class="hint">关闭后前端不再展示内置 IM 客服入口</span>
+            </div>
+          </div>
+          <div class="field" style="align-items:flex-start">
+            <label style="padding-top:6px">外置客服</label>
+            <div class="ctl" style="flex-direction:column;align-items:stretch;gap:10px">
+              <div id="csListBox" class="hint">加载中...</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input class="inp small" id="csName" placeholder="客服名称" style="width:150px">
+                <select class="sel" id="csType" style="width:130px">
+                  <option value="external">外置客服</option>
+                  <option value="im">内置客服</option>
+                </select>
+                <input class="inp small" id="csAvatar" placeholder="头像URL(可选)" style="width:180px">
+                <button class="btn" type="button" style="flex:0 0 auto;padding:9px 16px" onclick="csAdd()">添加客服</button>
+              </div>
+              <span class="hint">可添加多个外置客服；启用状态可随时切换或删除。</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 预览卡 -->
@@ -331,7 +363,8 @@ function buildDraft() {
     tabbar_inactive_color: $('tabbarInactive').value.trim(),
     tabbar_style: curStyle,
     tabbar_ellipse_color: $('tabbarEllipseText').value.trim(),
-    badge_color: $('badgeColorText').value.trim()
+    badge_color: $('badgeColorText').value.trim(),
+    builtin_cs_enabled: parseInt($('builtinCs').value, 10) || 0
   };
 }
 function refreshPreview() { postDraft(); }
@@ -424,6 +457,67 @@ function saveConfig(items) {
   }).then(function (r) { return r.json(); });
 }
 
+/* ===== 客服设置 ===== */
+function csApi(path, data) {
+  return fetch(API + path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data || {})
+  }).then(function (r) { return r.json(); });
+}
+
+async function csLoad() {
+  try {
+    var r = await fetch(API + '/api/config/csList', { cache: 'no-store' }).then(function (x) { return x.json(); });
+    var list = (r && r.data) || [];
+    var box = $('csListBox');
+    if (!list.length) { box.innerHTML = '<span class="hint">暂无客服，请在下方添加</span>'; return; }
+    var base = API + '/static/yun/customer.png';
+    box.innerHTML = list.map(function (c) {
+      var isIm = (c.type === 'im');
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(120,140,200,.22);border-radius:10px;margin-bottom:8px;background:rgba(255,255,255,.03)">' +
+        '<img src="' + (c.avatar || base) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:#223">' +
+        '<span style="flex:1;font-size:13.5px;color:#dfe8ff">' + c.name + ' <span class="hint">' + (isIm ? '内置客服' : '外置客服') + '</span></span>' +
+        '<button class="btn ghost" style="flex:0 0 auto;padding:5px 12px;font-size:12px" onclick="csToggle(' + c.id + ',' + (c.online ? 0 : 1) + ')">' + (c.online ? '已启用' : '已停用') + '</button>' +
+        '<button class="btn ghost" style="flex:0 0 auto;padding:5px 12px;font-size:12px;color:#ff6b6b" onclick="csDele(' + c.id + ')">删除</button>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    $('csListBox').innerHTML = '<span class="hint">加载失败</span>';
+  }
+}
+
+async function csAdd() {
+  var name = $('csName').value.trim();
+  if (!name) { showMsg('请填写客服名称', false); return; }
+  var r = await csApi('/api/config/csAdd', { name: name, type: $('csType').value, avatar: $('csAvatar').value.trim() });
+  if (r.code !== 1) { showMsg('添加失败：' + (r.msg || ''), false); return; }
+  $('csName').value = ''; $('csAvatar').value = '';
+  pushLog('添加客服 ' + name, CHIP_COLORS[1]);
+  showMsg('客服添加成功', true);
+  csLoad();
+}
+
+async function csToggle(id, online) {
+  var r = await csApi('/api/config/csEdit', { id: id, online: online });
+  if (r.code !== 1) { showMsg('操作失败', false); return; }
+  csLoad();
+}
+
+async function csDele(id) {
+  if (!confirm('确定删除该客服？')) return;
+  var r = await csApi('/api/config/csDele', { id: id });
+  if (r.code !== 1) { showMsg('删除失败', false); return; }
+  pushLog('删除客服', CHIP_COLORS[2]);
+  csLoad();
+}
+
+$('builtinCs').addEventListener('change', function () {
+  saveConfig([{ name: 'builtin_cs_enabled', value: $('builtinCs').value }]).then(function (r) {
+    showMsg(r.code === 1 ? '内置客服设置已保存' : '保存失败', r.code === 1);
+    postDraft();
+  });
+});
+
 function showMsg(t, ok) { var m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); }
 
 async function saveAll() {
@@ -504,8 +598,11 @@ fetch(API + '/api/index/configure').then(function (r) { return r.json(); }).then
   serverImage = d.app_bg_image || '';
   curStyle = d.tabbar_style || 'ellipse';
   document.querySelectorAll('.opt').forEach(function (o) { o.classList.toggle('on', o.dataset.style === curStyle); });
+  if ('builtin_cs_enabled' in d) set('builtinCs', String(d.builtin_cs_enabled));
   refreshPreview();
 }).catch(function () { refreshPreview(); });
+
+csLoad();
 </script>
 </body>
 </html>

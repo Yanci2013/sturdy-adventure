@@ -252,15 +252,43 @@
 					watchHead();
 				}
 
+				/* ===== 主题色：覆盖 uni-app / uview 主色组件 ===== */
+				function applyThemeColor(cfg) {
+					var p = cfg.theme_primary, s = cfg.theme_secondary;
+					var root = document.documentElement.style;
+					var css = '';
+					if (p) {
+						root.setProperty('--cs-primary', p);
+						css +=
+							'.u-button--primary,.u-btn--primary{background-color:' + p + '!important;border-color:' + p + '!important;color:#fff!important;}' +
+							'.u-button--primary--plain,.u-btn--primary--plain{color:' + p + '!important;border-color:' + p + '!important;background:transparent!important;}' +
+							'.u-tag--primary{background-color:' + p + '!important;border-color:' + p + '!important;}' +
+							'.u-badge--primary{background-color:' + p + '!important;}' +
+							'.u-radio__icon-wrap--checked,.u-checkbox__icon-wrap--checked{background-color:' + p + '!important;border-color:' + p + '!important;}' +
+							'.u-switch--on,.u-switch--primary{background-color:' + p + '!important;}' +
+							'.u-primary,.u-text-primary,.u-count-to-primary{color:' + p + '!important;}' +
+							'.u-tabs__line,.u-line-progress__inner,.u-line-progress--active,.u-slider--active{background-color:' + p + '!important;}' +
+							'.u-circle-progress__line{color:' + p + '!important;}' +
+							'.u-search__action{color:' + p + '!important;}' +
+							'.u-checkbox__icon-wrap--checked,.u-radio__icon-wrap--checked{box-shadow:none!important;}';
+					}
+					if (s) {
+						root.setProperty('--cs-secondary', s);
+						css += '.u-button--primary:active,.u-btn--primary:active{background-color:' + s + '!important;}';
+					}
+					ensureStyle('cs-theme-skin').textContent = css;
+				}
+
 				/* ===== 统一应用（供后台实时预览 postMessage 调用） ===== */
 				function applyAll(cfg) {
 					cfg = cfg || {};
-					var root = document.documentElement.style;
-					if (cfg.theme_primary) root.setProperty('--cs-primary', cfg.theme_primary);
-					if (cfg.theme_secondary) root.setProperty('--cs-secondary', cfg.theme_secondary);
+					applyThemeColor(cfg);
 					applyBg(cfg);
 					applyTabbar(cfg);
 					applyBadge(cfg);
+					if ('builtin_cs_enabled' in cfg) {
+						document.documentElement.setAttribute('data-builtin-cs', String(cfg.builtin_cs_enabled));
+					}
 					if (loader.style.display !== 'none') {
 						if (cfg.loading_name) brand.textContent = cfg.loading_name;
 						if (cfg.loading_logo) logo.src = cfg.loading_logo.indexOf('http') === 0 ? cfg.loading_logo : (cfg.loading_logo.charAt(0) === '/' ? '/h5' + cfg.loading_logo : cfg.loading_logo);
