@@ -227,6 +227,8 @@ const moreList = computed(() => {
 	const isThugApproved = isThug && String(thug.sh_status || '') === '1'
 	const isCs = isThug && String(thug.is_customer_service || '0') === '1'
 	const list = [
+		{ label: '设置', icon: 'setting', action: 'setting' },
+		{ label: '切换身份', icon: 'reload', action: 'switch' },
 		{ label: '会员等级', icon: 'level', action: 'level' },
 		{ label: '打手入驻', icon: 'integral', action: 'ruzhu' },
 		{ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' },
@@ -235,14 +237,10 @@ const moreList = computed(() => {
 	if (isThugApproved) list.push({ label: '打手端', icon: 'account', action: 'player' })
 	if (isCs) list.push({ label: '客服端', icon: 'phone', action: 'customer' })
 	list.push(
-		{ label: '用户隐私政策', icon: 'info-circle', action: 'agreement' },
 		{ label: '联系客服', icon: 'phone', action: 'service' },
-		{ label: '关于平台', icon: 'info-circle', action: 'about' },
-		{ label: '意见反馈', icon: 'edit-pen', action: 'feedback' },
-		{ label: '切换身份', icon: 'reload', action: 'switch' }
+		{ label: '意见反馈', icon: 'edit-pen', action: 'feedback' }
 	)
 	if (!!token.value) list.push({ label: '退出登陆', icon: 'account', action: 'logout' })
-	list.push({ label: '设置', icon: 'setting', action: 'setting' })
 	return list
 })
 

@@ -65,8 +65,39 @@
 				</scroll-view>
 			</view>
 
-			<!-- 订单 -->
+			<!-- 管理打手 -->
 			<view v-else-if="currentTab === 1" class="tab-pane">
+				<view class="sub-header">
+					<view class="sub-close" @click="goBack"><text class="close-icon">×</text></view>
+					<text class="sub-title">管理打手</text>
+					<view class="sub-manage">
+						<up-icon name="grid" size="18" color="#666"></up-icon>
+						<text class="manage-text">管理</text>
+					</view>
+				</view>
+				<scroll-view scroll-y class="order-scroll">
+					<view v-if="thugList.length" class="order-list">
+						<view class="thug-card" v-for="item in thugList" :key="item.id">
+							<view class="thug-avatar">{{ avatarChar(item.name) }}</view>
+							<view class="thug-info">
+								<text class="thug-name">{{ item.name || '未命名' }}</text>
+								<text class="thug-meta">ID：{{ item.id }} · {{ item.sh_status === '1' ? '已入驻' : '未入驻' }} · {{ item.jd_status === '1' ? '接单中' : '离线' }}</text>
+								<text class="thug-game">{{ item.game_names || '未设置游戏' }}</text>
+							</view>
+							<view class="thug-actions">
+								<view class="order-btn outline" @click="contactThug(item)">联系</view>
+								<view class="order-btn primary" @click="toggleThugStatus(item)">{{ item.jd_status === '1' ? '下线' : '上线' }}</view>
+							</view>
+						</view>
+					</view>
+					<view v-else class="empty-wrap">
+						<uv-empty mode="data" text="暂无打手"></uv-empty>
+					</view>
+				</scroll-view>
+			</view>
+
+			<!-- 订单 -->
+			<view v-else-if="currentTab === 2" class="tab-pane">
 				<view class="sub-header">
 					<view class="sub-close" @click="goBack"><text class="close-icon">×</text></view>
 					<text class="sub-title">订单列表</text>
@@ -113,7 +144,7 @@
 			</view>
 
 			<!-- 截单审核 -->
-			<view v-else-if="currentTab === 2" class="tab-pane">
+			<view v-else-if="currentTab === 3" class="tab-pane">
 				<view class="sub-header">
 					<view class="sub-close" @click="goBack"><text class="close-icon">×</text></view>
 					<text class="sub-title">截单审核</text>
@@ -151,7 +182,7 @@
 			</view>
 
 			<!-- 我的 -->
-			<view v-else-if="currentTab === 3" class="tab-pane mine-pane">
+			<view v-else-if="currentTab === 4" class="tab-pane mine-pane">
 				<view class="sub-header">
 					<view class="sub-close" @click="goBack"><text class="close-icon">×</text></view>
 					<text class="sub-title">我的</text>
@@ -241,7 +272,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getConversationList } from '../../utils/im'
-import { getUserInfo, customerServiceList as getCustomerServiceList } from '../../request/api'
+import { getUserInfo, customerServiceList as getCustomerServiceList, thug as getThugList, thugEdit } from '../../request/api'
 import { openCustomerServiceChat } from '../../utils/customer-service'
 
 const statusBarHeight = ref(44)
@@ -258,6 +289,7 @@ const orderList = ref([])
 const reviewList = ref([])
 const userInfo = ref({})
 const stats = ref({ todayOrders: 0, todayIncome: 0, pendingReview: 0 })
+const thugList = ref([])
 const inPoolCount = ref(0)
 const replyPoolCount = ref(0)
 const showIdentityPopup = ref(false)
@@ -266,9 +298,10 @@ let timer = null
 
 const tabbarList = [
 	{ icon: 'chat', text: '接入池' },
+	{ icon: 'account', text: '打手' },
 	{ icon: 'order', text: '订单' },
 	{ icon: 'checkmark-circle', text: '截单审核' },
-	{ icon: 'account', text: '我的' }
+	{ icon: 'account-fill', text: '我的' }
 ]
 
 const orderTabs = [
@@ -314,7 +347,7 @@ onUnmounted(() => {
 })
 
 const loadAll = async () => {
-	await Promise.all([loadConversationList(), loadOrders(), loadUserInfo()])
+	await Promise.all([loadConversationList(), loadOrders(), loadUserInfo(), loadThugList()])
 }
 
 const loadUserInfo = async () => {
@@ -413,6 +446,33 @@ const switchPool = (pool) => {
 
 const switchTab = (index) => {
 	currentTab.value = index
+}
+
+const loadThugList = async () => {
+	try {
+		const res = await getThugList({ page: 1, limit: 50 })
+		const data = res.data?.list || res.data?.data || res.data || []
+		thugList.value = Array.isArray(data) ? data : []
+	} catch (e) {
+		thugList.value = []
+	}
+}
+
+const contactThug = (item) => {
+	uni.navigateTo({
+		url: `/pagesA/im/chat?target_user_id=${item.id || item.user_id || ''}&target_name=${encodeURIComponent(item.name || '打手')}&target_avatar=${encodeURIComponent(item.avatar || '')}&conversation_id=&conversation_type=single`
+	})
+}
+
+const toggleThugStatus = async (item) => {
+	const newStatus = item.jd_status === '1' ? '0' : '1'
+	try {
+		await thugEdit({ thug_id: item.id, jd_status: newStatus })
+		item.jd_status = newStatus
+		uni.showToast({ title: newStatus === '1' ? '已上线' : '已下线', icon: 'none' })
+	} catch (e) {
+		uni.showToast({ title: '操作失败', icon: 'none' })
+	}
 }
 
 const gotoChat = (item) => {
@@ -604,6 +664,13 @@ const selectIdentity = async (item) => {
 
 .order-scroll { flex: 1; }
 .order-list { padding: 24rpx; display: flex; flex-direction: column; gap: 24rpx; }
+.thug-card { background: #fff; border-radius: 16rpx; padding: 24rpx; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04); display: flex; align-items: center; gap: 20rpx; }
+.thug-avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: linear-gradient(135deg, #FF7A45, #FFB38A); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 36rpx; font-weight: 600; flex-shrink: 0; }
+.thug-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.thug-name { font-size: 30rpx; color: #111; font-weight: 600; }
+.thug-meta { font-size: 22rpx; color: #999; }
+.thug-game { font-size: 22rpx; color: #1890ff; }
+.thug-actions { display: flex; flex-direction: column; gap: 12rpx; flex-shrink: 0; }
 .order-card { background: #fff; border-radius: 16rpx; padding: 24rpx; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04); }
 .order-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
 .order-no { font-size: 24rpx; color: #999; }

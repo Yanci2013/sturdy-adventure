@@ -162,7 +162,7 @@
 			</view>
 		</view>
 		<!-- 底部导航栏 -->
-		<player-tabbar :current="1"></player-tabbar>
+		<player-tabbar :current="3"></player-tabbar>
 	</view>
 </template>
 
