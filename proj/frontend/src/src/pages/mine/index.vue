@@ -22,15 +22,9 @@
 						<view class="uid-wrap">
 							<text class="uid">ID: {{ token ? dataInfo.id : '未登陆' }}</text>
 						</view>
-						<!-- VIP等级 + 联系客服 -->
-						<view class="level-cs-row">
-							<view class="level-wrap" @click="goLevelPage">
-								<image :src="'/static/ym/v' + levelNum + '.png'" mode="aspectFit" class="level-image"></image>
-							</view>
-							<view class="cs-contact-btn" @click="openCustomerService">
-								<up-icon name="headphones" size="14" color="#fff"></up-icon>
-								<text>联系客服</text>
-							</view>
+						<!-- VIP等级 -->
+						<view class="level-wrap" @click="goLevelPage">
+							<image :src="'/static/ym/v' + levelNum + '.png'" mode="aspectFit" class="level-image"></image>
 						</view>
 					</view>
 				</view>
@@ -69,6 +63,21 @@
 					<text class="order-count">{{ getOrderCount(item) }}</text>
 					<text class="order-label">{{ item.label }}</text>
 				</view>
+			</view>
+		</view>
+
+		<!-- 会员等级 + 联系客服 双卡片 -->
+		<view class="dual-card-row">
+			<view class="level-card" @click="goLevelPage">
+				<view class="level-card-top">
+					<text class="level-card-label">会员等级</text>
+					<image class="level-card-arrow" src="/static/images/right.png" mode="aspectFit"></image>
+				</view>
+				<text class="level-card-num">{{ levelNum }}</text>
+			</view>
+			<view class="cs-card" @click="openCustomerService">
+				<text class="cs-card-sub">实时在线</text>
+				<text class="cs-card-main">联系客服</text>
 			</view>
 		</view>
 
