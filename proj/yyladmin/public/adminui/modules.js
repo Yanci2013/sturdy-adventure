@@ -2145,6 +2145,2354 @@ window.MODULES = {
 }
 ]
 },
+"memberStat": {
+"group": "数据统计",
+"name": "会员统计",
+"apis": {
+"list": "admin/MemberStat/memberStatList",
+"add": "admin/MemberStat/memberStatAdd",
+"edit": "admin/MemberStat/memberStatEdit",
+"info": "admin/MemberStat/memberStatInfo",
+"dele": "admin/MemberStat/memberStatDele",
+"disable": "admin/MemberStat/memberStatDisable"
+},
+"idField": "stat_id",
+"search": {
+"field": "stat_date",
+"ph": "搜索会员统计"
+},
+"columns": [
+{
+"f": "stat_date",
+"t": "日期",
+"req": 0
+},
+{
+"f": "total_member",
+"t": "会员总数",
+"req": 0
+},
+{
+"f": "new_member",
+"t": "新增会员",
+"req": 0
+},
+{
+"f": "active_member",
+"t": "活跃会员",
+"req": 0
+},
+{
+"f": "growth_rate",
+"t": "增长率(%)",
+"req": 0
+}
+],
+"form": [
+{
+"f": "stat_date",
+"t": "日期",
+"req": 1
+},
+{
+"f": "total_member",
+"t": "会员总数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "new_member",
+"t": "新增会员",
+"req": 0,
+"type": "number"
+},
+{
+"f": "active_member",
+"t": "活跃会员",
+"req": 0,
+"type": "number"
+},
+{
+"f": "growth_rate",
+"t": "增长率(%)",
+"req": 0,
+"type": "number"
+}
+]
+},
+"orderStat": {
+"group": "数据统计",
+"name": "订单统计",
+"apis": {
+"list": "admin/OrderStat/orderStatList",
+"add": "admin/OrderStat/orderStatAdd",
+"edit": "admin/OrderStat/orderStatEdit",
+"info": "admin/OrderStat/orderStatInfo",
+"dele": "admin/OrderStat/orderStatDele",
+"disable": "admin/OrderStat/orderStatDisable"
+},
+"idField": "stat_id",
+"search": {
+"field": "stat_date",
+"ph": "搜索订单统计"
+},
+"columns": [
+{
+"f": "stat_date",
+"t": "日期",
+"req": 0
+},
+{
+"f": "order_count",
+"t": "订单数",
+"req": 0
+},
+{
+"f": "order_amount",
+"t": "订单金额",
+"req": 0
+},
+{
+"f": "finish_count",
+"t": "完成数",
+"req": 0
+},
+{
+"f": "cancel_count",
+"t": "取消数",
+"req": 0
+}
+],
+"form": [
+{
+"f": "stat_date",
+"t": "日期",
+"req": 1
+},
+{
+"f": "order_count",
+"t": "订单数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "order_amount",
+"t": "订单金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "finish_count",
+"t": "完成数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "cancel_count",
+"t": "取消数",
+"req": 0,
+"type": "number"
+}
+]
+},
+"financeReport": {
+"group": "数据统计",
+"name": "财务报表",
+"apis": {
+"list": "admin/FinanceReport/financeReportList",
+"add": "admin/FinanceReport/financeReportAdd",
+"edit": "admin/FinanceReport/financeReportEdit",
+"info": "admin/FinanceReport/financeReportInfo",
+"dele": "admin/FinanceReport/financeReportDele",
+"disable": "admin/FinanceReport/financeReportDisable"
+},
+"idField": "report_id",
+"search": {
+"field": "report_date",
+"ph": "搜索财务报表"
+},
+"columns": [
+{
+"f": "report_date",
+"t": "日期",
+"req": 0
+},
+{
+"f": "income",
+"t": "收入",
+"req": 0
+},
+{
+"f": "expense",
+"t": "支出",
+"req": 0
+},
+{
+"f": "refund",
+"t": "退款",
+"req": 0
+},
+{
+"f": "profit",
+"t": "利润",
+"req": 0
+}
+],
+"form": [
+{
+"f": "report_date",
+"t": "日期",
+"req": 1
+},
+{
+"f": "income",
+"t": "收入",
+"req": 0,
+"type": "number"
+},
+{
+"f": "expense",
+"t": "支出",
+"req": 0,
+"type": "number"
+},
+{
+"f": "refund",
+"t": "退款",
+"req": 0,
+"type": "number"
+},
+{
+"f": "profit",
+"t": "利润",
+"req": 0,
+"type": "number"
+}
+]
+},
+"inviteChannel": {
+"group": "数据统计",
+"name": "邀请渠道统计",
+"apis": {
+"list": "admin/InviteChannel/inviteChannelList",
+"add": "admin/InviteChannel/inviteChannelAdd",
+"edit": "admin/InviteChannel/inviteChannelEdit",
+"info": "admin/InviteChannel/inviteChannelInfo",
+"dele": "admin/InviteChannel/inviteChannelDele",
+"disable": "admin/InviteChannel/inviteChannelDisable"
+},
+"idField": "channel_id",
+"search": {
+"field": "channel_name",
+"ph": "搜索邀请渠道统计"
+},
+"columns": [
+{
+"f": "channel_name",
+"t": "渠道",
+"req": 0
+},
+{
+"f": "invite_count",
+"t": "邀请数",
+"req": 0
+},
+{
+"f": "register_count",
+"t": "注册数",
+"req": 0
+},
+{
+"f": "order_count",
+"t": "下单数",
+"req": 0
+},
+{
+"f": "amount",
+"t": "成交金额",
+"req": 0
+}
+],
+"form": [
+{
+"f": "channel_name",
+"t": "渠道名称",
+"req": 1
+},
+{
+"f": "invite_count",
+"t": "邀请数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "register_count",
+"t": "注册数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "order_count",
+"t": "下单数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "amount",
+"t": "成交金额",
+"req": 0,
+"type": "number"
+}
+]
+},
+"loginSecurity": {
+"group": "权限管理",
+"name": "登录安全管理",
+"apis": {
+"list": "admin/LoginSecurity/loginSecurityList",
+"add": "admin/LoginSecurity/loginSecurityAdd",
+"edit": "admin/LoginSecurity/loginSecurityEdit",
+"info": "admin/LoginSecurity/loginSecurityInfo",
+"dele": "admin/LoginSecurity/loginSecurityDele",
+"disable": "admin/LoginSecurity/loginSecurityDisable"
+},
+"idField": "security_id",
+"search": {
+"field": "username",
+"ph": "搜索登录安全管理"
+},
+"columns": [
+{
+"f": "username",
+"t": "账号",
+"req": 0
+},
+{
+"f": "ip",
+"t": "IP",
+"req": 0
+},
+{
+"f": "region",
+"t": "地区",
+"req": 0
+},
+{
+"f": "device",
+"t": "设备",
+"req": 0
+},
+{
+"f": "login_time",
+"t": "登录时间",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "username",
+"t": "账号",
+"req": 1
+},
+{
+"f": "ip",
+"t": "IP",
+"req": 0
+},
+{
+"f": "region",
+"t": "地区",
+"req": 0
+},
+{
+"f": "device",
+"t": "设备",
+"req": 0
+},
+{
+"f": "login_time",
+"t": "登录时间",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"refund": {
+"group": "财务管理",
+"name": "退款管理",
+"apis": {
+"list": "admin/Refund/refundList",
+"add": "admin/Refund/refundAdd",
+"edit": "admin/Refund/refundEdit",
+"info": "admin/Refund/refundInfo",
+"dele": "admin/Refund/refundDele",
+"disable": "admin/Refund/refundDisable"
+},
+"idField": "refund_id",
+"search": {
+"field": "order_no",
+"ph": "搜索退款管理"
+},
+"columns": [
+{
+"f": "order_no",
+"t": "订单号",
+"req": 0
+},
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "refund_money",
+"t": "退款金额",
+"req": 0
+},
+{
+"f": "reason",
+"t": "退款原因",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "order_no",
+"t": "订单号",
+"req": 1
+},
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "refund_money",
+"t": "退款金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "reason",
+"t": "退款原因",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"financeRecon": {
+"group": "财务管理",
+"name": "财务对账",
+"apis": {
+"list": "admin/FinanceRecon/financeReconList",
+"add": "admin/FinanceRecon/financeReconAdd",
+"edit": "admin/FinanceRecon/financeReconEdit",
+"info": "admin/FinanceRecon/financeReconInfo",
+"dele": "admin/FinanceRecon/financeReconDele",
+"disable": "admin/FinanceRecon/financeReconDisable"
+},
+"idField": "recon_id",
+"search": {
+"field": "recon_date",
+"ph": "搜索财务对账"
+},
+"columns": [
+{
+"f": "recon_date",
+"t": "对账日期",
+"req": 0
+},
+{
+"f": "order_amount",
+"t": "订单金额",
+"req": 0
+},
+{
+"f": "refund_amount",
+"t": "退款金额",
+"req": 0
+},
+{
+"f": "commission",
+"t": "佣金",
+"req": 0
+},
+{
+"f": "settle_amount",
+"t": "结算金额",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "recon_date",
+"t": "对账日期",
+"req": 1
+},
+{
+"f": "order_amount",
+"t": "订单金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "refund_amount",
+"t": "退款金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "commission",
+"t": "佣金",
+"req": 0,
+"type": "number"
+},
+{
+"f": "settle_amount",
+"t": "结算金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"goodsStock": {
+"group": "商品管理",
+"name": "商品库存",
+"apis": {
+"list": "admin/GoodsStock/goodsStockList",
+"add": "admin/GoodsStock/goodsStockAdd",
+"edit": "admin/GoodsStock/goodsStockEdit",
+"info": "admin/GoodsStock/goodsStockInfo",
+"dele": "admin/GoodsStock/goodsStockDele",
+"disable": "admin/GoodsStock/goodsStockDisable"
+},
+"idField": "stock_id",
+"search": {
+"field": "goods_name",
+"ph": "搜索商品库存"
+},
+"columns": [
+{
+"f": "goods_name",
+"t": "商品名称",
+"req": 0
+},
+{
+"f": "sku",
+"t": "规格",
+"req": 0
+},
+{
+"f": "stock",
+"t": "库存",
+"req": 0
+},
+{
+"f": "warning_stock",
+"t": "预警值",
+"req": 0
+},
+{
+"f": "unit",
+"t": "单位",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "goods_name",
+"t": "商品名称",
+"req": 1
+},
+{
+"f": "sku",
+"t": "规格",
+"req": 0
+},
+{
+"f": "stock",
+"t": "库存",
+"req": 0,
+"type": "number"
+},
+{
+"f": "warning_stock",
+"t": "预警值",
+"req": 0,
+"type": "number"
+},
+{
+"f": "unit",
+"t": "单位",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"goodsAudit": {
+"group": "商品管理",
+"name": "商品审核",
+"apis": {
+"list": "admin/GoodsAudit/goodsAuditList",
+"add": "admin/GoodsAudit/goodsAuditAdd",
+"edit": "admin/GoodsAudit/goodsAuditEdit",
+"info": "admin/GoodsAudit/goodsAuditInfo",
+"dele": "admin/GoodsAudit/goodsAuditDele",
+"disable": "admin/GoodsAudit/goodsAuditDisable"
+},
+"idField": "audit_id",
+"search": {
+"field": "goods_name",
+"ph": "搜索商品审核"
+},
+"columns": [
+{
+"f": "goods_name",
+"t": "商品名称",
+"req": 0
+},
+{
+"f": "player_name",
+"t": "所属打手",
+"req": 0
+},
+{
+"f": "price",
+"t": "价格",
+"req": 0
+},
+{
+"f": "status",
+"t": "审核状态",
+"req": 0,
+"type": "status"
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0
+}
+],
+"form": [
+{
+"f": "goods_name",
+"t": "商品名称",
+"req": 1
+},
+{
+"f": "player_name",
+"t": "所属打手",
+"req": 0
+},
+{
+"f": "price",
+"t": "价格",
+"req": 0,
+"type": "number"
+},
+{
+"f": "images",
+"t": "商品图片URL",
+"req": 0
+},
+{
+"f": "status",
+"t": "审核状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"refundAudit": {
+"group": "订单管理",
+"name": "退款审核",
+"apis": {
+"list": "admin/RefundAudit/refundAuditList",
+"add": "admin/RefundAudit/refundAuditAdd",
+"edit": "admin/RefundAudit/refundAuditEdit",
+"info": "admin/RefundAudit/refundAuditInfo",
+"dele": "admin/RefundAudit/refundAuditDele",
+"disable": "admin/RefundAudit/refundAuditDisable"
+},
+"idField": "audit_id",
+"search": {
+"field": "order_no",
+"ph": "搜索退款审核"
+},
+"columns": [
+{
+"f": "order_no",
+"t": "订单号",
+"req": 0
+},
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "refund_money",
+"t": "退款金额",
+"req": 0
+},
+{
+"f": "reason",
+"t": "退款原因",
+"req": 0
+},
+{
+"f": "status",
+"t": "审核状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "order_no",
+"t": "订单号",
+"req": 1
+},
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "refund_money",
+"t": "退款金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "reason",
+"t": "退款原因",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "status",
+"t": "审核状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "审核备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"inviteCode": {
+"group": "会员管理",
+"name": "邀请码管理",
+"apis": {
+"list": "admin/InviteCode/inviteCodeList",
+"add": "admin/InviteCode/inviteCodeAdd",
+"edit": "admin/InviteCode/inviteCodeEdit",
+"info": "admin/InviteCode/inviteCodeInfo",
+"dele": "admin/InviteCode/inviteCodeDele",
+"disable": "admin/InviteCode/inviteCodeDisable"
+},
+"idField": "code_id",
+"search": {
+"field": "code",
+"ph": "搜索邀请码管理"
+},
+"columns": [
+{
+"f": "code",
+"t": "邀请码",
+"req": 0
+},
+{
+"f": "member_name",
+"t": "所属会员",
+"req": 0
+},
+{
+"f": "used_num",
+"t": "已使用",
+"req": 0
+},
+{
+"f": "max_num",
+"t": "可用次数",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "code",
+"t": "邀请码",
+"req": 1
+},
+{
+"f": "member_name",
+"t": "所属会员",
+"req": 0
+},
+{
+"f": "used_num",
+"t": "已使用",
+"req": 0,
+"type": "number"
+},
+{
+"f": "max_num",
+"t": "可用次数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"inviteRecord": {
+"group": "会员管理",
+"name": "邀请记录",
+"apis": {
+"list": "admin/InviteRecord/inviteRecordList",
+"add": "admin/InviteRecord/inviteRecordAdd",
+"edit": "admin/InviteRecord/inviteRecordEdit",
+"info": "admin/InviteRecord/inviteRecordInfo",
+"dele": "admin/InviteRecord/inviteRecordDele",
+"disable": "admin/InviteRecord/inviteRecordDisable"
+},
+"idField": "record_id",
+"search": {
+"field": "invite_code",
+"ph": "搜索邀请记录"
+},
+"columns": [
+{
+"f": "invite_code",
+"t": "邀请码",
+"req": 0
+},
+{
+"f": "inviter",
+"t": "邀请人",
+"req": 0
+},
+{
+"f": "invitee",
+"t": "被邀请人",
+"req": 0
+},
+{
+"f": "ip",
+"t": "注册IP",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "invite_code",
+"t": "邀请码",
+"req": 1
+},
+{
+"f": "inviter",
+"t": "邀请人",
+"req": 0
+},
+{
+"f": "invitee",
+"t": "被邀请人",
+"req": 0
+},
+{
+"f": "ip",
+"t": "注册IP",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"inviteReward": {
+"group": "会员管理",
+"name": "邀请奖励配置",
+"apis": {
+"list": "admin/InviteReward/inviteRewardList",
+"add": "admin/InviteReward/inviteRewardAdd",
+"edit": "admin/InviteReward/inviteRewardEdit",
+"info": "admin/InviteReward/inviteRewardInfo",
+"dele": "admin/InviteReward/inviteRewardDele",
+"disable": "admin/InviteReward/inviteRewardDisable"
+},
+"idField": "reward_id",
+"search": {
+"field": "reward_name",
+"ph": "搜索邀请奖励配置"
+},
+"columns": [
+{
+"f": "reward_name",
+"t": "奖励名称",
+"req": 0
+},
+{
+"f": "reward_type",
+"t": "奖励类型",
+"req": 0
+},
+{
+"f": "reward_money",
+"t": "奖励金额",
+"req": 0
+},
+{
+"f": "condition",
+"t": "达成条件",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "reward_name",
+"t": "奖励名称",
+"req": 1
+},
+{
+"f": "reward_type",
+"t": "奖励类型",
+"req": 0
+},
+{
+"f": "reward_money",
+"t": "奖励金额",
+"req": 0,
+"type": "number"
+},
+{
+"f": "condition",
+"t": "达成条件",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"memberBlacklist": {
+"group": "会员管理",
+"name": "会员黑名单",
+"apis": {
+"list": "admin/MemberBlacklist/memberBlacklistList",
+"add": "admin/MemberBlacklist/memberBlacklistAdd",
+"edit": "admin/MemberBlacklist/memberBlacklistEdit",
+"info": "admin/MemberBlacklist/memberBlacklistInfo",
+"dele": "admin/MemberBlacklist/memberBlacklistDele",
+"disable": "admin/MemberBlacklist/memberBlacklistDisable"
+},
+"idField": "black_id",
+"search": {
+"field": "member_name",
+"ph": "搜索会员黑名单"
+},
+"columns": [
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "phone",
+"t": "手机",
+"req": 0
+},
+{
+"f": "reason",
+"t": "拉黑原因",
+"req": 0
+},
+{
+"f": "operator",
+"t": "操作人",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "member_name",
+"t": "会员",
+"req": 1
+},
+{
+"f": "phone",
+"t": "手机",
+"req": 0
+},
+{
+"f": "reason",
+"t": "拉黑原因",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "operator",
+"t": "操作人",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"stationLetter": {
+"group": "会员管理",
+"name": "站内信管理",
+"apis": {
+"list": "admin/StationLetter/stationLetterList",
+"add": "admin/StationLetter/stationLetterAdd",
+"edit": "admin/StationLetter/stationLetterEdit",
+"info": "admin/StationLetter/stationLetterInfo",
+"dele": "admin/StationLetter/stationLetterDele",
+"disable": "admin/StationLetter/stationLetterDisable"
+},
+"idField": "letter_id",
+"search": {
+"field": "title",
+"ph": "搜索站内信管理"
+},
+"columns": [
+{
+"f": "title",
+"t": "标题",
+"req": 0
+},
+{
+"f": "content",
+"t": "内容",
+"req": 0
+},
+{
+"f": "receiver",
+"t": "接收人",
+"req": 0
+},
+{
+"f": "sender",
+"t": "发送人",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "title",
+"t": "标题",
+"req": 1
+},
+{
+"f": "content",
+"t": "内容",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "receiver",
+"t": "接收人",
+"req": 0
+},
+{
+"f": "sender",
+"t": "发送人",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"memberTag": {
+"group": "会员管理",
+"name": "会员标签",
+"apis": {
+"list": "admin/MemberTag/memberTagList",
+"add": "admin/MemberTag/memberTagAdd",
+"edit": "admin/MemberTag/memberTagEdit",
+"info": "admin/MemberTag/memberTagInfo",
+"dele": "admin/MemberTag/memberTagDele",
+"disable": "admin/MemberTag/memberTagDisable"
+},
+"idField": "tag_id",
+"search": {
+"field": "tag_name",
+"ph": "搜索会员标签"
+},
+"columns": [
+{
+"f": "tag_name",
+"t": "标签名称",
+"req": 0
+},
+{
+"f": "color",
+"t": "标签颜色",
+"req": 0
+},
+{
+"f": "member_num",
+"t": "会员数",
+"req": 0
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0
+}
+],
+"form": [
+{
+"f": "tag_name",
+"t": "标签名称",
+"req": 1
+},
+{
+"f": "color",
+"t": "标签颜色(如 #7c5cf6)",
+"req": 0
+},
+{
+"f": "member_num",
+"t": "会员数",
+"req": 0,
+"type": "number"
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"popup": {
+"group": "自定义UI",
+"name": "弹窗配置",
+"apis": {
+"list": "admin/Popup/popupList",
+"add": "admin/Popup/popupAdd",
+"edit": "admin/Popup/popupEdit",
+"info": "admin/Popup/popupInfo",
+"dele": "admin/Popup/popupDele",
+"disable": "admin/Popup/popupDisable"
+},
+"idField": "popup_id",
+"search": {
+"field": "title",
+"ph": "搜索弹窗配置"
+},
+"columns": [
+{
+"f": "image",
+"t": "弹窗图片",
+"req": 0,
+"type": "image"
+},
+{
+"f": "title",
+"t": "标题",
+"req": 0
+},
+{
+"f": "url",
+"t": "跳转链接",
+"req": 0
+},
+{
+"f": "position",
+"t": "位置",
+"req": 0
+},
+{
+"f": "start_time",
+"t": "开始时间",
+"req": 0
+},
+{
+"f": "end_time",
+"t": "结束时间",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "title",
+"t": "标题",
+"req": 1
+},
+{
+"f": "image",
+"t": "弹窗图片URL",
+"req": 0
+},
+{
+"f": "url",
+"t": "跳转链接",
+"req": 0
+},
+{
+"f": "position",
+"t": "展示位置",
+"req": 0
+},
+{
+"f": "start_time",
+"t": "开始时间",
+"req": 0
+},
+{
+"f": "end_time",
+"t": "结束时间",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"oauthLogin": {
+"group": "接口配置",
+"name": "聚合登录",
+"apis": {
+"list": "admin/OauthLogin/oauthLoginList",
+"add": "admin/OauthLogin/oauthLoginAdd",
+"edit": "admin/OauthLogin/oauthLoginEdit",
+"info": "admin/OauthLogin/oauthLoginInfo",
+"dele": "admin/OauthLogin/oauthLoginDele",
+"disable": "admin/OauthLogin/oauthLoginDisable"
+},
+"idField": "oauth_id",
+"search": {
+"field": "name",
+"ph": "搜索聚合登录"
+},
+"columns": [
+{
+"f": "name",
+"t": "平台名称",
+"req": 0
+},
+{
+"f": "code",
+"t": "标识",
+"req": 0
+},
+{
+"f": "app_id",
+"t": "AppID",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "name",
+"t": "平台名称",
+"req": 1
+},
+{
+"f": "code",
+"t": "标识(如 qq/weixin)",
+"req": 0
+},
+{
+"f": "app_id",
+"t": "AppID",
+"req": 0
+},
+{
+"f": "app_key",
+"t": "AppKey",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"epay": {
+"group": "接口配置",
+"name": "易支付",
+"apis": {
+"list": "admin/Epay/epayList",
+"add": "admin/Epay/epayAdd",
+"edit": "admin/Epay/epayEdit",
+"info": "admin/Epay/epayInfo",
+"dele": "admin/Epay/epayDele",
+"disable": "admin/Epay/epayDisable"
+},
+"idField": "epay_id",
+"search": {
+"field": "name",
+"ph": "搜索易支付"
+},
+"columns": [
+{
+"f": "name",
+"t": "商户名称",
+"req": 0
+},
+{
+"f": "api_url",
+"t": "接口地址",
+"req": 0
+},
+{
+"f": "pid",
+"t": "商户ID",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "name",
+"t": "商户名称",
+"req": 1
+},
+{
+"f": "api_url",
+"t": "接口地址",
+"req": 0
+},
+{
+"f": "pid",
+"t": "商户ID",
+"req": 0
+},
+{
+"f": "key",
+"t": "商户密钥",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"wxMerchant": {
+"group": "接口配置",
+"name": "微信商户",
+"apis": {
+"list": "admin/WxMerchant/wxMerchantList",
+"add": "admin/WxMerchant/wxMerchantAdd",
+"edit": "admin/WxMerchant/wxMerchantEdit",
+"info": "admin/WxMerchant/wxMerchantInfo",
+"dele": "admin/WxMerchant/wxMerchantDele",
+"disable": "admin/WxMerchant/wxMerchantDisable"
+},
+"idField": "merchant_id",
+"search": {
+"field": "merchant_name",
+"ph": "搜索微信商户"
+},
+"columns": [
+{
+"f": "merchant_name",
+"t": "商户名称",
+"req": 0
+},
+{
+"f": "mch_id",
+"t": "商户号",
+"req": 0
+},
+{
+"f": "app_id",
+"t": "AppID",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "merchant_name",
+"t": "商户名称",
+"req": 1
+},
+{
+"f": "mch_id",
+"t": "商户号",
+"req": 0
+},
+{
+"f": "app_id",
+"t": "AppID",
+"req": 0
+},
+{
+"f": "api_key",
+"t": "API密钥",
+"req": 0
+},
+{
+"f": "cert_path",
+"t": "证书路径",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"smsConfig": {
+"group": "接口配置",
+"name": "短信配置",
+"apis": {
+"list": "admin/SmsConfig/smsConfigList",
+"add": "admin/SmsConfig/smsConfigAdd",
+"edit": "admin/SmsConfig/smsConfigEdit",
+"info": "admin/SmsConfig/smsConfigInfo",
+"dele": "admin/SmsConfig/smsConfigDele",
+"disable": "admin/SmsConfig/smsConfigDisable"
+},
+"idField": "sms_id",
+"search": {
+"field": "name",
+"ph": "搜索短信配置"
+},
+"columns": [
+{
+"f": "name",
+"t": "服务商",
+"req": 0
+},
+{
+"f": "code",
+"t": "标识",
+"req": 0
+},
+{
+"f": "sign_name",
+"t": "签名",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "name",
+"t": "服务商名称",
+"req": 1
+},
+{
+"f": "code",
+"t": "标识(如 aliyun)",
+"req": 0
+},
+{
+"f": "sign_name",
+"t": "短信签名",
+"req": 0
+},
+{
+"f": "access_key",
+"t": "AccessKey",
+"req": 0
+},
+{
+"f": "access_secret",
+"t": "AccessSecret",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"csSession": {
+"group": "其他",
+"name": "客服会话记录",
+"apis": {
+"list": "admin/CsSession/csSessionList",
+"add": "admin/CsSession/csSessionAdd",
+"edit": "admin/CsSession/csSessionEdit",
+"info": "admin/CsSession/csSessionInfo",
+"dele": "admin/CsSession/csSessionDele",
+"disable": "admin/CsSession/csSessionDisable"
+},
+"idField": "session_id",
+"search": {
+"field": "cs_name",
+"ph": "搜索客服会话记录"
+},
+"columns": [
+{
+"f": "cs_name",
+"t": "客服",
+"req": 0
+},
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "content",
+"t": "最后消息",
+"req": 0
+},
+{
+"f": "duration",
+"t": "时长(秒)",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+},
+{
+"f": "create_time",
+"t": "时间",
+"req": 0
+}
+],
+"form": [
+{
+"f": "cs_name",
+"t": "客服",
+"req": 1
+},
+{
+"f": "member_name",
+"t": "会员",
+"req": 0
+},
+{
+"f": "content",
+"t": "最后消息",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "duration",
+"t": "时长(秒)",
+"req": 0,
+"type": "number"
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"riskRule": {
+"group": "风控管理",
+"name": "风控规则配置",
+"apis": {
+"list": "admin/RiskRule/riskRuleList",
+"add": "admin/RiskRule/riskRuleAdd",
+"edit": "admin/RiskRule/riskRuleEdit",
+"info": "admin/RiskRule/riskRuleInfo",
+"dele": "admin/RiskRule/riskRuleDele",
+"disable": "admin/RiskRule/riskRuleDisable"
+},
+"idField": "rule_id",
+"search": {
+"field": "rule_name",
+"ph": "搜索风控规则配置"
+},
+"columns": [
+{
+"f": "rule_name",
+"t": "规则名称",
+"req": 0
+},
+{
+"f": "rule_type",
+"t": "规则类型",
+"req": 0
+},
+{
+"f": "threshold",
+"t": "阈值",
+"req": 0
+},
+{
+"f": "action",
+"t": "处理动作",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "rule_name",
+"t": "规则名称",
+"req": 1
+},
+{
+"f": "rule_type",
+"t": "规则类型",
+"req": 0
+},
+{
+"f": "threshold",
+"t": "阈值",
+"req": 0,
+"type": "number"
+},
+{
+"f": "action",
+"t": "处理动作",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"riskAccount": {
+"group": "风控管理",
+"name": "风险账号",
+"apis": {
+"list": "admin/RiskAccount/riskAccountList",
+"add": "admin/RiskAccount/riskAccountAdd",
+"edit": "admin/RiskAccount/riskAccountEdit",
+"info": "admin/RiskAccount/riskAccountInfo",
+"dele": "admin/RiskAccount/riskAccountDele",
+"disable": "admin/RiskAccount/riskAccountDisable"
+},
+"idField": "risk_id",
+"search": {
+"field": "member_name",
+"ph": "搜索风险账号"
+},
+"columns": [
+{
+"f": "member_name",
+"t": "账号",
+"req": 0
+},
+{
+"f": "risk_level",
+"t": "风险等级",
+"req": 0
+},
+{
+"f": "risk_reason",
+"t": "风险原因",
+"req": 0
+},
+{
+"f": "handle_status",
+"t": "处理状态",
+"req": 0,
+"type": "status"
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0
+}
+],
+"form": [
+{
+"f": "member_name",
+"t": "账号",
+"req": 1
+},
+{
+"f": "risk_level",
+"t": "风险等级(1-3)",
+"req": 0,
+"type": "number"
+},
+{
+"f": "risk_reason",
+"t": "风险原因",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "handle_status",
+"t": "处理状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+},
+{
+"f": "remark",
+"t": "备注",
+"req": 0,
+"type": "textarea"
+}
+]
+},
+"ipBlacklist": {
+"group": "风控管理",
+"name": "IP黑名单",
+"apis": {
+"list": "admin/IpBlacklist/ipBlacklistList",
+"add": "admin/IpBlacklist/ipBlacklistAdd",
+"edit": "admin/IpBlacklist/ipBlacklistEdit",
+"info": "admin/IpBlacklist/ipBlacklistInfo",
+"dele": "admin/IpBlacklist/ipBlacklistDele",
+"disable": "admin/IpBlacklist/ipBlacklistDisable"
+},
+"idField": "ip_id",
+"search": {
+"field": "ip",
+"ph": "搜索IP黑名单"
+},
+"columns": [
+{
+"f": "ip",
+"t": "IP地址",
+"req": 0
+},
+{
+"f": "reason",
+"t": "封禁原因",
+"req": 0
+},
+{
+"f": "operator",
+"t": "操作人",
+"req": 0
+},
+{
+"f": "expire_time",
+"t": "过期时间",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+}
+],
+"form": [
+{
+"f": "ip",
+"t": "IP地址",
+"req": 1
+},
+{
+"f": "reason",
+"t": "封禁原因",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "operator",
+"t": "操作人",
+"req": 0
+},
+{
+"f": "expire_time",
+"t": "过期时间",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
+"riskLog": {
+"group": "风控管理",
+"name": "风控拦截日志",
+"apis": {
+"list": "admin/RiskLog/riskLogList",
+"add": "admin/RiskLog/riskLogAdd",
+"edit": "admin/RiskLog/riskLogEdit",
+"info": "admin/RiskLog/riskLogInfo",
+"dele": "admin/RiskLog/riskLogDele",
+"disable": "admin/RiskLog/riskLogDisable"
+},
+"idField": "log_id",
+"search": {
+"field": "ip",
+"ph": "搜索风控拦截日志"
+},
+"columns": [
+{
+"f": "ip",
+"t": "IP",
+"req": 0
+},
+{
+"f": "member_name",
+"t": "账号",
+"req": 0
+},
+{
+"f": "rule_name",
+"t": "触发规则",
+"req": 0
+},
+{
+"f": "content",
+"t": "拦截详情",
+"req": 0
+},
+{
+"f": "level",
+"t": "风险等级",
+"req": 0
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "status"
+},
+{
+"f": "create_time",
+"t": "时间",
+"req": 0
+}
+],
+"form": [
+{
+"f": "ip",
+"t": "IP",
+"req": 1
+},
+{
+"f": "member_name",
+"t": "账号",
+"req": 0
+},
+{
+"f": "rule_name",
+"t": "触发规则",
+"req": 0
+},
+{
+"f": "content",
+"t": "拦截详情",
+"req": 0,
+"type": "textarea"
+},
+{
+"f": "level",
+"t": "风险等级(1-3)",
+"req": 0,
+"type": "number"
+},
+{
+"f": "status",
+"t": "状态",
+"req": 0,
+"type": "select",
+"opts": [
+[
+"1",
+"待处理"
+],
+[
+"2",
+"已完成"
+],
+[
+"3",
+"处理中"
+]
+]
+}
+]
+},
 "adminUser": {
 "group": "权限管理",
 "name": "管理员管理",
@@ -2274,8 +4622,24 @@ window.MENU = [
 "items": [
 {
 "key": "dashboard",
-"name": "数据统计",
+"name": "数据大盘",
 "tag": "hot"
+},
+{
+"key": "memberStat",
+"name": "会员统计"
+},
+{
+"key": "orderStat",
+"name": "订单统计"
+},
+{
+"key": "financeReport",
+"name": "财务报表"
+},
+{
+"key": "inviteChannel",
+"name": "邀请渠道统计"
 }
 ]
 },
@@ -2322,6 +4686,10 @@ window.MENU = [
 "key": "adminMenu",
 "name": "菜单规则",
 "tag": "菜单"
+},
+{
+"key": "loginSecurity",
+"name": "登录安全管理"
 }
 ]
 },
@@ -2352,6 +4720,14 @@ window.MENU = [
 {
 "key": "memberOrder",
 "name": "会员订单"
+},
+{
+"key": "refund",
+"name": "退款管理"
+},
+{
+"key": "financeRecon",
+"name": "财务对账"
 }
 ]
 },
@@ -2370,63 +4746,14 @@ window.MENU = [
 {
 "key": "goods",
 "name": "商品"
-}
-]
 },
 {
-"group": "打手管理",
-"ic": "player",
-"items": [
-{
-"key": "player",
-"name": "打手管理"
-}
-]
+"key": "goodsStock",
+"name": "商品库存"
 },
 {
-"group": "会员管理",
-"ic": "user",
-"items": [
-{
-"key": "member",
-"name": "会员管理"
-},
-{
-"key": "memberLevel",
-"name": "会员等级管理"
-}
-]
-},
-{
-"group": "自定义UI",
-"ic": "layout",
-"items": [
-{
-"key": "imageNav",
-"name": "图片导航"
-},
-{
-"key": "banner",
-"name": "轮播图",
-"tag": "hot"
-},
-{
-"key": "notice",
-"name": "公告管理"
-},
-{
-"key": "msgTemplate",
-"name": "模板消息配置"
-}
-]
-},
-{
-"group": "客服管理",
-"ic": "headset",
-"items": [
-{
-"key": "cs",
-"name": "客服管理"
+"key": "goodsAudit",
+"name": "商品审核"
 }
 ]
 },
@@ -2449,6 +4776,137 @@ window.MENU = [
 {
 "key": "fine",
 "name": "罚款管理"
+},
+{
+"key": "refundAudit",
+"name": "退款审核"
+}
+]
+},
+{
+"group": "会员管理",
+"ic": "user",
+"items": [
+{
+"key": "member",
+"name": "会员管理"
+},
+{
+"key": "memberLevel",
+"name": "会员等级管理"
+},
+{
+"key": "inviteCode",
+"name": "邀请码管理"
+},
+{
+"key": "inviteRecord",
+"name": "邀请记录"
+},
+{
+"key": "inviteReward",
+"name": "邀请奖励配置"
+},
+{
+"key": "memberBlacklist",
+"name": "会员黑名单"
+},
+{
+"key": "stationLetter",
+"name": "站内信管理"
+},
+{
+"key": "memberTag",
+"name": "会员标签"
+}
+]
+},
+{
+"group": "自定义UI",
+"ic": "layout",
+"items": [
+{
+"key": "banner",
+"name": "轮播图",
+"tag": "hot"
+},
+{
+"key": "notice",
+"name": "公告管理"
+},
+{
+"key": "imageNav",
+"name": "图片导航"
+},
+{
+"key": "msgTemplate",
+"name": "模板消息配置"
+},
+{
+"key": "popup",
+"name": "弹窗配置"
+}
+]
+},
+{
+"group": "接口配置",
+"ic": "setting",
+"items": [
+{
+"key": "oauthLogin",
+"name": "聚合登录"
+},
+{
+"key": "epay",
+"name": "易支付"
+},
+{
+"key": "wxMerchant",
+"name": "微信商户"
+},
+{
+"key": "smsConfig",
+"name": "短信配置"
+}
+]
+},
+{
+"group": "其他",
+"ic": "dots",
+"items": [
+{
+"key": "player",
+"name": "打手管理"
+},
+{
+"key": "cs",
+"name": "客服管理"
+},
+{
+"key": "csSession",
+"name": "客服会话记录"
+}
+]
+},
+{
+"group": "风控管理",
+"ic": "shield",
+"items": [
+{
+"key": "riskRule",
+"name": "风控规则配置"
+},
+{
+"key": "riskAccount",
+"name": "风险账号"
+},
+{
+"key": "ipBlacklist",
+"name": "IP黑名单"
+},
+{
+"key": "riskLog",
+"name": "风控拦截日志"
 }
 ]
 }

@@ -5,14 +5,16 @@
 		<!-- z-paging 滚动列表容器 -->
 		<z-paging ref="paging" v-model="dataList" :default-page-size="8" @query="queryList" auto-show-back-to-top
 			@scrollTopChange="scrollTopChange" :use-page-scroll="false" :refresher-enabled="true">
-			<!-- 顶部导航栏 -->
+			<!-- 顶部头部：搜索框置于最上方 -->
 			<view class="top-header">
-				<!-- 标题居中 -->
-				<view class="navleft">打手专区</view>
-				<!-- 搜索框铺满横向 -->
 				<view class="search-glass">
 					<u-search placeholder="搜索打手昵称" v-model="keyword" :showAction="false"
 						@search="search"></u-search>
+				</view>
+				<!-- 标题 -->
+				<view class="nav-header">
+					<view class="nav-bar"></view>
+					<view class="navleft">打手专区</view>
 				</view>
 			</view>
 
@@ -52,11 +54,11 @@
 
 					<!-- 打手卡片列表 -->
 					<view v-if="dataList.length" v-for="(item,index) in dataList" :key="index"
-						class="rounded-lg flex align-center bg-white mt-1 player-card"
+						class="flex align-center player-card"
 						@click="goToPage(item)">
 						
-						<!-- 渐变边框 -->
-						<view class="inner-border"></view>
+						<!-- 左侧电竞渐变条 -->
+						<view class="card-accent"></view>
 
 						<!-- 打手头像 -->
 						<view class="avatar-frame-wrapper ml-3 mr-4">
@@ -78,20 +80,12 @@
 							<!-- 第一行：昵称+性别+可接单状态 -->
 							<view class="flex align-center">
 								<!-- 昵称+性别 -->
-							<!-- 昵称+性别 - 位移函数版，逻辑绝对直观 -->
 							<view style="display: flex; align-items: center; line-height: normal;">
-							    <!-- 核心：transform: translateY(2rpx) = 下移2rpx，数值越大越下移 -->
-							    <view style="
-							        color: #000000; 
-							        font-size: 24rpx;  /* 死死固定字号，绝对不变 */
-							        margin-right: 8rpx; /* 和图标间距 */
-							        transform: translateY(2rpx); /* 关键！2rpx=下移，3rpx=更下，-2rpx=上移 */
-							    ">{{item.name}}</view>
-							    
-							    <!-- 图标同步位移，避免错位 -->
+							    <view class="player-name">{{item.name}}</view>
+							    <!-- 性别图标 -->
 							    <image 
 							        :src="getSex(item)" 
-							        style="width: 25rpx; height: 25rpx; transform: translateY(2rpx);"
+							        class="sex-icon"
 							    ></image>
 							</view>
 								<!-- 可接单状态 -->
@@ -122,7 +116,7 @@
 							</view>
 							<!-- 第三行：打手简介 -->
 							<view>
-								<up-text :text="item.synopsis" color="#666" lines="1" size="24rpx"></up-text>
+								<up-text :text="item.synopsis" color="#7a7a86" lines="1" size="24rpx"></up-text>
 							</view>
 							<!-- 第四行：评分+在线状态 -->
 							<view class="mt-1 flex align-center justify-between">
@@ -472,41 +466,39 @@
 </script>
 
 <style lang="scss">
+	/* ================= 电竞风配色：主色 紫 + 橙 ================= */
+	$purple: #6C4CE6;
+	$purple-deep: #4B2FB0;
+	$purple-soft: #8B6BFF;
+	$orange: #FF7A45;
+	$orange-soft: #FFA24D;
+
 	// 页面背景
 	page {
-		background: #ffffff;
+		background: #F4F2FC;
 	}
 
 	.page-container {
 		min-height: 100vh;
-		background: linear-gradient(180deg, #FF7A45 0%, #ffffff 32%, #ffffff 100%);
+		background:
+			radial-gradient(130% 55% at 88% 0%, rgba(255,122,69,0.30) 0%, rgba(255,122,69,0) 52%),
+			linear-gradient(165deg, $purple 0%, $purple-soft 20%, #F4F2FC 50%, #F4F2FC 100%);
 	}
 
 	// 顶部头部容器
 	.top-header {
-		padding: 20rpx 30rpx;
-		background: transparent;
+		padding: 24rpx 30rpx 10rpx;
 	}
 
-	// 导航栏标题样式
-	.navleft {
-		font-family: PingFang SC, PingFang SC;
-		font-weight: bold;
-		font-size: 42rpx;
-		color: #1a1a1a;
-		text-align: center;
-		margin-bottom: 20rpx;
-	}
-
-	// 搜索框玻璃质感
+	// 搜索框（置于最上方）
 	.search-glass {
-		background: rgba(255,255,255,0.75);
+		background: rgba(255,255,255,0.94);
 		backdrop-filter: blur(24rpx);
 		-webkit-backdrop-filter: blur(24rpx);
-		border: 1rpx solid rgba(255,255,255,0.6);
-		border-radius: 16rpx;
-		padding: 8rpx 16rpx;
-		box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04), inset 0 1rpx rgba(255,255,255,0.8);
+		border: 1rpx solid rgba(255,255,255,0.7);
+		border-radius: 44rpx;
+		padding: 8rpx 22rpx;
+		box-shadow: 0 8rpx 24rpx rgba(75,47,176,0.22), inset 0 1rpx rgba(255,255,255,0.9);
 		width: 100%;
 		box-sizing: border-box;
 	}
@@ -521,12 +513,39 @@
 		width: 100% !important;
 	}
 
+	// 标题行
+	.nav-header {
+		display: flex;
+		align-items: center;
+		margin-top: 22rpx;
+		padding-left: 4rpx;
+	}
+
+	.nav-bar {
+		width: 10rpx;
+		height: 36rpx;
+		border-radius: 6rpx;
+		background: linear-gradient(180deg, $orange 0%, $orange-soft 100%);
+		margin-right: 14rpx;
+		box-shadow: 0 2rpx 8rpx rgba(255,122,69,0.5);
+	}
+
+	// 导航栏标题样式
+	.navleft {
+		font-weight: 800;
+		font-size: 40rpx;
+		color: #ffffff;
+		letter-spacing: 2rpx;
+		text-shadow: 0 2rpx 8rpx rgba(75,47,176,0.45);
+	}
+
 	// 标签容器居中
 	.tabs-container {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		width: 100%;
+		margin-top: 8rpx;
 	}
 
 	.tabs-inner {
@@ -546,8 +565,8 @@
 	.line {
 		width: 56rpx;
 		height: 10rpx;
-		background: linear-gradient(270deg, #FF9D6E 0%, #FF7A45 100%);
-		border-radius: 10rpx 10rpx 10rpx 10rpx;
+		background: linear-gradient(90deg, $purple 0%, $orange 100%);
+		border-radius: 10rpx;
 		z-index: -1;
 		bottom: 0rpx;
 		left: 0;
@@ -555,18 +574,16 @@
 
 	// 选中标签的文字样式
 	.sel {
-		font-family: PingFang SC, PingFang SC;
-		font-weight: bold;
+		font-weight: 800;
 		font-size: 38rpx;
-		color: #FF7A45;
+		color: $purple-deep;
 	}
 
 	// 未选中标签的文字样式
 	.nor {
-		font-family: PingFang SC, PingFang SC;
 		font-weight: 500;
 		font-size: 36rpx;
-		color: #999999;
+		color: #A6A6B4;
 	}
 
 	// 可接单状态的圆点样式
@@ -575,6 +592,7 @@
 		height: 8rpx;
 		background: #1BD36C;
 		border-radius: 4rpx;
+		box-shadow: 0 0 8rpx rgba(27,211,108,0.8);
 	}
 
 	// 不可接单状态的圆点样式
@@ -593,11 +611,20 @@
 		border-radius: 4rpx;
 	}
 
-	// 头像图片样式
-	.img {
-		width: 280rpx;
-		height: 280rpx;
-		border-radius: 20rpx 0 0 20rpx;
+	// 打手昵称
+	.player-name {
+		color: #1B1330;
+		font-size: 26rpx;
+		font-weight: 700;
+		margin-right: 8rpx;
+		transform: translateY(2rpx);
+	}
+
+	// 性别图标
+	.sex-icon {
+		width: 25rpx;
+		height: 25rpx;
+		transform: translateY(2rpx);
 	}
 
 	// 头像框容器样式
@@ -686,21 +713,32 @@
 		font-size: 36rpx;
 	}
 
-	// 打手卡片样式 - 平行四边形
+	// 打手卡片样式 —— 清爽圆角 + 轻微阴影，电竞质感
 	.player-card {
 		background: #ffffff;
 		position: relative;
-		padding: 0rpx;
-		transition: all 0.3s ease;
-		overflow: visible;
-		z-index: 1;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-		// 平行四边形效果：向左倾斜5度
-		transform: skewX(-5deg);
-		// 内部内容反向倾斜，保持文字正常
-		& > * {
-			transform: skewX(5deg);
-		}
+		border-radius: 26rpx;
+		margin-top: 22rpx;
+		padding: 22rpx 18rpx 22rpx 26rpx;
+		overflow: hidden;
+		box-shadow: 0 10rpx 26rpx rgba(75,47,176,0.10), 0 2rpx 6rpx rgba(0,0,0,0.03);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	// 左侧电竞渐变条
+	.card-accent {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 10rpx;
+		border-radius: 26rpx 0 0 26rpx;
+		background: linear-gradient(180deg, $purple 0%, $orange 100%);
+	}
+
+	.player-card:active {
+		transform: scale(0.985);
+		box-shadow: 0 4rpx 14rpx rgba(75,47,176,0.16);
 	}
 
 	// 打手等级标签样式
@@ -751,7 +789,7 @@
 		height: 112rpx;
 		border-radius: 50%;
 		overflow: hidden;
-		background: #f2f3f5;
+		background: #EFEBFD;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -777,7 +815,8 @@
 		justify-content: center;
 		border: 4rpx solid transparent;
 		background: linear-gradient(#fff, #fff) padding-box,
-					linear-gradient(135deg, #FF7A45, #FFB38A, #FF7A45) border-box;
+					linear-gradient(135deg, $purple, $orange, $purple) border-box;
+		box-shadow: 0 0 0 6rpx rgba(108,76,230,0.14);
 		box-sizing: border-box;
 	}
 
@@ -807,7 +846,7 @@
 
 	.category-name {
 		font-size: 22rpx;
-		color: #000000;
+		color: #5B5B6B;
 		text-align: center;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -817,17 +856,18 @@
 	}
 
 	.category-item-active .category-name {
-		background: linear-gradient(135deg, #FF7A45, #FF9D6E, #FF7A45);
+		background: linear-gradient(135deg, $purple, $orange, $purple);
 		padding: 6rpx 20rpx;
 		border-radius: 24rpx;
 		color: #ffffff;
+		font-weight: 600;
 	}
 
 	.category-tag {
 		width: 8rpx;
 		height: 8rpx;
 		border-radius: 50%;
-		background: #FF7A45;
+		background: $orange;
 		margin-top: 4rpx;
 		flex-shrink: 0;
 		opacity: 0;
@@ -841,56 +881,7 @@
 		visibility: visible;
 	}
 
-	// 语音播放器小图标样式
-	.voice-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.voice-icon-btn {
-		width: 40rpx;
-		height: 40rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		position: relative;
-	}
-
-	.voice-icon-btn.playing {
-		animation: playing-bounce 0.6s ease-in-out infinite;
-	}
-
-	@keyframes playing-bounce {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.1); }
-	}
-
-	.voice-icon-pulse {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		border-radius: 50%;
-		background: rgba(255, 122, 69, 0.2);
-		animation: voice-icon-pulse 1.5s infinite;
-	}
-
-	@keyframes voice-icon-pulse {
-		0% {
-			transform: scale(1);
-			opacity: 0.7;
-		}
-		50% {
-			transform: scale(1.3);
-			opacity: 0;
-		}
-		100% {
-			transform: scale(1);
-			opacity: 0;
-		}
-	}
-
-	/* 天蓝色科技风语音播放器样式 */
+	/* 电竞风语音播放器 */
 	.voice-player {
 		position: relative;
 		display: flex;
@@ -899,8 +890,8 @@
 		flex-shrink: 0;
 		padding: 8rpx 14rpx;
 		border-radius: 40rpx;
-		background: linear-gradient(135deg, #FF7A45 0%, #FF9D6E 100%);
-		box-shadow: 0 3rpx 15rpx rgba(255, 122, 69, 0.4),
+		background: linear-gradient(135deg, $purple 0%, $orange 100%);
+		box-shadow: 0 4rpx 16rpx rgba(108,76,230,0.42),
 					0 0 0 1rpx rgba(255, 255, 255, 0.2) inset;
 		transition: all 0.3s ease;
 		overflow: visible;
@@ -908,8 +899,8 @@
 	}
 
 	.voice-player.playing {
-		box-shadow: 0 4rpx 24rpx rgba(255, 122, 69, 0.7),
-					0 0 30rpx rgba(255, 122, 69, 0.4),
+		box-shadow: 0 4rpx 24rpx rgba(108,76,230,0.65),
+					0 0 30rpx rgba(255,122,69,0.4),
 					0 0 0 1rpx rgba(255, 255, 255, 0.3) inset;
 	}
 
@@ -928,7 +919,7 @@
 		border-radius: 50%;
 		background: #ffffff;
 		box-shadow: 0 1.5rpx 6rpx rgba(0, 0, 0, 0.15),
-					0 0 0 1.5rpx rgba(255, 122, 69, 0.3);
+					0 0 0 1.5rpx rgba(108,76,230,0.3);
 		transition: all 0.3s ease;
 	}
 
@@ -937,8 +928,8 @@
 	}
 
 	@keyframes btn-pulse {
-		0%, 100% { transform: scale(1); box-shadow: 0 1.5rpx 6rpx rgba(0, 0, 0, 0.15), 0 0 0 1.5rpx rgba(255, 122, 69, 0.3); }
-		50% { transform: scale(1.05); box-shadow: 0 3rpx 9rpx rgba(0, 0, 0, 0.2), 0 0 0 3rpx rgba(255, 122, 69, 0.5); }
+		0%, 100% { transform: scale(1); box-shadow: 0 1.5rpx 6rpx rgba(0, 0, 0, 0.15), 0 0 0 1.5rpx rgba(108,76,230,0.3); }
+		50% { transform: scale(1.05); box-shadow: 0 3rpx 9rpx rgba(0, 0, 0, 0.2), 0 0 0 3rpx rgba(108,76,230,0.5); }
 	}
 
 	.voice-bars {
@@ -991,7 +982,7 @@
 	// 评分文字
 	.score-text-fixed {
 		font-size: 24rpx;
-		color: #666666;
+		color: #7a7a86;
 		line-height: 24rpx;
 		display: inline-block;
 		vertical-align: middle;

@@ -2,6 +2,8 @@
 	<view class="page">
 		<!-- 顶部背景 -->
 		<image class="top-bg" src="/static/images/header_background.png" mode="aspectFill"></image>
+		<!-- 顶部紫色电竞遮罩 -->
+		<view class="top-mask"></view>
 
 		<!-- 导航栏 -->
 		<view class="navbar">
@@ -16,6 +18,12 @@
 			</view>
 			<text class="navbar-title">提交订单</text>
 			<view class="navbar-placeholder"></view>
+		</view>
+
+		<!-- 未成年人下单警示（红色提醒） -->
+		<view class="minor-tip">
+			<view class="minor-tip-tag">提示</view>
+			<text class="minor-tip-text">根据国家法律规定，未成年人禁止下单！</text>
 		</view>
 
 		<scroll-view scroll-y class="content">
@@ -61,12 +69,12 @@
 				<view class="form-card card-glass">
 					<!-- 游戏昵称 -->
 					<view class="form-row">
-						<text class="form-label">游戏昵称</text>
+						<text class="form-label"><text class="req">*</text>游戏昵称</text>
 						<input class="form-input" v-model="queryParams.wz_id" placeholder="请输入游戏昵称" placeholder-class="placeholder" />
 					</view>
 					<!-- ID账号 -->
 					<view class="form-row">
-						<text class="form-label">ID账号</text>
+						<text class="form-label"><text class="req">*</text>ID账号</text>
 						<input class="form-input" v-model="queryParams.game_id" placeholder="请输入ID账号" placeholder-class="placeholder" />
 					</view>
 					<!-- 游戏区服 -->
@@ -285,9 +293,10 @@ const submit = async () => {
 </script>
 
 <style scoped>
+/* ================= 电竞风配色：主色 紫 + 橙 ================= */
 .page {
 	min-height: 100vh;
-	background: #f5f6f9;
+	background: #F4F2FC;
 	display: flex;
 	flex-direction: column;
 	padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
@@ -300,6 +309,14 @@ const submit = async () => {
 	width: 100%; height: 480rpx;
 	z-index: 0;
 }
+/* 顶部紫色电竞遮罩 */
+.top-mask {
+	position: fixed;
+	top: 0; left: 0; right: 0;
+	height: 480rpx;
+	z-index: 0;
+	background: linear-gradient(180deg, rgba(108,76,230,0.92) 0%, rgba(108,76,230,0.55) 40%, rgba(108,76,230,0) 100%);
+}
 
 /* 导航栏 */
 .navbar {
@@ -310,18 +327,18 @@ const submit = async () => {
 	justify-content: space-between;
 	padding: 0 24rpx;
 	padding-top: calc(var(--status-bar-height, 0px) + 16rpx);
-	background: #fff;
+	background: transparent;
 }
 .navbar-capsule {
 	display: flex;
 	align-items: center;
-	border: 1rpx solid #dadbde;
+	border: 1rpx solid rgba(255,255,255,0.5);
 	border-radius: 100px;
 	padding: 8rpx 20rpx;
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
-	opacity: 0.95;
-	background: rgba(255,255,255,0.3);
+	background: rgba(255,255,255,0.85);
+	box-shadow: 0 4rpx 16rpx rgba(75,47,176,0.18);
 }
 .navbar-btn { padding: 4rpx 8rpx; }
 .navbar-divider {
@@ -331,10 +348,41 @@ const submit = async () => {
 }
 .navbar-title {
 	font-size: 34rpx;
-	font-weight: 600;
-	color: #333;
+	font-weight: 700;
+	color: #ffffff;
+	text-shadow: 0 2rpx 8rpx rgba(75,47,176,0.5);
 }
 .navbar-placeholder { width: 120rpx; }
+
+/* 未成年人下单警示 */
+.minor-tip {
+	position: relative;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	margin: 20rpx 24rpx 0;
+	padding: 16rpx 20rpx;
+	background: #FFF1F0;
+	border: 1rpx solid #FFCCC7;
+	border-left: 8rpx solid #E5484D;
+	border-radius: 16rpx;
+	box-shadow: 0 4rpx 14rpx rgba(229,72,77,0.10);
+}
+.minor-tip-tag {
+	flex-shrink: 0;
+	margin-right: 14rpx;
+	padding: 4rpx 16rpx;
+	font-size: 22rpx;
+	color: #ffffff;
+	font-weight: 600;
+	background: linear-gradient(135deg, #E5484D, #FF6B6B);
+	border-radius: 999rpx;
+}
+.minor-tip-text {
+	font-size: 24rpx;
+	color: #E5484D;
+	font-weight: 600;
+}
 
 /* 内容区 */
 .content {
@@ -348,28 +396,28 @@ const submit = async () => {
 
 /* 商品卡片 */
 .product-card {
-	padding: 24rpx 32rpx;
+	padding: 28rpx 32rpx;
 	background: #fff;
 	margin-bottom: 24rpx;
-	border-radius: 36rpx;
-	box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04);
+	border-radius: 28rpx;
+	box-shadow: 0 10rpx 26rpx rgba(75,47,176,0.08), 0 2rpx 6rpx rgba(0,0,0,0.03);
 }
 .product-count {
 	display: block;
 	font-size: 24rpx;
-	color: #666;
+	color: #8A8A99;
 	margin-bottom: 20rpx;
 }
 .product-body {
 	display: flex;
 	gap: 20rpx;
 	padding-bottom: 20rpx;
-	border-bottom: 1rpx solid rgba(0,0,0,0.08);
+	border-bottom: 1rpx solid rgba(108,76,230,0.10);
 }
 .product-thumb {
 	width: 160rpx; height: 160rpx;
 	flex-shrink: 0;
-	border-radius: 26rpx;
+	border-radius: 20rpx;
 	background: #f0f0f0;
 }
 .product-info {
@@ -378,8 +426,8 @@ const submit = async () => {
 }
 .product-name {
 	font-size: 28rpx;
-	font-weight: 600;
-	color: #000;
+	font-weight: 700;
+	color: #1B1330;
 	line-height: 1.4;
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
@@ -395,13 +443,13 @@ const submit = async () => {
 }
 .price-num {
 	font-size: 30rpx;
-	color: #da4a44;
-	font-weight: 600;
+	color: #FF7A45;
+	font-weight: 700;
 }
 .price-symbol {
 	font-size: 26rpx;
-	color: #da4a44;
-	font-weight: 600;
+	color: #FF7A45;
+	font-weight: 700;
 }
 .price-qty {
 	font-size: 24rpx;
@@ -431,23 +479,21 @@ const submit = async () => {
 	align-items: center;
 	gap: 6rpx;
 }
-.product-row-total .price-num { font-size: 32rpx; }
+.product-row-total .price-num { font-size: 34rpx; }
 
 /* 表单卡片 */
 .card-glass {
-	background: rgba(255,255,255,0.92);
-	backdrop-filter: blur(24rpx);
-	-webkit-backdrop-filter: blur(24rpx);
-	border: 1rpx solid rgba(255,255,255,0.8);
-	border-radius: 36rpx;
-	box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04);
+	background: #fff;
+	border: 1rpx solid rgba(108,76,230,0.08);
+	border-radius: 28rpx;
+	box-shadow: 0 10rpx 26rpx rgba(75,47,176,0.08), 0 2rpx 6rpx rgba(0,0,0,0.03);
 	margin-bottom: 24rpx;
 }
 .form-card { padding: 32rpx; }
 .form-row {
 	margin-bottom: 24rpx;
 	padding-bottom: 24rpx;
-	border-bottom: 1rpx solid rgba(0,0,0,0.08);
+	border-bottom: 1rpx solid rgba(108,76,230,0.08);
 }
 .form-row:last-child {
 	margin-bottom: 0;
@@ -462,22 +508,35 @@ const submit = async () => {
 .form-row-flex .form-label { margin-bottom: 0; }
 .form-label {
 	display: block;
-	font-size: 24rpx;
-	color: #000;
-	font-weight: 400;
+	font-size: 26rpx;
+	color: #1B1330;
+	font-weight: 600;
 	margin-bottom: 16rpx;
+}
+/* 必填星号 */
+.req {
+	color: #E5484D;
+	font-size: 28rpx;
+	font-weight: 700;
+	margin-right: 6rpx;
 }
 .form-input {
 	width: 100%;
-	height: 80rpx;
-	padding: 0 24rpx;
-	background: rgba(0,0,0,0.05);
-	border-radius: 12rpx;
-	font-size: 24rpx;
-	color: #333;
+	height: 84rpx;
+	padding: 0 26rpx;
+	background: #F4F2FC;
+	border: 1rpx solid rgba(108,76,230,0.12);
+	border-radius: 16rpx;
+	font-size: 26rpx;
+	color: #1B1330;
 	box-sizing: border-box;
+	transition: all .2s ease;
 }
-.placeholder { color: #999; }
+.form-input:focus {
+	border-color: #6C4CE6;
+	box-shadow: 0 0 0 4rpx rgba(108,76,230,0.12);
+}
+.placeholder { color: #A6A6B4; }
 
 /* 选项标签组 */
 .option-group {
@@ -486,15 +545,20 @@ const submit = async () => {
 	gap: 16rpx;
 }
 .option-tag {
-	padding: 16rpx 32rpx;
-	background: rgba(0,0,0,0.06);
-	border-radius: 12rpx;
+	padding: 16rpx 40rpx;
+	background: #F4F2FC;
+	border: 1rpx solid rgba(108,76,230,0.12);
+	border-radius: 16rpx;
 	font-size: 26rpx;
-	color: #666;
+	color: #6B6B7B;
+	transition: all .2s ease;
 }
 .option-tag.active {
-	background: #000;
+	background: linear-gradient(135deg, #6C4CE6, #8B6BFF);
+	border-color: transparent;
 	color: #fff;
+	font-weight: 600;
+	box-shadow: 0 6rpx 16rpx rgba(108,76,230,0.32);
 }
 
 /* 数量 */
@@ -504,18 +568,21 @@ const submit = async () => {
 	gap: 24rpx;
 }
 .qty-btn {
-	width: 56rpx; height: 56rpx;
+	width: 60rpx; height: 60rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(0,0,0,0.06);
-	border-radius: 8rpx;
-	font-size: 32rpx;
-	color: #333;
+	background: #F4F2FC;
+	border: 1rpx solid rgba(108,76,230,0.14);
+	border-radius: 12rpx;
+	font-size: 34rpx;
+	color: #6C4CE6;
+	font-weight: 600;
 }
 .qty-num {
-	font-size: 28rpx;
-	color: #333;
+	font-size: 30rpx;
+	color: #1B1330;
+	font-weight: 700;
 	min-width: 48rpx;
 	text-align: center;
 }
@@ -524,7 +591,7 @@ const submit = async () => {
 .notice-card { padding: 24rpx 0 0; }
 .notice-inner {
 	font-size: 22rpx;
-	color: #a26d47;
+	color: #8A7BA0;
 	line-height: 1.8;
 }
 
@@ -539,7 +606,7 @@ const submit = async () => {
 	padding: 20rpx 24rpx;
 	padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 	background: #fff;
-	box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.06);
+	box-shadow: 0 -4rpx 20rpx rgba(75,47,176,0.10);
 }
 .footer-left {
 	display: flex;
@@ -551,41 +618,47 @@ const submit = async () => {
 	color: #333;
 }
 .footer-total {
-	font-size: 32rpx;
-	color: #da4a44;
-	font-weight: 600;
+	font-size: 34rpx;
+	color: #FF7A45;
+	font-weight: 700;
 }
 .btn-settle {
-	height: 80rpx;
-	line-height: 80rpx;
+	height: 84rpx;
+	line-height: 84rpx;
 	min-width: 320rpx;
 	padding: 0 48rpx;
-	font-size: 28rpx;
+	font-size: 30rpx;
+	font-weight: 600;
 	color: #fff;
-	background: linear-gradient(135deg, #ffc300, #faad14);
-	border-radius: 16rpx;
+	background: linear-gradient(135deg, #FF9D6E, #FF7A45);
+	border-radius: 42rpx;
 	text-align: center;
+	box-shadow: 0 8rpx 20rpx rgba(255,122,69,0.4);
+}
+.btn-settle:active {
+	transform: scale(0.98);
 }
 
 /* 选择打手弹窗 */
 .popup-wrap {
 	width: 600rpx;
-	padding: 32rpx;
+	padding: 36rpx 32rpx 32rpx;
 	background: #fff;
-	border-radius: 24rpx;
+	border-radius: 32rpx;
 }
 .popup-title {
-	font-size: 30rpx;
-	font-weight: 600;
-	color: #000;
+	font-size: 32rpx;
+	font-weight: 700;
+	color: #1B1330;
 	text-align: center;
-	margin-bottom: 24rpx;
+	margin-bottom: 28rpx;
 }
 .thug-item {
 	display: flex;
 	align-items: center;
-	padding: 16rpx 0;
+	padding: 18rpx 12rpx;
 	gap: 16rpx;
+	border-radius: 16rpx;
 }
 .thug-check {
 	width: 48rpx; height: 48rpx;
@@ -595,19 +668,22 @@ const submit = async () => {
 	width: 90rpx; height: 90rpx;
 	border-radius: 20rpx;
 	flex-shrink: 0;
+	background: #f5f5f5;
 }
 .thug-name {
 	font-size: 28rpx;
 	color: #333;
 }
 .popup-btn {
-	margin-top: 24rpx;
-	height: 80rpx;
-	line-height: 80rpx;
+	margin-top: 28rpx;
+	height: 84rpx;
+	line-height: 84rpx;
 	text-align: center;
-	font-size: 28rpx;
+	font-size: 30rpx;
+	font-weight: 600;
 	color: #fff;
-	background: linear-gradient(135deg, #ffc300, #faad14);
-	border-radius: 16rpx;
+	background: linear-gradient(135deg, #FF9D6E, #FF7A45);
+	border-radius: 42rpx;
+	box-shadow: 0 8rpx 20rpx rgba(255,122,69,0.4);
 }
 </style>
