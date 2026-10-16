@@ -4,7 +4,16 @@
 		<view class="top-section">
 			<image class="top-bg" src="/static/images/header_background_panda.png" mode="aspectFill"></image>
 			<view class="top-content" :style="{paddingTop: statusBarHeight + 'px'}">
-				<!-- 头像 + 名字 + 等级 + 切换按钮 -->
+				<!-- 右上角操作：设置 + 切换身份 -->
+				<view class="top-actions">
+					<view class="top-action-btn" @click="goSetting">
+						<up-icon name="setting" size="18" color="#fff"></up-icon>
+					</view>
+					<view class="top-action-btn" @click="switchIdentity">
+						<up-icon name="reload" size="18" color="#fff"></up-icon>
+					</view>
+				</view>
+				<!-- 头像 + 名字 + 等级 -->
 				<view class="profile-row">
 					<!-- 左侧头像 -->
 					<view class="profile-left">
@@ -242,8 +251,6 @@ const moreList = computed(() => {
 	const isThugApproved = isThug && String(thug.sh_status || '') === '1'
 	const isCs = isThug && String(thug.is_customer_service || '0') === '1'
 	const list = [
-		{ label: '设置', icon: 'setting', action: 'setting' },
-		{ label: '切换身份', icon: 'reload', action: 'switch' },
 		{ label: '会员等级', icon: 'level', action: 'level' },
 		{ label: '打手入驻', icon: 'integral', action: 'ruzhu' },
 		{ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' },
@@ -396,6 +403,14 @@ const goBuildSame = () => {
 	// #endif
 }
 
+const goSetting = () => {
+	updateUserInfo()
+}
+
+const switchIdentity = () => {
+	openIdentityPopup()
+}
+
 const handleMoreClick = (item) => {
 	if (item.action === 'level') {
 		goLevelPage()
@@ -492,6 +507,23 @@ const handleMoreClick = (item) => {
 	position: relative;
 	z-index: 2;
 	padding: 120rpx 24rpx 0;
+}
+.top-actions {
+	position: absolute;
+	top: 24rpx;
+	right: 24rpx;
+	display: flex;
+	gap: 16rpx;
+	z-index: 11;
+}
+.top-action-btn {
+	width: 64rpx;
+	height: 64rpx;
+	border-radius: 50%;
+	background: rgba(255,255,255,0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 .page-title-wrap {
 	position: absolute;
