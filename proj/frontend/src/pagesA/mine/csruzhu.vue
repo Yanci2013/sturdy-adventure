@@ -15,7 +15,7 @@
 			<!-- Logo 区域 -->
 			<view class="logo-area">
 				<image class="logo-img" src="/static/logo.png" mode="aspectFit"></image>
-				<text class="brand-name">独眼蛇网络</text>
+				<text class="brand-name">创世网络</text>
 			</view>
 
 			<!-- 入驻表单 -->
@@ -57,8 +57,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { onMounted } from '@dcloudio/uni-app';
+import { ref, onMounted } from 'vue';
 import { csAdd, getUserInfo } from '../../request/api';
 import router from '../../utils/router';
 

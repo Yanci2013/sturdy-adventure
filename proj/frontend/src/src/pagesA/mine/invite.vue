@@ -10,7 +10,7 @@
 		<!-- Logo + 标题 -->
 		<view class="brand-area">
 			<image class="brand-logo" src="/static/eon.png" mode="aspectFit"></image>
-			<text class="brand-name">独眼蛇网络</text>
+			<text class="brand-name">创世网络</text>
 		</view>
 
 		<!-- 注册秘钥输入 -->
@@ -145,7 +145,7 @@ const onEnter = async () => {
 <style scoped>
 .invite-page {
 	min-height: 100vh;
-	background: #FFFFFF;
+	background: #0a0a0a;
 	display: flex;
 	flex-direction: column;
 	padding: 0 48rpx;
@@ -168,7 +168,7 @@ const onEnter = async () => {
 
 .back-icon {
 	font-size: 56rpx;
-	color: #333;
+	color: #fff;
 	line-height: 1;
 }
 
@@ -190,7 +190,7 @@ const onEnter = async () => {
 .brand-name {
 	font-size: 48rpx;
 	font-weight: 700;
-	color: #1a1a1a;
+	color: #fff;
 	letter-spacing: 4rpx;
 }
 
@@ -201,23 +201,23 @@ const onEnter = async () => {
 .form-label {
 	display: block;
 	font-size: 28rpx;
-	color: #333;
+	color: #fff;
 	margin-bottom: 20rpx;
 }
 
 .form-input {
 	width: 100%;
 	height: 96rpx;
-	background: #F5F6F8;
+	background: rgba(255, 255, 255, 0.08);
 	border-radius: 16rpx;
 	padding: 0 28rpx;
 	font-size: 30rpx;
-	color: #1a1a1a;
+	color: #fff;
 	box-sizing: border-box;
 }
 
 .placeholder {
-	color: #bbb;
+	color: rgba(255, 255, 255, 0.3);
 }
 
 .btn-area {
@@ -237,8 +237,8 @@ const onEnter = async () => {
 }
 
 .btn-enter.disabled {
-	background: #F0F0F0;
-	color: #bbb;
+	background: rgba(255, 255, 255, 0.15);
+	color: rgba(255, 255, 255, 0.4);
 }
 
 .agreement-area {
@@ -252,7 +252,7 @@ const onEnter = async () => {
 .checkbox {
 	width: 32rpx;
 	height: 32rpx;
-	border: 2rpx solid #ccc;
+	border: 2rpx solid rgba(255, 255, 255, 0.4);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -272,7 +272,7 @@ const onEnter = async () => {
 
 .agreement-text {
 	font-size: 24rpx;
-	color: #999;
+	color: rgba(255, 255, 255, 0.5);
 }
 
 .agreement-link {

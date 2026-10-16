@@ -12,6 +12,9 @@
 // [ 应用入口文件 ]
 namespace think;
 
+// 兼容 PHP 8.4+：屏蔽隐式 nullable 参数的弃用错误（ThinkPHP 6 旧代码触发）
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 require __DIR__ . '/../vendor/autoload.php';
 
 // 执行HTTP应用并响应

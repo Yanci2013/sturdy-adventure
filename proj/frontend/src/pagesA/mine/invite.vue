@@ -10,7 +10,7 @@
 		<!-- Logo + 标题 -->
 		<view class="brand-area">
 			<image class="brand-logo" src="/static/eon.png" mode="aspectFit"></image>
-			<text class="brand-name">独眼蛇网络</text>
+			<text class="brand-name">创世网络</text>
 		</view>
 
 		<!-- 注册秘钥输入 -->
