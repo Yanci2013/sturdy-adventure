@@ -4,8 +4,8 @@
 		<view class="top-section">
 			<image class="top-bg" src="/static/images/header_background_panda.png" mode="aspectFill"></image>
 			<view class="top-content" :style="{paddingTop: statusBarHeight + 'px'}">
-				<!-- 右上角操作：设置 + 切换身份 -->
-				<view class="top-actions">
+				<!-- 右上角操作：设置 + 切换身份（登录后显示） -->
+				<view class="top-actions" v-if="token">
 					<view class="top-action-btn" @click="goSetting">
 						<up-icon name="setting" size="18" color="#fff"></up-icon>
 					</view>
