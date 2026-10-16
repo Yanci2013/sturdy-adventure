@@ -66,6 +66,21 @@
 			</view>
 		</view>
 
+		<!-- 会员等级 + 联系客服 双卡片 -->
+		<view class="dual-card-row">
+			<view class="level-card" @click="goLevelPage">
+				<view class="level-card-top">
+					<text class="level-card-label">会员等级</text>
+					<image class="level-card-arrow" src="/static/images/right.png" mode="aspectFit"></image>
+				</view>
+				<text class="level-card-num">{{ levelNum }}</text>
+			</view>
+			<view class="cs-card" @click="openCustomerService">
+				<text class="cs-card-sub">实时在线</text>
+				<text class="cs-card-main">联系客服</text>
+			</view>
+		</view>
+
 		<!-- 更多功能 -->
 		<view class="section more-section">
 			<text class="section-title more-title">常用功能</text>
@@ -711,6 +726,72 @@ const handleMoreClick = (item) => {
 	color: #ffffff;
 	font-weight: 700;
 	box-sizing: border-box;
+}
+
+/* ===== 会员等级 + 联系客服 双卡片 ===== */
+.dual-card-row {
+	display: flex;
+	gap: 20rpx;
+	margin: 0 auto 24rpx;
+	width: 93%;
+}
+.level-card {
+	flex: 1;
+	background: #1a1a1a;
+	border-radius: 28rpx;
+	padding: 32rpx 28rpx;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 200rpx;
+	box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.15);
+}
+.level-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.level-card-label {
+	color: #fff;
+	font-size: 28rpx;
+	font-weight: 500;
+}
+.level-card-arrow {
+	width: 24rpx;
+	height: 24rpx;
+	opacity: 0.6;
+}
+.level-card-num {
+	color: #fff;
+	font-size: 72rpx;
+	font-weight: 800;
+	line-height: 1;
+	margin-top: 24rpx;
+}
+.cs-card {
+	flex: 1;
+	background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+	border-radius: 28rpx;
+	padding: 32rpx 28rpx;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+	min-height: 200rpx;
+	box-shadow: 0 8rpx 24rpx rgba(255,152,0,0.3);
+}
+.cs-card-sub {
+	color: rgba(0,0,0,0.6);
+	font-size: 26rpx;
+	font-weight: 500;
+	margin-top: 8rpx;
+}
+.cs-card-main {
+	color: #3a2000;
+	font-size: 48rpx;
+	font-weight: 800;
+	line-height: 1.1;
+	margin-top: 20rpx;
 }
 
 /* ===== 我的订单 ===== */
