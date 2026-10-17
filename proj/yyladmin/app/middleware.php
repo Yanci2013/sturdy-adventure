@@ -7,6 +7,8 @@
  */
 
 return [
+    // 多应用解析
+    \think\app\MultiApp::class,
     // 全局跨域请求
     \app\common\middleware\AllowCrossDomain::class,
     // 全局请求缓存

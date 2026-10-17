@@ -8,8 +8,10 @@
 
 use app\ExceptionHandle;
 use app\Request;
+use think\app\Service as MultiAppService;
 
 return [
     'think\Request'          => Request::class,
     'think\exception\Handle' => ExceptionHandle::class,
+    'think\app\Service' => MultiAppService::class,
 ];
