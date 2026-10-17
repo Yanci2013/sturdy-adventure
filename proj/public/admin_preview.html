@@ -94,6 +94,21 @@ table tr:hover td { background: #f5fff5; }
 .login-status.enabled { background: #e8f5e9; color: #3cc51f; }
 .login-status.disabled { background: #fff1f0; color: #f5222d; }
 .login-tip { background: #fff7e6; border: 1px solid #ffe7ba; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #874d00; margin-bottom: 20px; line-height: 1.6; }
+/* 前端预览 */
+.preview-toolbar { background: #fff; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); flex-wrap: wrap; }
+.toolbar-left { display: flex; align-items: center; gap: 8px; }
+.toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.preview-url-input { width: 320px; padding: 7px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
+.preview-url-input:focus { outline: none; border-color: #3cc51f; }
+.device-label { font-size: 13px; color: #666; }
+.device-btn.active { background: #3cc51f; color: #fff; border-color: #3cc51f; }
+.preview-wrapper { display: flex; justify-content: center; align-items: flex-start; background: #f0f0f5; border-radius: 8px; padding: 30px 20px; min-height: 70vh; overflow: auto; }
+.phone-frame { position: relative; background: #1a1a1a; border-radius: 40px; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.3); transition: width .3s, height .3s; }
+.phone-frame.fullscreen { border-radius: 0; padding: 0; background: transparent; box-shadow: none; width: 100%; }
+.phone-notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 120px; height: 24px; background: #1a1a1a; border-radius: 0 0 16px 16px; z-index: 2; }
+.phone-frame.fullscreen .phone-notch { display: none; }
+.preview-frame { width: 375px; height: 667px; border: none; border-radius: 30px; background: #fff; display: block; }
+.phone-frame.fullscreen .preview-frame { width: 100% !important; height: calc(100vh - 160px) !important; border-radius: 0 !important; }
 </style>
 </head>
 <body>
@@ -110,6 +125,7 @@ table tr:hover td { background: #f5fff5; }
             <li onclick="showPage('thugs')"><span class="icon">👤</span> 打手管理</li>
             <li onclick="window.open('/realname_admin.html','_blank')"><span class="icon">🪪</span> 实名认证管理</li>
             <li onclick="window.open('/site_settings.html','_blank')"><span class="icon">🏷️</span> 站点Logo与名称</li>
+            <li onclick="showPage('preview')"><span class="icon">📱</span> 前端预览</li>
 
             <li class="section-title">系统管理</li>
             <li onclick="showPage('finance')"><span class="icon">💰</span> 财务管理</li>
@@ -330,6 +346,32 @@ table tr:hover td { background: #f5fff5; }
                     </div>
                 </div>
             </div>
+
+            <!-- 前端预览 -->
+            <div id="page-preview" class="page hidden">
+                <div class="preview-toolbar">
+                    <div class="toolbar-left">
+                        <input type="text" id="previewUrl" class="preview-url-input" value="/h5/" placeholder="输入预览地址">
+                        <button class="btn btn-primary" onclick="loadPreview()">加载</button>
+                    </div>
+                    <div class="toolbar-right">
+                        <span class="device-label">设备尺寸：</span>
+                        <button class="btn btn-default device-btn active" data-width="375" data-height="667" onclick="setDevice(this)">iPhone</button>
+                        <button class="btn btn-default device-btn" data-width="414" data-height="896" onclick="setDevice(this)">iPhone Plus</button>
+                        <button class="btn btn-default device-btn" data-width="360" data-height="640" onclick="setDevice(this)">Android</button>
+                        <button class="btn btn-default device-btn" data-width="768" data-height="1024" onclick="setDevice(this)">iPad</button>
+                        <button class="btn btn-default" onclick="setFullscreen()">全屏</button>
+                        <button class="btn btn-default" onclick="refreshPreview()">刷新</button>
+                        <button class="btn btn-primary" onclick="openNewTab()">新标签打开</button>
+                    </div>
+                </div>
+                <div class="preview-wrapper">
+                    <div class="phone-frame" id="phoneFrame">
+                        <div class="phone-notch"></div>
+                        <iframe id="previewFrame" src="/h5/" class="preview-frame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -388,9 +430,47 @@ function showPage(name) {
     document.getElementById('page-'+name).classList.remove('hidden');
     document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
     event.target.closest('li').classList.add('active');
-    const titles = {dashboard:'控制台', thugs:'打手管理', finance:'财务管理', general:'常规管理', login:'登录配置'};
+    const titles = {dashboard:'控制台', thugs:'打手管理', finance:'财务管理', general:'常规管理', login:'登录配置', preview:'前端预览'};
     document.getElementById('pageTitle').textContent = titles[name];
     if (name === 'login') loadLoginConfig();
+    if (name === 'preview') refreshPreview();
+}
+
+// 前端预览相关函数
+function loadPreview() {
+    const url = document.getElementById('previewUrl').value.trim() || '/h5/';
+    document.getElementById('previewFrame').src = url;
+}
+
+function setDevice(btn) {
+    document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const w = btn.getAttribute('data-width');
+    const h = btn.getAttribute('data-height');
+    const frame = document.getElementById('phoneFrame');
+    frame.classList.remove('fullscreen');
+    const iframe = document.getElementById('previewFrame');
+    iframe.style.width = w + 'px';
+    iframe.style.height = h + 'px';
+}
+
+function setFullscreen() {
+    document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+    const frame = document.getElementById('phoneFrame');
+    frame.classList.add('fullscreen');
+    const iframe = document.getElementById('previewFrame');
+    iframe.style.width = '';
+    iframe.style.height = '';
+}
+
+function refreshPreview() {
+    const iframe = document.getElementById('previewFrame');
+    iframe.src = iframe.src;
+}
+
+function openNewTab() {
+    const url = document.getElementById('previewUrl').value.trim() || '/h5/';
+    window.open(url, '_blank');
 }
 
 // 加载聚合登录配置

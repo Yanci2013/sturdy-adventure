@@ -475,14 +475,12 @@
 
 	// 页面背景
 	page {
-		background: #F4F2FC;
+		background: #ffffff;
 	}
 
 	.page-container {
 		min-height: 100vh;
-		background:
-			radial-gradient(130% 55% at 88% 0%, rgba(255,122,69,0.30) 0%, rgba(255,122,69,0) 52%),
-			linear-gradient(165deg, $purple 0%, $purple-soft 20%, #F4F2FC 50%, #F4F2FC 100%);
+		background: #ffffff;
 	}
 
 	// 顶部头部容器
@@ -492,13 +490,9 @@
 
 	// 搜索框（置于最上方）
 	.search-glass {
-		background: rgba(255,255,255,0.94);
-		backdrop-filter: blur(24rpx);
-		-webkit-backdrop-filter: blur(24rpx);
-		border: 1rpx solid rgba(255,255,255,0.7);
+		background: #f5f5f7;
 		border-radius: 44rpx;
 		padding: 8rpx 22rpx;
-		box-shadow: 0 8rpx 24rpx rgba(75,47,176,0.22), inset 0 1rpx rgba(255,255,255,0.9);
 		width: 100%;
 		box-sizing: border-box;
 	}
@@ -534,9 +528,8 @@
 	.navleft {
 		font-weight: 800;
 		font-size: 40rpx;
-		color: #ffffff;
+		color: #1a1a1a;
 		letter-spacing: 2rpx;
-		text-shadow: 0 2rpx 8rpx rgba(75,47,176,0.45);
 	}
 
 	// 标签容器居中
