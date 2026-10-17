@@ -4915,6 +4915,11 @@ window.MENU = [
 {
 "key": "popup",
 "name": "弹窗配置"
+},
+{
+"key": "uiDecor",
+"name": "UI装修",
+"tag": "new"
 }
 ]
 },

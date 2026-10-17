@@ -4,6 +4,8 @@
 
 	// 应用后台自定义 UI 配置（背景色/背景图/主题色/底部导航颜色）
 	function applyUiConfig(data) {
+		// 保存完整配置到 storage，供 tabbar 等组件读取
+		try { uni.setStorageSync('ui_config', data || {}); } catch (e) {}
 		// #ifdef H5
 		const primary = data.theme_primary || '#FF7A45'
 		const secondary = data.theme_secondary || '#FFB199'

@@ -141,6 +141,33 @@ tbody tr:hover td{background:#f8faff}
   .menu-btn{display:flex!important}
 }
 .menu-btn{display:none;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:none;cursor:pointer;font-size:20px;margin-right:8px}
+/* ===== UI 装修实时预览 ===== */
+.ui-decor-wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.ui-decor-preview{flex:0 0 340px;display:flex;flex-direction:column;align-items:center;position:sticky;top:16px}
+.ui-decor-panel{flex:1;min-width:320px;max-width:560px}
+.phone-frame{width:320px;height:640px;background:#1a1a1a;border-radius:42px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative}
+.phone-notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#1a1a1a;border-radius:0 0 18px 18px;z-index:5}
+.phone-screen{width:100%;height:100%;background:#fff;border-radius:32px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.ps-statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 22px 4px;font-size:12px;font-weight:600;color:#333;flex-shrink:0}
+.ps-content{flex:1;overflow-y:auto;padding:8px 14px 80px}
+.ps-search{background:#f5f5f5;border-radius:20px;padding:8px 14px;font-size:13px;color:#999;margin:6px 0 12px}
+.ps-banner-row{display:flex;gap:10px;margin-bottom:14px}
+.ps-banner{flex:1;border-radius:12px;padding:14px 12px;font-size:15px;font-weight:700;color:#fff;line-height:1.3}
+.ps-banner span{font-size:11px;font-weight:400;opacity:.9}
+.ps-banner-male{background:linear-gradient(135deg,#667eea,#764ba2)}
+.ps-banner-female{background:linear-gradient(135deg,#f093fb,#f5576c)}
+.ps-item{display:flex;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.ps-avatar{width:50px;height:50px;border-radius:12px;flex-shrink:0}
+.ps-info{flex:1;min-width:0}
+.ps-info b{font-size:14px}
+.ps-desc{font-size:11px;color:#999;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-btn{background:#FF7A45;color:#fff;border:2px solid #FF7A45;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:600;flex-shrink:0}
+.ps-tabbar{position:absolute;bottom:10px;left:12px;right:12px}
+.ps-capsule{display:flex;align-items:center;justify-content:space-around;height:52px;background:#fff;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:0 6px}
+.ps-ti{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;height:100%;position:relative;font-size:10px;cursor:pointer;transition:all .2s}
+.ps-ti svg{width:22px;height:22px;margin-bottom:2px}
+.ps-oval{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;z-index:0}
+.ps-ti svg,.ps-ti span{position:relative;z-index:1}
 </style>
 </head>
 <body>
@@ -323,6 +350,7 @@ function route(){
   else if(k==='adminRole') renderRole();
   else if(k==='adminMenu') renderMenuRules();
   else if(k==='inviteCode') renderInviteCode();
+  else if(k==='uiDecor') renderUiDecor();
   else renderModule(k);
 }
 
@@ -682,6 +710,210 @@ async function resetInvite(id){
   if(!confirm('确定将该邀请码重置为未使用？重置后可再次用于入驻。'))return;
   const j=await req('api/invite/reset',{id},'POST');
   if(j.code===1){toast('已重置为未使用');renderInviteCode();}else toast(j.msg||'重置失败',true);
+}
+
+/* ================= UI 装修（实时预览） ================= */
+const UI_ICONS = {
+  home: '<path d="M8 22 L24 8 L40 22"/><path d="M12 20 V40 H36 V20"/><path d="M20 40 V30 H28 V40"/>',
+  classify: '<rect x="8" y="8" width="13" height="13" rx="2"/><rect x="27" y="8" width="13" height="13" rx="2"/><rect x="8" y="27" width="13" height="13" rx="2"/><rect x="27" y="27" width="13" height="13" rx="2"/>',
+  player: '<path d="M14 14 H34 C40 14 44 18 44 24 C44 32 40 38 34 38 C30 38 28 36 24 36 C20 36 18 38 14 38 C8 38 4 32 4 24 C4 18 8 14 14 14 Z"/><line x1="11" y1="24" x2="17" y2="24"/><line x1="14" y1="21" x2="14" y2="27"/><circle cx="31" cy="22" r="1.8" fill="currentColor" stroke="none"/><circle cx="35" cy="26" r="1.8" fill="currentColor" stroke="none"/>',
+  message: '<path d="M10 12 H38 C42 12 44 14 44 18 V32 C44 36 42 38 38 38 H22 L14 44 V38 H10 C6 38 4 36 4 32 V18 C4 14 6 12 10 12 Z"/><line x1="14" y1="22" x2="34" y2="22"/><line x1="14" y1="28" x2="26" y2="28"/>',
+  mine: '<circle cx="24" cy="16" r="8"/><path d="M10 42 C10 32 16 26 24 26 C32 26 38 32 38 42"/>'
+};
+const UI_TAB_LABELS = ['首页','分类','挑选打手','消息','我的'];
+let uiPreviewActive = 0;
+
+async function renderUiDecor(){
+  document.getElementById('crumb').innerHTML='自定义UI <span>· UI装修</span>';
+  const c=document.getElementById('content');
+  c.innerHTML='<div class="loading">加载中...</div>';
+  uiPreviewActive=0;
+  // 加载现有配置
+  let auv={};
+  try{
+    const j=await req('api/config/get?group=basic');
+    (j.data||[]).forEach(i=>{auv[i.name]=i.value;});
+  }catch(e){}
+  const cfg={
+    app_bg_color: auv.app_bg_color||'#FFFFFF',
+    app_bg_image: auv.app_bg_image||'',
+    theme_primary: auv.theme_primary||'#FF7A45',
+    theme_secondary: auv.theme_secondary||'#FFB199',
+    tabbar_bg: auv.tabbar_bg||'#ffffff',
+    tabbar_active_color: auv.tabbar_active_color||auv.theme_primary||'#FF7A45',
+    tabbar_inactive_color: auv.tabbar_inactive_color||'rgba(60,40,30,.55)',
+    tabbar_style: auv.tabbar_style||'ellipse',
+    tabbar_ellipse_color: auv.tabbar_ellipse_color||''
+  };
+  c.innerHTML=`
+    <div class="ui-decor-wrap">
+      <div class="ui-decor-preview">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" id="phoneScreen">
+            <div class="ps-statusbar"><span>9:41</span><span>●●●● 5G ▮</span></div>
+            <div class="ps-content">
+              <div class="ps-search">🔍 搜索打手昵称</div>
+              <div class="ps-banner-row">
+                <div class="ps-banner ps-banner-male">男陪专区<br><span>[专属男神]</span></div>
+                <div class="ps-banner ps-banner-female">女陪专区<br><span>[终极甜心]</span></div>
+              </div>
+              <div class="ps-list">
+                <div class="ps-item">
+                  <div class="ps-avatar" style="background:linear-gradient(135deg,#ffd1dc,#ffb6c1)"></div>
+                  <div class="ps-info"><b>小美 ♀</b><div class="ps-desc">很高兴为你服务~</div></div>
+                  <div class="ps-btn">下单</div>
+                </div>
+                <div class="ps-item">
+                  <div class="ps-avatar" style="background:linear-gradient(135deg,#c1e7ff,#a4d8ff)"></div>
+                  <div class="ps-info"><b>阿杰 ♂</b><div class="ps-desc">专业打手，实力接单</div></div>
+                  <div class="ps-btn">下单</div>
+                </div>
+              </div>
+            </div>
+            <div class="ps-tabbar" id="psTabbar"></div>
+          </div>
+        </div>
+        <p style="text-align:center;color:#8a94a6;font-size:13px;margin-top:14px">点击下方导航项可预览选中效果</p>
+      </div>
+      <div class="ui-decor-panel">
+        <div class="panel">
+          <div class="panel-hd"><h3>主题与背景</h3></div>
+          <div class="panel-bd" style="padding:16px 18px">
+            ${colorRow('ui_theme_primary','主色',cfg.theme_primary)}
+            ${colorRow('ui_theme_secondary','辅助色',cfg.theme_secondary)}
+            ${colorRow('ui_bg_color','页面背景色',cfg.app_bg_color)}
+            <div class="form-row"><label>底部导航背景色</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="color" id="ui_tab_bg" value="${cfg.tabbar_bg}" oninput="syncText('ui_tab_bg');uiRefresh()" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+                <input id="ui_tab_bg_t" value="${cfg.tabbar_bg}" style="flex:1" oninput="syncColor('ui_tab_bg');uiRefresh()">
+              </div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><h3>底部导航颜色</h3></div>
+          <div class="panel-bd" style="padding:16px 18px">
+            ${colorRow('ui_tab_active','选中颜色',cfg.tabbar_active_color)}
+            <div class="form-row"><label>未选中颜色</label>
+              <input id="ui_tab_inactive" value="${cfg.tabbar_inactive_color}" style="flex:1;max-width:320px" oninput="uiRefresh()" placeholder="rgba(60,40,30,.55)">
+            </div>
+            <div class="form-row"><label>椭圆高亮颜色</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="color" id="ui_ellipse" value="${cfg.tabbar_ellipse_color||cfg.theme_primary}" oninput="syncText('ui_ellipse');uiRefresh()" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+                <input id="ui_ellipse_t" value="${cfg.tabbar_ellipse_color||''}" style="flex:1" oninput="uiRefresh()" placeholder="留空跟随选中色（半透明）">
+              </div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><h3>选中效果</h3></div>
+          <div class="panel-bd" style="padding:16px 18px">
+            <div class="form-row"><label>选中样式</label>
+              <select id="ui_style" onchange="uiRefresh()" style="max-width:360px">
+                <option value="ellipse" ${cfg.tabbar_style==='ellipse'?'selected':''}>大椭圆 + 小椭圆高亮</option>
+                <option value="color" ${cfg.tabbar_style==='color'?'selected':''}>大椭圆 + 仅图标/文字变色</option>
+              </select>
+            </div>
+            <p style="color:#8a94a6;font-size:12px;line-height:1.6;margin:6px 0 0">
+              • <b>大椭圆+小椭圆</b>：选中项背后出现圆形高亮底色<br>
+              • <b>仅变色</b>：选中项仅图标和文字变为选中色，无椭圆背景
+            </p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><h3>操作</h3></div>
+          <div class="panel-bd" style="padding:16px 18px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="mini primary" onclick="saveUiDecor()">保存并应用到前端</button>
+              <button class="mini" onclick="uiReset()">恢复默认</button>
+              <button class="mini" onclick="window.open('/h5/','_blank')">在新窗口查看真实效果</button>
+            </div>
+            <p style="color:#8a94a6;font-size:12px;margin:10px 0 0">保存后刷新前端 H5 页面即可看到效果。</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  uiRefresh();
+}
+function colorRow(id,label,val){
+  return `<div class="form-row"><label>${label}</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input type="color" id="${id}" value="${val}" oninput="syncText('${id}');uiRefresh()" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+      <input id="${id}_t" value="${val}" style="flex:1" oninput="syncColor('${id}');uiRefresh()">
+    </div></div>`;
+}
+function syncText(id){ document.getElementById(id+'_t').value=document.getElementById(id).value; }
+function syncColor(id){
+  const v=document.getElementById(id+'_t').value.trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById(id).value=v;
+}
+function uiGetCfg(){
+  const g=id=>document.getElementById(id)&&document.getElementById(id).value;
+  const gt=id=>document.getElementById(id+'_t')&&document.getElementById(id+'_t').value;
+  return {
+    theme_primary: gt('ui_theme_primary')||g('ui_theme_primary'),
+    theme_secondary: gt('ui_theme_secondary')||g('ui_theme_secondary'),
+    app_bg_color: gt('ui_bg_color')||g('ui_bg_color'),
+    tabbar_bg: gt('ui_tab_bg')||g('ui_tab_bg'),
+    tabbar_active_color: gt('ui_tab_active')||g('ui_tab_active'),
+    tabbar_inactive_color: g('ui_tab_inactive'),
+    tabbar_ellipse_color: gt('ui_ellipse'),
+    tabbar_style: g('ui_style')
+  };
+}
+function uiRefresh(){
+  const cfg=uiGetCfg();
+  const primary=cfg.theme_primary;
+  const bgColor=cfg.app_bg_color;
+  const screen=document.getElementById('phoneScreen');
+  if(screen){
+    screen.style.background=`linear-gradient(180deg, ${primary}22 0%, ${bgColor} 30%, ${bgColor} 100%)`;
+  }
+  const tb=document.getElementById('psTabbar');
+  if(tb){
+    const style=cfg.tabbar_style;
+    const active=cfg.tabbar_active_color;
+    const inactive=cfg.tabbar_inactive_color||'rgba(60,40,30,.55)';
+    const ellipse=cfg.tabbar_ellipse_color||(active+'22');
+    const bg=cfg.tabbar_bg||'#fff';
+    tb.innerHTML=`<div class="ps-capsule" style="background:${bg}">`+
+      UI_TAB_LABELS.map((t,i)=>{
+        const isAct=i===uiPreviewActive;
+        const color=isAct?active:inactive;
+        const oval=(isAct&&style==='ellipse')?`<span class="ps-oval" style="background:${ellipse}"></span>`:'';
+        return `<div class="ps-ti" style="color:${color}" onclick="uiSetActive(${i})">${oval}<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${UI_ICONS[Object.keys(UI_ICONS)[i]]}</svg><span>${t}</span></div>`;
+      }).join('')+`</div>`;
+  }
+  // 更新按钮颜色
+  const btns=document.querySelectorAll('.ps-btn');
+  btns.forEach(b=>{ b.style.background=primary; b.style.borderColor=primary; });
+}
+function uiSetActive(i){ uiPreviewActive=i; uiRefresh(); }
+function uiReset(){
+  if(!confirm('恢复默认配色？'))return;
+  document.getElementById('ui_theme_primary').value='#FF7A45'; syncText('ui_theme_primary');
+  document.getElementById('ui_theme_secondary').value='#FFB199'; syncText('ui_theme_secondary');
+  document.getElementById('ui_bg_color').value='#FFFFFF'; syncText('ui_bg_color');
+  document.getElementById('ui_tab_bg').value='#ffffff'; syncText('ui_tab_bg');
+  document.getElementById('ui_tab_active').value='#FF7A45'; syncText('ui_tab_active');
+  document.getElementById('ui_tab_inactive').value='rgba(60,40,30,.55)';
+  document.getElementById('ui_ellipse_t').value='';
+  document.getElementById('ui_style').value='ellipse';
+  uiRefresh();
+}
+async function saveUiDecor(){
+  const cfg=uiGetCfg();
+  const items=[
+    {name:'theme_primary',value:cfg.theme_primary},
+    {name:'theme_secondary',value:cfg.theme_secondary},
+    {name:'app_bg_color',value:cfg.app_bg_color},
+    {name:'tabbar_bg',value:cfg.tabbar_bg},
+    {name:'tabbar_active_color',value:cfg.tabbar_active_color},
+    {name:'tabbar_inactive_color',value:cfg.tabbar_inactive_color},
+    {name:'tabbar_ellipse_color',value:cfg.tabbar_ellipse_color||''},
+    {name:'tabbar_style',value:cfg.tabbar_style}
+  ];
+  const j=await req('api/config/save',{items},'POST');
+  if(j.code===1) toast('保存成功，刷新前端即可生效'); else toast(j.msg||'保存失败',true);
 }
 
 /* ================= 系统配置 ================= */
