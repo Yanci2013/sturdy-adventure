@@ -21,8 +21,8 @@
 			<!-- 入驻表单 -->
 			<view class="form-area">
 				<view class="form-group">
-					<text class="form-label">请输入注册秘钥</text>
-					<input class="form-input" v-model="secretKey" placeholder="请输入注册秘钥" placeholder-class="placeholder" />
+					<text class="form-label">请输入邀请码</text>
+					<input class="form-input" v-model="secretKey" placeholder="请输入客服邀请码" placeholder-class="placeholder" />
 				</view>
 
 				<view class="btn-area">
@@ -113,7 +113,7 @@ const submit = async () => {
 	}
 
 	if (!secretKey.value.trim()) {
-		return uni.showToast({ title: '请输入注册秘钥', icon: 'none' });
+		return uni.showToast({ title: '请输入邀请码', icon: 'none' });
 	}
 
 	submitting.value = true;
@@ -145,6 +145,10 @@ const goBack = () => {
 </script>
 
 <style scoped>
+page {
+	background: #0a0a0a !important;
+	background-image: none !important;
+}
 .page {
 	min-height: 100vh;
 	background: #0a0a0a;

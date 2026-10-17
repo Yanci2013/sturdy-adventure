@@ -322,6 +322,7 @@ function route(){
   else if(k==='profile') renderProfile();
   else if(k==='adminRole') renderRole();
   else if(k==='adminMenu') renderMenuRules();
+  else if(k==='inviteCode') renderInviteCode();
   else renderModule(k);
 }
 
@@ -559,6 +560,91 @@ async function submitForm(key,mode,id){
   }else{
     toast(j.msg||'保存失败',true);
   }
+}
+
+/* ================= 邀请码管理（对接 Python API） ================= */
+let INVITE_USERS=[];
+async function loadInviteUsers(){
+  if(INVITE_USERS.length) return INVITE_USERS;
+  try{ const j=await req('api/invite/users'); INVITE_USERS=(j.code===1&&j.data)?j.data:[]; }catch(e){ INVITE_USERS=[]; }
+  return INVITE_USERS;
+}
+async function renderInviteCode(){
+  document.getElementById('crumb').innerHTML='自定义UI <span>· 邀请码管理</span>';
+  const c=document.getElementById('content');
+  c.innerHTML='<div class="loading">加载中...</div>';
+  const [list,users]=await Promise.all([req('api/invite/list'),loadInviteUsers()]);
+  const rows=(list.code===1&&list.data)?list.data:[];
+  const html=rows.map(r=>{
+    const u=users.find(u=>u.id===r.user_id);
+    return `<tr>
+      <td>${r.id}</td>
+      <td><b>${r.code}</b></td>
+      <td><span class="badge ${r.type==='thug'?'blue':'on'}">${r.type_text||r.type}</span></td>
+      <td>${r.name||'-'}</td>
+      <td>${u?u.label:'（未指定）'}</td>
+      <td style="white-space:nowrap">
+        <button class="mini" onclick="editInvite(${r.id})">编辑</button>
+        <button class="mini danger" onclick="delInvite(${r.id})">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+  c.innerHTML=`
+    <div class="panel">
+      <div class="panel-hd"><h3>邀请码管理</h3><div class="sp"></div>
+        <button class="mini primary" onclick="editInvite(0)">+ 新增邀请码</button>
+      </div>
+      <div class="panel-bd">
+        <p style="color:#8a94a6;font-size:13px;margin:0 0 12px">邀请码用于<b>打手入驻</b>和<b>客服入驻</b>。类型为「打手」的邀请码用于打手入驻，类型为「客服」的邀请码用于客服入驻。可分配给指定用户（使用ID），也可留空（user_id=0）作为通用邀请码。</p>
+        <table>
+          <thead><tr><th>ID</th><th>邀请码</th><th>类型</th><th>名称</th><th>使用ID</th><th>操作</th></tr></thead>
+          <tbody>${html||'<tr><td colspan="6" style="text-align:center;color:#8a94a6;padding:30px">暂无邀请码</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+async function editInvite(id){
+  const users=await loadInviteUsers();
+  let row={code:'',type:'thug',name:'',user_id:0};
+  if(id){
+    const j=await req('api/invite/list');
+    const all=(j.code===1&&j.data)?j.data:[];
+    row=all.find(r=>r.id===id)||row;
+  }
+  const userOpts=`<option value="0">（通用，不指定）</option>`+users.map(u=>`<option value="${u.id}" ${u.id===row.user_id?'selected':''}>${u.label}</option>`).join('');
+  const dlg=document.createElement('div');
+  dlg.className='mask';
+  dlg.innerHTML=`<div class="modal">
+    <div class="modal-hd"><h3>${id?'编辑邀请码':'新增邀请码'}</h3><button class="x" onclick="this.closest('.mask').remove()">×</button></div>
+    <div class="modal-bd">
+      <div class="form-row"><label>邀请码</label><input id="iv_code" value="${row.code}" placeholder="如 THUG666"></div>
+      <div class="form-row"><label>类型</label><select id="iv_type"><option value="thug" ${row.type==='thug'?'selected':''}>打手</option><option value="cs" ${row.type==='cs'?'selected':''}>客服</option></select></div>
+      <div class="form-row"><label>名称</label><input id="iv_name" value="${row.name||''}" placeholder="如 大神老王"></div>
+      <div class="form-row"><label>使用ID（分配给指定用户）</label><select id="iv_uid">${userOpts}</select></div>
+    </div>
+    <div class="modal-ft">
+      <button class="mini" onclick="this.closest('.mask').remove()">取消</button>
+      <button class="mini primary" id="iv_save">保存</button>
+    </div></div>`;
+  document.body.appendChild(dlg);
+  dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.remove();});
+  dlg.querySelector('#iv_save').onclick=async()=>{
+    const code=dlg.querySelector('#iv_code').value.trim();
+    const type=dlg.querySelector('#iv_type').value;
+    const name=dlg.querySelector('#iv_name').value.trim();
+    const user_id=parseInt(dlg.querySelector('#iv_uid').value)||0;
+    if(!code){toast('请输入邀请码',true);return;}
+    const api=id?'api/invite/edit':'api/invite/add';
+    const body=id?{id,...{code,type,name,user_id}}:{code,type,name,user_id};
+    const j=await req(api,body,'POST');
+    if(j.code===1){toast('保存成功');dlg.remove();renderInviteCode();}
+    else toast(j.msg||'保存失败',true);
+  };
+}
+async function delInvite(id){
+  if(!confirm('确定删除该邀请码？'))return;
+  const j=await req('api/invite/delete',{id},'POST');
+  if(j.code===1){toast('删除成功');renderInviteCode();}else toast(j.msg||'删除失败',true);
 }
 
 /* ================= 系统配置 ================= */

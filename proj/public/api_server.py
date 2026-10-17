@@ -1100,6 +1100,91 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        # ===== 邀请码管理（后台） =====
+        if path == '/api/invite/users':
+            db = get_db()
+            rows = db.execute('SELECT id, nickname, openid FROM users ORDER BY id DESC LIMIT 200').fetchall()
+            db.close()
+            data = [{"id": r['id'], "label": f"{r['id']} - {r['nickname'] or r['openid'] or '未命名'}", "nickname": r['nickname'] or '', "openid": r['openid'] or ''} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        if path == '/api/invite/list':
+            db = get_db()
+            rows = db.execute('SELECT * FROM invite_codes ORDER BY id DESC').fetchall()
+            db.close()
+            data = [dict(r) for r in rows]
+            for d in data:
+                d['type_text'] = '打手' if d.get('type') == 'thug' else ('客服' if d.get('type') == 'cs' else d.get('type', ''))
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        if path == '/api/invite/add':
+            code = (body.get('code') or '').strip()
+            itype = (body.get('type') or 'thug').strip()
+            name = (body.get('name') or '').strip()
+            user_id = int(body.get('user_id') or 0)
+            if not code:
+                self.send_json({"code": 0, "msg": "请输入邀请码"})
+                return
+            if itype not in ('thug', 'cs'):
+                self.send_json({"code": 0, "msg": "类型只能为打手或客服"})
+                return
+            now = now_ts()
+            db = get_db()
+            exist = db.execute('SELECT id FROM invite_codes WHERE code = ?', (code,)).fetchone()
+            if exist:
+                db.close()
+                self.send_json({"code": 0, "msg": "邀请码已存在"})
+                return
+            db.execute(
+                'INSERT INTO invite_codes (code, type, user_id, name, createtime) VALUES (?,?,?,?,?)',
+                (code, itype, user_id, name, now)
+            )
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "添加成功"})
+            return
+
+        if path == '/api/invite/edit':
+            cid = int(body.get('id') or 0)
+            code = (body.get('code') or '').strip()
+            itype = (body.get('type') or 'thug').strip()
+            name = (body.get('name') or '').strip()
+            user_id = int(body.get('user_id') or 0)
+            if not cid:
+                self.send_json({"code": 0, "msg": "缺少ID"})
+                return
+            if itype not in ('thug', 'cs'):
+                self.send_json({"code": 0, "msg": "类型只能为打手或客服"})
+                return
+            db = get_db()
+            exist = db.execute('SELECT id FROM invite_codes WHERE code = ? AND id != ?', (code, cid)).fetchone()
+            if exist:
+                db.close()
+                self.send_json({"code": 0, "msg": "邀请码已存在"})
+                return
+            db.execute(
+                'UPDATE invite_codes SET code=?, type=?, name=?, user_id=? WHERE id=?',
+                (code, itype, name, user_id, cid)
+            )
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "修改成功"})
+            return
+
+        if path == '/api/invite/delete':
+            cid = int(body.get('id') or (qs.get('id', ['0'])[0] if isinstance(qs, dict) else 0))
+            if not cid:
+                self.send_json({"code": 0, "msg": "缺少ID"})
+                return
+            db = get_db()
+            db.execute('DELETE FROM invite_codes WHERE id = ?', (cid,))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "删除成功"})
+            return
+
         # ===== 打手入驻（注册秘钥） =====
         if path == '/api/thug/thugAdd':
             u = get_user_by_token(token)
