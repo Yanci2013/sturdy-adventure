@@ -32,16 +32,6 @@
 				url: '/pages/playerHome/index'
 			},
 			{
-				icon: '<path d="M10 12 H38 C42 12 44 14 44 18 V32 C44 36 42 38 38 38 H22 L14 44 V38 H10 C6 38 4 36 4 32 V18 C4 14 6 12 10 12 Z"/><line x1="14" y1="22" x2="34" y2="22"/><line x1="14" y1="28" x2="26" y2="28"/>',
-				text: '消息',
-				url: '/pages/playerMain/message'
-			},
-			{
-				icon: '<rect x="6" y="10" width="36" height="28" rx="4"/><path d="M6 18 H42"/><circle cx="12" cy="28" r="1.6" fill="currentColor" stroke="none"/><path d="M18 28 H36 M18 34 H28"/>',
-				text: '订单',
-				url: '/pages/playerOrder/index'
-			},
-			{
 				icon: '<circle cx="24" cy="16" r="8"/><path d="M10 42 C10 32 16 26 24 26 C32 26 38 32 38 42"/>',
 				text: '我的',
 				url: '/pages/playerMain/index'
@@ -49,7 +39,7 @@
 		]
 	})
 	const onChange = (index) => {
-		if (current === index) return;
+		if (props.current === index) return;
 		uni.reLaunch({
 			url: tabList.value[index].url
 		})
