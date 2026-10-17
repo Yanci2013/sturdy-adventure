@@ -32,18 +32,6 @@
 				url: '/pages/playerHome/index'
 			},
 			{
-				iconPath: '/static/ym/33.png',
-				selectedIconPath: '/static/ym/3.png',
-				text: '订单',
-				url: '/pages/playerOrder/index'
-			},
-			{
-				iconPath: '/static/ym/44.png',
-				selectedIconPath: '/static/ym/4.png',
-				text: '消息',
-				url: '/pages/message/index'
-			},
-			{
 				iconPath: '/static/ym/55.png',
 				selectedIconPath: '/static/ym/5.png',
 				text: '我的',
