@@ -13,10 +13,10 @@
 			<text class="brand-name">创世网络</text>
 		</view>
 
-		<!-- 注册秘钥输入 -->
+		<!-- 邀请码输入 -->
 		<view class="form-area">
-			<text class="form-label">请输入注册秘钥</text>
-			<input class="form-input" v-model="inviteCode" placeholder="请输入注册秘钥" placeholder-class="placeholder" />
+			<text class="form-label">请输入邀请码</text>
+			<input class="form-input" v-model="inviteCode" placeholder="请输入邀请码" placeholder-class="placeholder" />
 		</view>
 
 		<!-- 去入驻按钮 -->
@@ -104,7 +104,7 @@ const agreeProtocol = () => {
 
 const onEnter = async () => {
 	if (!inviteCode.value.trim()) {
-		return uni.showToast({ title: '请输入注册秘钥', icon: 'none' })
+		return uni.showToast({ title: '请输入邀请码', icon: 'none' })
 	}
 	if (!agreed.value) {
 		return uni.showToast({ title: '请先同意入驻协议', icon: 'none' })

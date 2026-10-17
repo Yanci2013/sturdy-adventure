@@ -1189,7 +1189,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "删除成功"})
             return
 
-        # ===== 打手入驻（注册秘钥） =====
+        # ===== 打手入驻（邀请码） =====
         if path == '/api/thug/thugAdd':
             u = get_user_by_token(token)
             if not u:
@@ -1197,19 +1197,25 @@ class Handler(BaseHTTPRequestHandler):
                 return
             secret_key = (body.get('secret_key') or '').strip()
             if not secret_key:
-                self.send_json({"code": 0, "msg": "请输入注册秘钥"})
+                self.send_json({"code": 0, "msg": "请输入邀请码"})
                 return
             db = get_db()
             inv = db.execute('SELECT * FROM invite_codes WHERE code = ? AND type = ?', (secret_key, 'thug')).fetchone()
             if not inv:
+                # 判断是码不存在，还是类型不匹配
+                other = db.execute('SELECT type FROM invite_codes WHERE code = ?', (secret_key,)).fetchone()
                 db.close()
-                self.send_json({"code": 0, "msg": "注册秘钥无效"})
+                if other:
+                    tip = '客服' if other['type'] == 'cs' else '打手'
+                    self.send_json({"code": 0, "msg": f"该邀请码是{tip}邀请码，请使用打手邀请码"})
+                else:
+                    self.send_json({"code": 0, "msg": "邀请码不存在，请检查后重新输入"})
                 return
             # 检查是否已入驻
             existing = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
             if existing:
                 db.close()
-                self.send_json({"code": 0, "msg": "您已提交过打手入驻申请"})
+                self.send_json({"code": 0, "msg": "您已提交过打手入驻申请，无需重复提交"})
                 return
             now = now_ts()
             db.execute(
@@ -1322,7 +1328,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "保存成功"})
             return
 
-        # ===== 客服入驻（注册秘钥） =====
+        # ===== 客服入驻（邀请码） =====
         if path == '/api/cs/csAdd':
             u = get_user_by_token(token)
             if not u:
@@ -1330,13 +1336,19 @@ class Handler(BaseHTTPRequestHandler):
                 return
             secret_key = (body.get('secret_key') or '').strip()
             if not secret_key:
-                self.send_json({"code": 0, "msg": "请输入注册秘钥"})
+                self.send_json({"code": 0, "msg": "请输入邀请码"})
                 return
             db = get_db()
             inv = db.execute('SELECT * FROM invite_codes WHERE code = ? AND type = ?', (secret_key, 'cs')).fetchone()
             if not inv:
+                # 判断是码不存在，还是类型不匹配
+                other = db.execute('SELECT type FROM invite_codes WHERE code = ?', (secret_key,)).fetchone()
                 db.close()
-                self.send_json({"code": 0, "msg": "注册秘钥无效"})
+                if other:
+                    tip = '打手' if other['type'] == 'thug' else '客服'
+                    self.send_json({"code": 0, "msg": f"该邀请码是{tip}邀请码，请使用客服邀请码"})
+                else:
+                    self.send_json({"code": 0, "msg": "邀请码不存在，请检查后重新输入"})
                 return
             existing = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
             now = now_ts()
