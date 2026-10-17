@@ -1,5 +1,5 @@
 <template>
-	<view class="tabbar-wrap">
+	<view class="tabbar-wrap" :style="wrapStyle">
 		<view class="tabbar-capsule">
 			<view
 				v-for="(item, index) in tabList"
@@ -16,7 +16,7 @@
 	</view>
 </template>
 <script setup>
-	import { ref, onMounted } from 'vue';
+	import { ref, computed, onMounted } from 'vue';
 	const props = defineProps({
 		current: {
 			type: Number,
@@ -24,6 +24,7 @@
 		}
 	})
 	const tabList = ref([]);
+	const uiConfig = ref({});
 	onMounted(() => {
 		tabList.value = [
 			{
@@ -37,7 +38,17 @@
 				url: '/pages/playerMain/index'
 			}
 		]
+		try {
+			const saved = uni.getStorageSync('ui_config');
+			if (saved && typeof saved === 'object') uiConfig.value = saved;
+		} catch (e) {}
 	})
+	const activeColor = computed(() => uiConfig.value.theme_primary || '#FF7A45');
+	const ellipseColor = computed(() => uiConfig.value.tabbar_ellipse_color || (activeColor.value + '22'));
+	const wrapStyle = computed(() => ({
+		'--tabbar-active': activeColor.value,
+		'--tabbar-ellipse': ellipseColor.value
+	}));
 	const onChange = (index) => {
 		if (props.current === index) return;
 		uni.reLaunch({
@@ -89,7 +100,7 @@
 	}
 
 	.tabbar-active {
-		color: #FF7A45;
+		color: var(--tabbar-active, #FF7A45);
 	}
 
 	.tabbar-ellipse {
@@ -100,7 +111,7 @@
 		width: 90rpx;
 		height: 90rpx;
 		border-radius: 50%;
-		background: rgba(255, 122, 69, 0.12);
+		background: var(--tabbar-ellipse, rgba(255, 122, 69, 0.12));
 		z-index: 0;
 	}
 

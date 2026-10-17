@@ -8,8 +8,8 @@
 			<view class="mt-4 text-light6 font-28">{{subtitle}}</view>
 			<slot></slot>
 			<view class="flex align-center" style="margin-top: 100rpx;">
-				<view class="leftItem" @click="leftBtnClick">{{leftBtnText}}</view>
-				<view class="rightItem" @click="rightBtnClick">{{rightBtnText}}</view>
+				<view class="leftItem" :style="{color: themePrimary}" @click="leftBtnClick">{{leftBtnText}}</view>
+				<view class="rightItem" :style="{background: rightBtnBg}" @click="rightBtnClick">{{rightBtnText}}</view>
 			</view>
 
 		</view>
@@ -17,6 +17,7 @@
 </template>
 
 <script setup>
+	import { ref, computed, onMounted } from 'vue';
 	const props = defineProps({
 		show: Boolean,
 		imageSrc: String,
@@ -29,6 +30,18 @@
 		height: [Number, String],
 		width: [Number, String]
 	})
+
+	const uiConfig = ref({});
+	onMounted(() => {
+		try {
+			const saved = uni.getStorageSync('ui_config');
+			if (saved && typeof saved === 'object') uiConfig.value = saved;
+		} catch (e) {}
+	})
+
+	const themePrimary = computed(() => uiConfig.value.theme_primary || '#FF7A45');
+	const themeSecondary = computed(() => uiConfig.value.theme_secondary || '#FFB38A');
+	const rightBtnBg = computed(() => `linear-gradient(180deg, ${themePrimary.value} 0%, ${themeSecondary.value} 100%)`);
 
 	const emit = defineEmits(['left', 'right', 'close'])
 
