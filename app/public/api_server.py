@@ -12,7 +12,7 @@ import re
 import sqlite3
 import secrets
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urlencode
 from datetime import datetime, timedelta
 
 HOST = '0.0.0.0'
@@ -337,6 +337,13 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith('/api/'):
             self.handle_api(path, qs, 'GET', {})
             return
+        # /yyl/ 反向代理到 yylAdmin 后台框架（登录/权限/菜单/日志等）
+        if path.startswith('/yyl/'):
+            self.proxy_yyl(path[len('/yyl'):], 'GET', b'', qs)
+            return
+        # 自定义后台 UI
+        if path in ('/adminui', '/adminui/'):
+            path = '/adminui/index.html'
         if path == '/' or path == '':
             path = '/index.html'
         elif path == '/h5' or path == '/h5/':
@@ -414,6 +421,10 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith('/api/'):
             self.handle_api(path, qs, 'POST', post_data, files=files)
             return
+        # /yyl/ 反向代理到 yylAdmin 后台框架
+        if path.startswith('/yyl/'):
+            self.proxy_yyl(path[len('/yyl'):], 'POST', raw_body, qs)
+            return
         self.send_response(404)
         self.send_header('Content-Type', 'text/plain')
         self.end_headers()
@@ -421,6 +432,39 @@ class Handler(BaseHTTPRequestHandler):
 
     def get_token(self):
         return self.headers.get('token', '')
+
+    def proxy_yyl(self, target_path, method, body_bytes, qs=None):
+        """把 /yyl/* 请求反向代理到 yylAdmin（后台框架，PHP）"""
+        import urllib.request
+        import urllib.error
+        url = 'http://127.0.0.1:8080' + target_path
+        if qs:
+            url += ('&' if '?' in url else '?') + urlencode(qs, doseq=True)
+        headers = {}
+        for k in ('AdminToken', 'AdminUserId', 'Authorization', 'Content-Type'):
+            v = self.headers.get(k)
+            if v:
+                headers[k] = v
+        req = urllib.request.Request(url, data=body_bytes if method == 'POST' else None,
+                                     headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = resp.read()
+                ctype = resp.headers.get('Content-Type', 'application/json')
+                code = resp.status
+        except urllib.error.HTTPError as e:
+            data = e.read()
+            ctype = e.headers.get('Content-Type', 'application/json')
+            code = e.code
+        except Exception as e:
+            data = json.dumps({"code": 0, "msg": "后台框架代理失败: %s" % e}).encode('utf-8')
+            ctype = 'application/json; charset=utf-8'
+            code = 502
+        self.send_response(code)
+        self.send_header('Content-Type', ctype)
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def handle_api(self, path, qs, method, body, files=None):
         global TOGGLE_STATUS, CONFIG
@@ -1082,8 +1126,251 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "客服入驻成功"})
             return
 
+        # ===== 后台管理 API（自定义后台 UI 使用，与 H5 共用同一数据源）=====
+        if path.startswith('/api/admin/'):
+            self.handle_admin_api(path, qs, method, body)
+            return
+
         # ===== 兜底：其他接口返回空数据，避免前端报错 =====
         self.send_json({"code": 1, "msg": "成功", "data": {"data": [], "total": 0}})
+
+
+    # ===== 后台管理 API =====
+    def handle_admin_api(self, path, qs, method, body):
+        """自定义后台 UI 的业务接口，读写与 H5 相同的数据源"""
+
+        def q(name, default=''):
+            v = qs.get(name)
+            return v[0] if v else default
+
+        def ok(data=None, msg='操作成功'):
+            self.send_json({"code": 1, "msg": msg, "data": data})
+
+        db = get_db()
+        try:
+            # 控制台统计
+            if path == '/api/admin/stat':
+                def count(sql, args=()):
+                    return db.execute(sql, args).fetchone()[0]
+                today = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+                data = {
+                    'user_count': count('SELECT COUNT(*) FROM users'),
+                    'thug_count': count('SELECT COUNT(*) FROM thug'),
+                    'thug_approved': count('SELECT COUNT(*) FROM thug WHERE sh_status = 1'),
+                    'thug_pending': count('SELECT COUNT(*) FROM thug WHERE sh_status = 0'),
+                    'cs_count': count('SELECT COUNT(*) FROM thug WHERE is_customer_service = 1'),
+                    'order_count': count('SELECT COUNT(*) FROM orders'),
+                    'order_today': count('SELECT COUNT(*) FROM orders WHERE createtime >= ?', (today,)),
+                    'notice_count': count('SELECT COUNT(*) FROM notices'),
+                    'invite_count': count('SELECT COUNT(*) FROM invite_codes'),
+                    'money_sum': round(db.execute('SELECT IFNULL(SUM(money),0) FROM users').fetchone()[0] or 0, 2),
+                }
+                ok(data)
+                return
+
+            # 会员（用户）管理
+            if path == '/api/admin/users':
+                kw = q('keyword')
+                page = max(1, int(q('page', 1) or 1))
+                limit = max(1, int(q('limit', 20) or 20))
+                where, args = '', []
+                if kw:
+                    where = 'WHERE nickname LIKE ? OR openid LIKE ? OR id = ?'
+                    args = ['%' + kw + '%', '%' + kw + '%', kw if str(kw).isdigit() else -1]
+                total = db.execute('SELECT COUNT(*) FROM users ' + where, args).fetchone()[0]
+                rows = db.execute(
+                    'SELECT id, nickname, avatar, type, openid, pid, money, score, level, group_chat, createtime '
+                    'FROM users ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                    args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            if path == '/api/admin/user/save':
+                uid = int(body.get('id') or 0)
+                action = body.get('action') or 'edit'
+                if action == 'delete':
+                    db.execute('DELETE FROM users WHERE id = ?', (uid,))
+                    db.commit()
+                    ok(None, '已删除该会员')
+                    return
+                if action == 'recharge':
+                    db.execute('UPDATE users SET money = money + ? WHERE id = ?',
+                               (float(body.get('money') or 0), uid))
+                    db.commit()
+                    ok(None, '充值成功')
+                    return
+                db.execute('UPDATE users SET nickname = ?, money = ?, level = ? WHERE id = ?',
+                           (body.get('nickname'), float(body.get('money') or 0),
+                            int(body.get('level') or 1), uid))
+                db.commit()
+                ok(None, '保存成功')
+                return
+
+            # 打手管理
+            if path == '/api/admin/thugs':
+                kw = q('keyword')
+                sh = q('sh_status')
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (t.name LIKE ? OR u.nickname LIKE ?)'
+                    args += ['%' + kw + '%', '%' + kw + '%']
+                if sh != '':
+                    where += ' AND t.sh_status = ?'
+                    args.append(int(sh))
+                rows = db.execute(
+                    'SELECT t.*, u.nickname AS user_nickname, u.money AS user_money '
+                    'FROM thug t LEFT JOIN users u ON u.id = t.user_id ' + where +
+                    ' ORDER BY t.id DESC', args).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': len(rows)})
+                return
+
+            if path == '/api/admin/thug/audit':
+                tid = int(body.get('id') or 0)
+                action = body.get('action')
+                if action == 'approve':
+                    db.execute('UPDATE thug SET sh_status = 1, status = 1 WHERE id = ?', (tid,))
+                    msg = '已通过打手入驻审核'
+                elif action == 'reject':
+                    db.execute('UPDATE thug SET sh_status = 2, status = 0 WHERE id = ?', (tid,))
+                    msg = '已驳回打手入驻申请'
+                elif action == 'toggle_cs':
+                    db.execute('UPDATE thug SET is_customer_service = ? WHERE id = ?',
+                               (1 if body.get('is_customer_service') else 0, tid))
+                    msg = '客服权限已更新'
+                else:
+                    db.execute('UPDATE thug SET name = ? WHERE id = ?', (body.get('name'), tid))
+                    msg = '保存成功'
+                db.commit()
+                ok(None, msg)
+                return
+
+            # 客服管理
+            if path == '/api/admin/cs':
+                rows = db.execute(
+                    'SELECT c.*, u.nickname AS user_nickname FROM customer_services c '
+                    'LEFT JOIN users u ON u.id = c.user_id ORDER BY c.id DESC').fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': len(rows)})
+                return
+
+            if path == '/api/admin/cs/save':
+                cid = int(body.get('id') or 0)
+                if cid:
+                    db.execute('UPDATE customer_services SET name = ?, avatar = ?, online = ? WHERE id = ?',
+                               (body.get('name'), body.get('avatar', ''), int(body.get('online') or 0), cid))
+                else:
+                    db.execute('INSERT INTO customer_services (name, user_id, type, avatar, online) VALUES (?,?,?,?,?)',
+                               (body.get('name'), int(body.get('user_id') or 0),
+                                body.get('type', 'im'), body.get('avatar', ''), int(body.get('online') or 1)))
+                db.commit()
+                ok(None, '保存成功')
+                return
+
+            if path == '/api/admin/cs/delete':
+                db.execute('DELETE FROM customer_services WHERE id = ?', (int(body.get('id') or 0),))
+                db.commit()
+                ok(None, '已删除')
+                return
+
+            # 订单管理
+            if path == '/api/admin/orders':
+                kw = q('keyword')
+                status = q('status')
+                page = max(1, int(q('page', 1) or 1))
+                limit = max(1, int(q('limit', 20) or 20))
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (order_no LIKE ? OR title LIKE ? OR game_id LIKE ?)'
+                    args += ['%' + kw + '%', '%' + kw + '%', '%' + kw + '%']
+                if status != '':
+                    where += ' AND status = ?'
+                    args.append(int(status))
+                total = db.execute('SELECT COUNT(*) FROM orders ' + where, args).fetchone()[0]
+                rows = db.execute(
+                    'SELECT * FROM orders ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                    args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            if path == '/api/admin/order/save':
+                db.execute('UPDATE orders SET status = ?, status_text = ? WHERE id = ?',
+                           (int(body.get('status') or 0), body.get('status_text', ''), int(body.get('id') or 0)))
+                db.commit()
+                ok(None, '订单状态已更新')
+                return
+
+            # 公告管理
+            if path == '/api/admin/notices':
+                rows = db.execute('SELECT * FROM notices ORDER BY id DESC').fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': len(rows)})
+                return
+
+            if path == '/api/admin/notice/save':
+                nid = int(body.get('id') or 0)
+                if nid:
+                    db.execute('UPDATE notices SET title = ?, synopsis = ?, content = ?, type = ? WHERE id = ?',
+                               (body.get('title'), body.get('synopsis', ''), body.get('content', ''),
+                                int(body.get('type') or 1), nid))
+                else:
+                    db.execute('INSERT INTO notices (title, synopsis, content, type, createtime) VALUES (?,?,?,?,?)',
+                               (body.get('title'), body.get('synopsis', ''), body.get('content', ''),
+                                int(body.get('type') or 1), now_ts()))
+                db.commit()
+                ok(None, '保存成功')
+                return
+
+            if path == '/api/admin/notice/delete':
+                db.execute('DELETE FROM notices WHERE id = ?', (int(body.get('id') or 0),))
+                db.commit()
+                ok(None, '已删除')
+                return
+
+            # 邀请码管理
+            if path == '/api/admin/invites':
+                rows = db.execute('SELECT * FROM invite_codes ORDER BY id DESC').fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': len(rows)})
+                return
+
+            if path == '/api/admin/invite/save':
+                iid = int(body.get('id') or 0)
+                if iid:
+                    db.execute('UPDATE invite_codes SET code = ?, type = ?, name = ? WHERE id = ?',
+                               (body.get('code'), body.get('type', 'thug'), body.get('name', ''), iid))
+                else:
+                    db.execute('INSERT INTO invite_codes (code, type, user_id, name, createtime) VALUES (?,?,?,?,?)',
+                               (body.get('code'), body.get('type', 'thug'), int(body.get('user_id') or 0),
+                                body.get('name', ''), now_ts()))
+                db.commit()
+                ok(None, '保存成功')
+                return
+
+            if path == '/api/admin/invite/delete':
+                db.execute('DELETE FROM invite_codes WHERE id = ?', (int(body.get('id') or 0),))
+                db.commit()
+                ok(None, '已删除')
+                return
+
+            # 系统配置
+            if path == '/api/admin/configs':
+                group = q('group')
+                if group:
+                    rows = db.execute('SELECT * FROM fa_config WHERE group_name = ? ORDER BY id', (group,)).fetchall()
+                else:
+                    rows = db.execute('SELECT * FROM fa_config ORDER BY id').fetchall()
+                ok({'list': [dict(r) for r in rows]})
+                return
+
+            if path == '/api/admin/config/save':
+                items = body.get('items') or {}
+                if isinstance(items, dict):
+                    for k, v in items.items():
+                        db.execute('UPDATE fa_config SET value = ? WHERE name = ?', (str(v), k))
+                db.commit()
+                ok(None, '配置已保存')
+                return
+
+            self.send_json({"code": 0, "msg": "未知的后台接口: " + path})
+        finally:
+            db.close()
 
 
 if __name__ == '__main__':

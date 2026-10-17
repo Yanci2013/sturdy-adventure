@@ -66,6 +66,25 @@
 			</view>
 		</view>
 
+		<!-- 会员等级 + 联系客服 双卡片 -->
+		<view class="cards-row">
+			<view class="card-diamond" @click="goLevelPage">
+				<view class="card-diamond-left">
+					<view class="card-diamond-title-row">
+						<text class="card-diamond-title">会员等级</text>
+					</view>
+					<text class="card-diamond-num">{{ levelNum }}</text>
+				</view>
+				<text class="card-diamond-arrow">›</text>
+			</view>
+			<view class="card-service" @click="openCustomerService">
+				<view class="card-service-left">
+					<text class="card-service-online">实时在线</text>
+					<text class="card-service-cta">联系客服</text>
+				</view>
+			</view>
+		</view>
+
 		<!-- 更多功能 -->
 		<view class="section more-section">
 			<text class="section-title more-title">常用功能</text>
@@ -227,13 +246,21 @@ const moreList = computed(() => {
 	const isThugApproved = isThug && String(thug.sh_status || '') === '1'
 	const isCs = isThug && String(thug.is_customer_service || '0') === '1'
 	const list = [
-		{ label: '会员等级', icon: 'level', action: 'level' },
-		{ label: '打手入驻', icon: 'integral', action: 'ruzhu' },
-		{ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' },
-		{ label: '投诉陪玩', icon: 'warning', action: 'companion' }
+		{ label: '会员等级', icon: 'level', action: 'level' }
 	]
-	if (isThugApproved) list.push({ label: '打手端', icon: 'account', action: 'player' })
-	if (isCs) list.push({ label: '客服端', icon: 'phone', action: 'customer' })
+	// 打手入口组：已通过审核显示「打手端」，未入驻显示「打手入驻」
+	if (isThugApproved) {
+		list.push({ label: '打手端', icon: 'account', action: 'player' })
+	} else {
+		list.push({ label: '打手入驻', icon: 'integral', action: 'ruzhu' })
+	}
+	// 客服入口组：已是客服显示「客服端」，未入驻显示「客服入驻」
+	if (isCs) {
+		list.push({ label: '客服端', icon: 'phone', action: 'customer' })
+	} else {
+		list.push({ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' })
+	}
+	list.push({ label: '投诉陪玩', icon: 'warning', action: 'companion' })
 	list.push(
 		{ label: '用户隐私政策', icon: 'info-circle', action: 'agreement' },
 		{ label: '联系客服', icon: 'phone', action: 'service' },
@@ -791,22 +818,22 @@ const handleMoreClick = (item) => {
 .cards-row {
 	display: flex;
 	gap: 20rpx;
-	margin: 40rpx 24rpx 24rpx;
+	width: 93%;
+	margin: 0 auto 24rpx;
 }
 .card-diamond {
 	flex: 1;
-	height: 120rpx;
-	background: #ffffff;
-	backdrop-filter: blur(10rpx);
+	min-height: 120rpx;
+	background: #1a1a1a;
 	border-radius: 32rpx;
-	padding: 14rpx 30rpx;
+	padding: 20rpx 30rpx;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
-	box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08);
-	border: 1rpx solid #eee;
+	box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.18);
 	position: relative;
 	overflow: hidden;
+	box-sizing: border-box;
 }
 .card-diamond-left {
 	display: flex;
@@ -819,31 +846,33 @@ const handleMoreClick = (item) => {
 	gap: 8rpx;
 }
 .card-diamond-title {
-	font-size: 20rpx;
-	color: #4a5568;
+	font-size: 24rpx;
+	color: rgba(255,255,255,0.72);
 	font-weight: 500;
 }
 .card-diamond-arrow {
-	width: 24rpx; height: 24rpx;
-	opacity: 0.7;
+	font-size: 40rpx;
+	color: #ffffff;
+	opacity: 0.85;
+	line-height: 1;
+	flex-shrink: 0;
 }
 .card-diamond-num {
-	font-size: 40rpx;
+	font-size: 44rpx;
 	font-weight: 700;
-	color: #2d3748;
+	color: #ffffff;
 }
 .card-service {
 	flex: 1;
-	height: 120rpx;
-	background: #ffffff;
-	backdrop-filter: blur(10rpx);
+	min-height: 120rpx;
+	background: linear-gradient(135deg, #FFC53D, #FF9F1C);
 	border-radius: 32rpx;
-	padding: 14rpx 30rpx;
+	padding: 20rpx 30rpx;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08);
-	border: 1rpx solid #eee;
+	box-shadow: 0 4rpx 20rpx rgba(255,159,28,0.30);
+	box-sizing: border-box;
 }
 .card-service-left {
 	display: flex;
@@ -852,13 +881,13 @@ const handleMoreClick = (item) => {
 }
 .card-service-online {
 	font-size: 22rpx;
-	color: #4a5568;
+	color: rgba(0,0,0,0.55);
 	font-weight: 500;
 }
 .card-service-cta {
-	font-size: 32rpx;
+	font-size: 34rpx;
 	font-weight: 700;
-	color: #2d3748;
+	color: #1a1a1a;
 }
 
 /* ===== 更多功能 ===== */

@@ -6,7 +6,7 @@
 			<view class="entry-card">
 				<view class="entry-item" @click="gotoNoticeList">
 					<view class="entry-icon notice-icon">
-						<text class="iconfont">🔔</text>
+						<uv-icon name="bell" size="24" color="#fff"></uv-icon>
 					</view>
 					<view class="entry-info">
 						<text class="entry-name">系统通知</text>
@@ -19,7 +19,7 @@
 				<view class="entry-divider"></view>
 				<view class="entry-item" @click="contactCustomerService">
 					<view class="entry-icon cs-icon">
-						<text class="iconfont">🎧</text>
+						<uv-icon name="server-man" size="24" color="#fff"></uv-icon>
 					</view>
 					<view class="entry-info">
 						<text class="entry-name">平台人工客服</text>
@@ -55,6 +55,9 @@
 					@click="gotoChatDetail(item)">
 					<view class="chat-avatar-wrap">
 						<image class="chat-avatar" :src="item.logo || '/static/yun/default_avatar.png'" mode="aspectFill"></image>
+						<view class="chat-avatar-badge" :class="'badge-' + getChatRole(item).cls">
+							<text class="chat-avatar-badge-text">{{ getChatRole(item).label }}</text>
+						</view>
 						<view class="chat-unread" v-if="!item.is_read">
 							<text class="chat-unread-text">{{ item.unread_count || '●' }}</text>
 						</view>
@@ -73,7 +76,7 @@
 				<!-- 空状态 -->
 				<view class="chat-empty" v-if="!orderLoading && filteredChatList.length === 0">
 					<view class="chat-empty-icon">
-						<text class="iconfont">💬</text>
+						<uv-icon name="chat" size="40" color="#ccc"></uv-icon>
 					</view>
 					<text class="chat-empty-text">暂无聊天对话</text>
 				</view>
@@ -150,6 +153,15 @@
 		}
 		return list
 	})
+
+	// 会话角色类型标识（打手/客服/订单/系统）
+	const getChatRole = (item) => {
+		if (item.is_cs) return { label: '客服', cls: 'cs' }
+		if (item.is_player || item.is_thug || item.player_id || item.thug_id) return { label: '打手', cls: 'thug' }
+		if (item.order_no) return { label: '订单', cls: 'order' }
+		if (item.type) return { label: '系统', cls: 'sys' }
+		return { label: '订单', cls: 'order' }
+	}
 
 	onMounted(() => {
 		loadNotice()
@@ -501,6 +513,35 @@
 		height: 88rpx;
 		border-radius: 24rpx;
 	}
+
+	/* 会话角色类型徽章 */
+	.chat-avatar-badge {
+		position: absolute;
+		right: -6rpx;
+		bottom: -6rpx;
+		min-width: 36rpx;
+		height: 36rpx;
+		padding: 0 8rpx;
+		border-radius: 36rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 2rpx solid #fff;
+		box-sizing: border-box;
+		box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+	}
+
+	.chat-avatar-badge-text {
+		font-size: 18rpx;
+		color: #fff;
+		font-weight: 600;
+		line-height: 1;
+	}
+
+	.badge-thug { background: #FF9F1C; }
+	.badge-cs { background: #2FBF71; }
+	.badge-order { background: #3B82F6; }
+	.badge-sys { background: #9AA5B1; }
 
 	.chat-unread {
 		position: absolute;
