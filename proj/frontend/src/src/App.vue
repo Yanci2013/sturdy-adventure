@@ -74,6 +74,14 @@
 
 	export default {
 		onLaunch: function() {
+			// #ifdef H5
+			// 实时预览：监听来自后台装修页的 postMessage，即时应用主题色
+			window.addEventListener('message', function(e) {
+				if (e.data && e.data.type === 'ui-preview') {
+					applyUiConfig(e.data.config || {})
+				}
+			})
+			// #endif
 			// 暖珊瑚橘到纯白渐变背景 - 运行时注入确保生效
 			// #ifdef H5
 			const style = document.createElement('style')
