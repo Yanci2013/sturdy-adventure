@@ -37,7 +37,7 @@ a{color:inherit;text-decoration:none}
 /* 布局 */
 #app{display:none;min-height:100vh}
 .layout{display:flex;min-height:100vh}
-.sidebar{width:224px;background:var(--sidebar);color:#cbd5e1;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:50}
+.sidebar{width:224px;background:var(--sidebar);color:#cbd5e1;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:60;transition:transform .22s ease}
 .sidebar .brand{display:flex;align-items:center;gap:10px;padding:18px 18px;border-bottom:1px solid #2b3648}
 .sidebar .brand .b{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#22c55e,#16a34a);
  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px}
@@ -58,9 +58,18 @@ a{color:inherit;text-decoration:none}
 .menu .grp .grp-hd .caret{margin-left:auto;font-size:11px;color:#64748b;transition:transform .2s}
 .menu .grp.open .grp-hd .caret{transform:rotate(180deg)}
 .menu .grp-bd{background:#0f172a}
-.main{flex:1;margin-left:224px;display:flex;flex-direction:column;min-width:0}
+.main{flex:1;margin-left:224px;display:flex;flex-direction:column;min-width:0;transition:margin-left .22s ease}
 .topbar{height:58px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;
  justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:40}
+.topbar .tb-left{display:flex;align-items:center;gap:12px;min-width:0}
+.sidebar-toggle{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:9px;
+ display:flex;align-items:center;justify-content:center;cursor:pointer;color:#374151;flex-shrink:0;transition:.15s}
+.sidebar-toggle:hover{background:#f8fafc;border-color:#cbd5e1;color:#111827}
+.sidebar-toggle svg{width:20px;height:20px;display:block}
+.sidebar-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:55}
+/* 折叠 / 展开 */
+body.sidebar-collapsed .sidebar{transform:translateX(-100%)}
+body.sidebar-collapsed .main{margin-left:0}
 .topbar h1{font-size:16px;font-weight:600}
 .topbar .right{display:flex;align-items:center;gap:14px;font-size:13px;color:#374151}
 .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;
@@ -145,7 +154,11 @@ td .muted{color:var(--muted);font-size:12px}
 .toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;
  padding:10px 20px;border-radius:10px;font-size:13px;z-index:300;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1;top:26px}
-@media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}}
+@media(max-width:900px){
+  .main{margin-left:0}
+  .sidebar{box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  body:not(.sidebar-collapsed) .sidebar-mask{display:block}
+}
 </style>
 </head>
 <body>
@@ -167,13 +180,21 @@ td .muted{color:var(--muted);font-size:12px}
 <!-- 后台主体 -->
 <div id="app">
   <div class="layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="brand"><div class="b">创</div><div class="t">创世网络<span>前台装修 · 后台管理</span></div></div>
       <nav class="menu" id="menu"></nav>
     </aside>
+    <div class="sidebar-mask" id="sidebarMask" onclick="toggleSidebar()"></div>
     <div class="main">
       <div class="topbar">
-        <h1 id="pageTitle">控制台</h1>
+        <div class="tb-left">
+          <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="折叠 / 展开菜单">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <h1 id="pageTitle">控制台</h1>
+        </div>
         <div class="right">
           <span id="adminName">加载中…</span>
           <div class="avatar" id="adminAvatar">A</div>
@@ -397,11 +418,29 @@ function toggleGroup(name) {
   renderMenu()
 }
 
+/* ============ 侧边栏折叠/展开 ============ */
+const MOBILE_BP = 900
+function isMobile() { return window.innerWidth <= MOBILE_BP }
+function toggleSidebar() {
+  const collapsed = document.body.classList.toggle('sidebar-collapsed')
+  if (!isMobile()) localStorage.setItem('admin_sidebar_collapsed', collapsed ? '1' : '0')
+}
+function initSidebar() {
+  // 移动端默认收起；桌面端读取上次记忆的状态
+  if (isMobile()) document.body.classList.add('sidebar-collapsed')
+  else if (localStorage.getItem('admin_sidebar_collapsed') === '1') document.body.classList.add('sidebar-collapsed')
+}
+window.addEventListener('resize', () => {
+  // 切换回桌面端时恢复默认（不保留移动端临时收起态）
+  if (!isMobile() && !localStorage.getItem('admin_sidebar_collapsed')) document.body.classList.remove('sidebar-collapsed')
+})
+
 /* ============ 路由 ============ */
 const PAGES = {}
 function go(key) {
   state.page = key
   renderMenu()
+  if (isMobile()) document.body.classList.add('sidebar-collapsed')
   $('#pageTitle').textContent = (flatMenus().find(m => m.key === key) || {}).name || ''
   const box = $('#content')
   box.innerHTML = '<div class="empty">加载中…</div>'
@@ -900,6 +939,7 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
 async function enterApp() {
   $('#login').style.display = 'none'
   $('#app').style.display = 'block'
+  initSidebar()
   renderMenu()
   go('dashboard')
   try {
