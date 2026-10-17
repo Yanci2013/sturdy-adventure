@@ -66,8 +66,26 @@ def init_db():
         status INTEGER DEFAULT 0,
         sh_status INTEGER DEFAULT 0,
         is_customer_service INTEGER DEFAULT 0,
-        createtime INTEGER
+        createtime INTEGER,
+        real_name TEXT DEFAULT '',
+        id_card TEXT DEFAULT '',
+        realname_front TEXT DEFAULT '',
+        realname_back TEXT DEFAULT '',
+        realname_status INTEGER DEFAULT 0,
+        realname_reason TEXT DEFAULT '',
+        realname_time INTEGER DEFAULT 0
     )''')
+    # 老库补字段（实名认证）
+    for _col in ('real_name', 'id_card', 'realname_front', 'realname_back', 'realname_reason'):
+        try:
+            cur.execute('ALTER TABLE thug ADD COLUMN %s TEXT DEFAULT ""' % _col)
+        except sqlite3.OperationalError:
+            pass
+    for _col in ('realname_status', 'realname_time'):
+        try:
+            cur.execute('ALTER TABLE thug ADD COLUMN %s INTEGER DEFAULT 0' % _col)
+        except sqlite3.OperationalError:
+            pass
     # 订单表
     cur.execute('''CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -274,6 +292,10 @@ DEFAULT_DECORATION = {
         "card_border": "#E8E8E8",
         "notice_bg": "#FFF3E0",
         "notice_text": "#F25109",
+        "tabbar_active": "#F25109",
+        "tabbar_text": "#999999",
+        "tabbar_text_active": "#F25109",
+        "tabbar_radius": "999",
     },
     "bg_image": "",
 }
@@ -356,7 +378,9 @@ class Handler(BaseHTTPRequestHandler):
       price:'--theme-price', btn_text:'--theme-btn-text',
       tabbar_bg:'--theme-tabbar-bg', top_text:'--theme-top-text',
       search_bg:'--theme-search-bg', card_border:'--theme-card-border',
-      notice_bg:'--theme-notice-bg', notice_text:'--theme-notice-text'
+      notice_bg:'--theme-notice-bg', notice_text:'--theme-notice-text',
+      tabbar_active:'--theme-tabbar-active', tabbar_text:'--theme-tabbar-text',
+      tabbar_text_active:'--theme-tabbar-text-active'
     };
     for (var k in map) if (c[k]) root.style.setProperty(map[k], c[k]);
     if (c.page_bg) document.body.style.backgroundColor = c.page_bg;
@@ -374,6 +398,9 @@ class Handler(BaseHTTPRequestHandler):
         '--theme-price:'+(c.price||'#EA3A1C')+';',
         '--theme-btn-text:'+(c.btn_text||'#fff')+';',
         '--theme-tabbar-bg:'+(c.tabbar_bg||'#fff')+';',
+        '--theme-tabbar-active:'+(c.tabbar_active||c.brand||'#F25109')+';',
+        '--theme-tabbar-text:'+(c.tabbar_text||'#999')+';',
+        '--theme-tabbar-text-active:'+(c.tabbar_text_active||c.tabbar_active||c.brand||'#F25109')+';',
         '--theme-top-text:'+(c.top_text||'#fff')+';',
         '--theme-search-bg:'+(c.search_bg||'#FFF8F1')+';',
         '--theme-card-border:'+(c.card_border||'#e8e8e8')+';',
@@ -382,6 +409,11 @@ class Handler(BaseHTTPRequestHandler):
       '}',
       'html,body,#app,.uni-page-wrapper,.uni-page-body{background-color:var(--theme-page-bg)!important;background-image:none!important;}',
       '.uni-tabbar,.uni-tabbar__item,.uni-tabbar-nav{background:var(--theme-tabbar-bg)!important;}',
+      // 自定义底部导航栏（三端）
+      '.tabbar-capsule,.cs-tabbar{background:var(--theme-tabbar-bg)!important;}',
+      '.tabbar-text,.cs-tabbar-text{color:var(--theme-tabbar-text)!important;}',
+      '.tabbar-active .tabbar-text,.cs-tabbar-item.active .cs-tabbar-text{color:var(--theme-tabbar-text-active)!important;}',
+      '.cs-tabbar-item.active{background:linear-gradient(135deg,var(--theme-tabbar-active),var(--theme-tabbar-active))!important;}',
       // 通用按钮/主色覆盖
       'button,.uv-button--primary,[class*="primary"]{background:linear-gradient(90deg,var(--theme-brand),var(--theme-brand-gradient))!important;color:var(--theme-btn-text)!important;border-color:var(--theme-brand)!important;}',
       // 卡片/容器背景
@@ -1237,6 +1269,85 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "客服入驻成功"})
             return
 
+        # ===== 实名认证（打手）=====
+        if path == '/api/realname/info':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            enabled = get_config('realname_enabled', '1') == '1'
+            db = get_db()
+            trow = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            db.close()
+            t = dict(trow) if trow else {}
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "enabled": enabled,
+                "status": int(t.get('realname_status') or 0),
+                "real_name": t.get('real_name') or '',
+                "id_card": t.get('id_card') or '',
+                "front": t.get('realname_front') or '',
+                "back": t.get('realname_back') or '',
+                "reason": t.get('realname_reason') or '',
+                "time": t.get('realname_time') or 0,
+            }})
+            return
+
+        if path == '/api/realname/submit':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            if get_config('realname_enabled', '1') != '1':
+                self.send_json({"code": 0, "msg": "实名认证功能未开启"})
+                return
+            real_name = (body.get('real_name') or '').strip()
+            id_card = (body.get('id_card') or '').strip().upper()
+            front = body.get('front') or ''
+            back = body.get('back') or ''
+            if not real_name or len(real_name) < 2:
+                self.send_json({"code": 0, "msg": "请填写真实姓名"})
+                return
+            if not re.match(r'^\d{17}[\dX]$', id_card):
+                self.send_json({"code": 0, "msg": "请填写正确的18位身份证号"})
+                return
+            if not front or not back:
+                self.send_json({"code": 0, "msg": "请上传身份证正反面照片"})
+                return
+            db = get_db()
+            trow = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            if not trow:
+                now = now_ts()
+                db.execute('INSERT INTO thug (user_id, name, status, sh_status, is_customer_service, createtime) VALUES (?,?,?,?,?,?)',
+                           (u['id'], real_name, 0, 0, 0, now))
+                trow = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            db.execute('UPDATE thug SET real_name = ?, id_card = ?, realname_front = ?, realname_back = ?, '
+                       'realname_status = 1, realname_reason = "", realname_time = ? WHERE id = ?',
+                       (real_name, id_card, front, back, now_ts(), trow['id']))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "提交成功，请等待平台审核"})
+            return
+
+        # ===== 客服端：管理打手列表 =====
+        if path == '/api/cs/thugList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            kw = qs.get('keyword', [''])[0]
+            where, args = 'WHERE 1=1', []
+            if kw:
+                where += ' AND (t.name LIKE ? OR t.real_name LIKE ? OR u.nickname LIKE ?)'
+                args += ['%' + kw + '%', '%' + kw + '%', '%' + kw + '%']
+            db = get_db()
+            rows = db.execute(
+                'SELECT t.id, t.name, t.real_name, t.sh_status, t.is_customer_service, t.realname_status, '
+                'u.nickname AS user_nickname, u.id AS user_id '
+                'FROM thug t LEFT JOIN users u ON u.id = t.user_id ' + where + ' ORDER BY t.id DESC', args).fetchall()
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": {"list": [dict(r) for r in rows], "total": len(rows)}})
+            return
+
         # ===== 前端装修配置（公开接口，H5 加载时拉取主题/背景）=====
         if path == '/api/frontend/decoration':
             cfg = get_decoration_config()
@@ -1357,6 +1468,33 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     db.execute('UPDATE thug SET name = ? WHERE id = ?', (body.get('name'), tid))
                     msg = '保存成功'
+                db.commit()
+                ok(None, msg)
+                return
+
+            # 实名认证：开关配置
+            if path == '/api/admin/realname/config':
+                ok({'enabled': get_config('realname_enabled', '1') == '1'})
+                return
+
+            if path == '/api/admin/realname/config/save':
+                set_config('realname_enabled', '1' if body.get('enabled') else '0')
+                ok(None, '实名认证设置已保存')
+                return
+
+            # 实名认证：审核打手认证信息
+            if path == '/api/admin/realname/audit':
+                tid = int(body.get('id') or 0)
+                action = body.get('action')
+                if action == 'approve':
+                    db.execute('UPDATE thug SET realname_status = 2, realname_reason = "" WHERE id = ?', (tid,))
+                    msg = '已通过实名认证'
+                elif action == 'reject':
+                    db.execute('UPDATE thug SET realname_status = 3, realname_reason = ? WHERE id = ?',
+                               (body.get('reason', ''), tid))
+                    msg = '已驳回实名认证'
+                else:
+                    msg = '未知操作'
                 db.commit()
                 ok(None, msg)
                 return
