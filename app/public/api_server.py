@@ -245,6 +245,54 @@ def get_config(name, default=''):
         pass
     return default
 
+def set_config(name, value):
+    """写入 fa_config 配置，不存在则插入"""
+    db = get_db()
+    db.execute(
+        'INSERT INTO fa_config (name, value) VALUES (?, ?) '
+        'ON CONFLICT(name) DO UPDATE SET value = excluded.value',
+        (name, str(value))
+    )
+    db.commit()
+    db.close()
+
+# ===== 前端装修主题配置 =====
+DEFAULT_DECORATION = {
+    "name": "活力橙",
+    "colors": {
+        "brand": "#F25109",
+        "brand_gradient": "#FF7C43",
+        "page_bg": "#F5F5F5",
+        "card_bg": "#FFFFFF",
+        "text_main": "#1A1A1A",
+        "text_sub": "#999999",
+        "price": "#EA3A1C",
+        "btn_text": "#FFFFFF",
+        "tabbar_bg": "#FFFFFF",
+        "top_text": "#FFFFFF",
+        "search_bg": "#FFF8F1",
+        "card_border": "#E8E8E8",
+        "notice_bg": "#FFF3E0",
+        "notice_text": "#F25109",
+    },
+    "bg_image": "",
+}
+
+def get_decoration_config():
+    raw = get_config('frontend_decoration', '')
+    if raw:
+        try:
+            cfg = json.loads(raw)
+            # 合并默认值，避免缺字段
+            merged = json.loads(json.dumps(DEFAULT_DECORATION))
+            merged['colors'].update(cfg.get('colors', {}))
+            merged['name'] = cfg.get('name', DEFAULT_DECORATION['name'])
+            merged['bg_image'] = cfg.get('bg_image', '')
+            return merged
+        except Exception:
+            pass
+    return json.loads(json.dumps(DEFAULT_DECORATION))
+
 def get_ulogin_config():
     """获取聚合登录配置（从数据库读取）"""
     app_id = get_config('ulogin_appid', '')
@@ -292,6 +340,69 @@ class Handler(BaseHTTPRequestHandler):
             with open(filepath, 'rb') as f:
                 content = f.read()
             ext = os.path.splitext(filepath)[1].lower()
+            # H5 入口注入前端装修主题脚本（从 /api/frontend/decoration 拉取配色并应用）
+            if ext == '.html' and filepath.endswith(os.path.join('h5', 'index.html')):
+                content = content.decode('utf-8', errors='ignore')
+                theme_script = '''<script>
+(function(){
+  function applyTheme(cfg){
+    var c = (cfg && cfg.colors) || {};
+    var bg = cfg && cfg.bg_image ? cfg.bg_image : '';
+    var root = document.documentElement;
+    var map = {
+      brand:'--theme-brand', brand_gradient:'--theme-brand-gradient',
+      page_bg:'--theme-page-bg', card_bg:'--theme-card-bg',
+      text_main:'--theme-text-main', text_sub:'--theme-text-sub',
+      price:'--theme-price', btn_text:'--theme-btn-text',
+      tabbar_bg:'--theme-tabbar-bg', top_text:'--theme-top-text',
+      search_bg:'--theme-search-bg', card_border:'--theme-card-border',
+      notice_bg:'--theme-notice-bg', notice_text:'--theme-notice-text'
+    };
+    for (var k in map) if (c[k]) root.style.setProperty(map[k], c[k]);
+    if (c.page_bg) document.body.style.backgroundColor = c.page_bg;
+    if (bg) { document.body.style.backgroundImage='url('+bg+')'; document.body.style.backgroundSize='cover'; document.body.style.backgroundPosition='center'; document.body.style.backgroundAttachment='fixed'; }
+    var style = document.getElementById('__theme_override__');
+    if (!style) { style = document.createElement('style'); style.id='__theme_override__'; document.head.appendChild(style); }
+    style.textContent = [
+      ':root{',
+        '--theme-brand:'+(c.brand||'#F25109')+';',
+        '--theme-brand-gradient:'+(c.brand_gradient||'#FF7C43')+';',
+        '--theme-page-bg:'+(c.page_bg||'#F5F5F5')+';',
+        '--theme-card-bg:'+(c.card_bg||'#fff')+';',
+        '--theme-text-main:'+(c.text_main||'#1a1a1a')+';',
+        '--theme-text-sub:'+(c.text_sub||'#999')+';',
+        '--theme-price:'+(c.price||'#EA3A1C')+';',
+        '--theme-btn-text:'+(c.btn_text||'#fff')+';',
+        '--theme-tabbar-bg:'+(c.tabbar_bg||'#fff')+';',
+        '--theme-top-text:'+(c.top_text||'#fff')+';',
+        '--theme-search-bg:'+(c.search_bg||'#FFF8F1')+';',
+        '--theme-card-border:'+(c.card_border||'#e8e8e8')+';',
+        '--theme-notice-bg:'+(c.notice_bg||'#FFF3E0')+';',
+        '--theme-notice-text:'+(c.notice_text||'#F25109')+';',
+      '}',
+      'html,body,#app,.uni-page-wrapper,.uni-page-body{background-color:var(--theme-page-bg)!important;background-image:none!important;}',
+      '.uni-tabbar,.uni-tabbar__item,.uni-tabbar-nav{background:var(--theme-tabbar-bg)!important;}',
+      // 通用按钮/主色覆盖
+      'button,.uv-button--primary,[class*="primary"]{background:linear-gradient(90deg,var(--theme-brand),var(--theme-brand-gradient))!important;color:var(--theme-btn-text)!important;border-color:var(--theme-brand)!important;}',
+      // 卡片/容器背景
+      '[class*="card"],[class*="Card"],[class*="item"][class*="bg"]{background-color:var(--theme-card-bg)!important;}',
+      // 文字颜色
+      'uni-text,text,.uni-text{color:var(--theme-text-main);}',
+      '[class*="sub"],[class*="muted"],[class*="desc"]{color:var(--theme-text-sub)!important;}',
+      '[class*="price"],[class*="money"]{color:var(--theme-price)!important;}',
+      '[class*="notice"],[class*="Notice"]{background:var(--theme-notice-bg)!important;color:var(--theme-notice-text)!important;}',
+      '[class*="search"],[class*="Search"]{background:var(--theme-search-bg)!important;}'
+    ].join('');
+  }
+  fetch('/api/frontend/decoration',{cache:'no-store'}).then(function(r){return r.json();}).then(function(res){
+    if (res && res.data) applyTheme(res.data);
+  }).catch(function(){});
+  // 暴露给后台实时预览调用
+  window.__applyTheme = applyTheme;
+})();
+</script>'''
+                content = content.replace('</head>', theme_script + '\n</head>')
+                content = content.encode('utf-8')
             mime = {
                 '.html': 'text/html; charset=utf-8',
                 '.js': 'application/javascript; charset=utf-8',
@@ -1126,6 +1237,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "客服入驻成功"})
             return
 
+        # ===== 前端装修配置（公开接口，H5 加载时拉取主题/背景）=====
+        if path == '/api/frontend/decoration':
+            cfg = get_decoration_config()
+            self.send_json({"code": 1, "msg": "成功", "data": cfg})
+            return
+
         # ===== 后台管理 API（自定义后台 UI 使用，与 H5 共用同一数据源）=====
         if path.startswith('/api/admin/'):
             self.handle_admin_api(path, qs, method, body)
@@ -1366,6 +1483,21 @@ class Handler(BaseHTTPRequestHandler):
                         db.execute('UPDATE fa_config SET value = ? WHERE name = ?', (str(v), k))
                 db.commit()
                 ok(None, '配置已保存')
+                return
+
+            # 前端装修配置
+            if path == '/api/admin/decoration':
+                ok(get_decoration_config())
+                return
+
+            if path == '/api/admin/decoration/save':
+                cfg = {
+                    'name': body.get('name') or '自定义',
+                    'colors': body.get('colors') or {},
+                    'bg_image': body.get('bg_image') or '',
+                }
+                set_config('frontend_decoration', json.dumps(cfg, ensure_ascii=False))
+                ok(None, '装修配置已保存，前端将实时生效')
                 return
 
             self.send_json({"code": 0, "msg": "未知的后台接口: " + path})

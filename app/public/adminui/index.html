@@ -50,6 +50,14 @@ a{color:inherit;text-decoration:none}
 .menu a.active{background:#273244;color:#fff;border-left-color:var(--accent)}
 .menu a .ic{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex:0 0 18px}
 .menu a .ic svg{width:17px;height:17px;display:block}
+.menu a.sub{padding-left:46px;font-size:13px;color:#94a3b8}
+.menu a.sub:hover{color:#fff}
+.menu a.sub.active{color:#fff}
+.menu .grp .grp-hd{display:flex;align-items:center;gap:11px;padding:11px 18px;font-size:14px;color:#cbd5e1;cursor:pointer}
+.menu .grp .grp-hd:hover{background:#273244;color:#fff}
+.menu .grp .grp-hd .caret{margin-left:auto;font-size:11px;color:#64748b;transition:transform .2s}
+.menu .grp.open .grp-hd .caret{transform:rotate(180deg)}
+.menu .grp-bd{background:#0f172a}
 .main{flex:1;margin-left:224px;display:flex;flex-direction:column;min-width:0}
 .topbar{height:58px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;
  justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:40}
@@ -108,6 +116,23 @@ td .muted{color:var(--muted);font-size:12px}
 .phone .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:22px;background:#111827;border-radius:12px;z-index:2}
 .phone iframe{display:block;border:0;background:#fff;border-radius:28px;width:100%;height:100%}
 .pv-url{flex:1;min-width:200px;height:38px;border:1px solid var(--line);border-radius:8px;padding:0 12px;font-size:13px;background:#fff;color:#374151;font-family:monospace}
+/* 前端装修 */
+.deco-layout{display:grid;grid-template-columns:1fr 420px;gap:18px;align-items:start}
+@media(max-width:1100px){.deco-layout{grid-template-columns:1fr}}
+.preset-list{display:flex;gap:10px;flex-wrap:wrap}
+.preset{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:13px;background:#fff;transition:.15s;position:relative}
+.preset:hover{border-color:var(--accent)}
+.preset-dot{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--pc),var(--pc2));border:2px solid #fff;box-shadow:0 0 0 1px #e5e7eb}
+.preset-check{color:var(--accent-d);font-weight:700}
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.color-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fafafa}
+.color-row label{font-size:12px;color:#6b7280;width:90px;flex-shrink:0}
+.color-input{display:flex;align-items:center;gap:8px;flex:1}
+.color-input input[type=color]{width:36px;height:36px;border:1px solid var(--line);border-radius:8px;cursor:pointer;padding:2px;background:#fff}
+.color-input input[type=text]{height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:12px;font-family:monospace;outline:none;width:100%}
+.color-input input[type=text]:focus{border-color:var(--accent)}
+.color-row > input[type=text]{flex:1;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:12px;outline:none}
+.color-row > input[type=text]:focus{border-color:var(--accent)}
 /* 弹窗 */
 .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
 .modal-mask.show{display:flex}
@@ -199,6 +224,46 @@ const ICONS = {
   invites: `<svg ${SVG_ATTRS}><path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><line x1="13.5" y1="6" x2="13.5" y2="18" stroke-dasharray="2 2.4"/></svg>`,
   config: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
   logs: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>`,
+  decoration: `<svg ${SVG_ATTRS}><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 22a10 10 0 1 1 0-20 8 8 0 0 1 8 8c0 1.5-.5 3-1.5 4-1 1-2.5 1.5-4 1.5H12z"/></svg>`,
+  goods: `<svg ${SVG_ATTRS}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+  goods_category: `<svg ${SVG_ATTRS}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  prize_pool: `<svg ${SVG_ATTRS}><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`,
+  banner: `<svg ${SVG_ATTRS}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`,
+  order_complaint: `<svg ${SVG_ATTRS}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  withdraw: `<svg ${SVG_ATTRS}><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M12 6v6l4 2"/></svg>`,
+  level: `<svg ${SVG_ATTRS}><path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>`,
+  cs_account: `<svg ${SVG_ATTRS}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  fine: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  upload_storage: `<svg ${SVG_ATTRS}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  quick_entry: `<svg ${SVG_ATTRS}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+  my_setting: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  admin_user: `<svg ${SVG_ATTRS}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>`,
+  role: `<svg ${SVG_ATTRS}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  cron: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  wechat_robot: `<svg ${SVG_ATTRS}><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>`,
+  bill: `<svg ${SVG_ATTRS}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`,
+  package: `<svg ${SVG_ATTRS}><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  auth: `<svg ${SVG_ATTRS}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  profile: `<svg ${SVG_ATTRS}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  balance: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M17 10H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H6"/></svg>`,
+  recharge_order: `<svg ${SVG_ATTRS}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`,
+  order_commission: `<svg ${SVG_ATTRS}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  commission_detail: `<svg ${SVG_ATTRS}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  refund: `<svg ${SVG_ATTRS}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>`,
+  deposit: `<svg ${SVG_ATTRS}><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`,
+  wechat_notice: `<svg ${SVG_ATTRS}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  sms_config: `<svg ${SVG_ATTRS}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+  // 分组图标
+  '用户管理': `<svg ${SVG_ATTRS}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`,
+  '商品管理': `<svg ${SVG_ATTRS}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>`,
+  '订单管理': `<svg ${SVG_ATTRS}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>`,
+  '等级管理': `<svg ${SVG_ATTRS}><path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>`,
+  '客服管理': `<svg ${SVG_ATTRS}><path d="M3 16v-4a9 9 0 0 1 18 0v4"/></svg>`,
+  '上传管理': `<svg ${SVG_ATTRS}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>`,
+  '系统管理': `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="3"/></svg>`,
+  '财务管理': `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M17 10H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H6"/></svg>`,
+  '通知管理': `<svg ${SVG_ATTRS}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>`,
+  '短信管理': `<svg ${SVG_ATTRS}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg>`,
 }
 function icon(name) {
   return ICONS[name] || `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="3.2"/></svg>`
@@ -244,28 +309,92 @@ function logout() {
   $('#app').style.display = 'none'; $('#login').style.display = 'flex'
 }
 
-/* ============ 菜单 ============ */
+/* ============ 菜单（参考凝冰电竞俱乐部后台结构） ============ */
 const MENUS = [
-  { sec: '概览' },
   { key: 'dashboard', name: '控制台' },
   { key: 'preview', name: '前端实时预览' },
-  { sec: '业务管理' },
-  { key: 'users', name: '会员管理' },
-  { key: 'thugs', name: '打手管理' },
-  { key: 'cs', name: '客服管理' },
-  { key: 'orders', name: '订单管理' },
-  { sec: '内容运营' },
+  { group: '用户管理', children: [
+    { key: 'users', name: '会员管理' },
+    { key: 'thugs', name: '打手管理' },
+  ]},
+  { group: '商品管理', children: [
+    { key: 'goods_category', name: '商品分类管理' },
+    { key: 'goods', name: '商品管理' },
+    { key: 'prize_pool', name: '奖池管理' },
+  ]},
   { key: 'notices', name: '公告管理' },
-  { key: 'invites', name: '邀请码管理' },
-  { sec: '系统' },
-  { key: 'config', name: '系统配置' },
-  { key: 'logs', name: '操作日志' },
+  { key: 'banner', name: '轮播图管理' },
+  { group: '订单管理', children: [
+    { key: 'orders', name: '订单管理' },
+    { key: 'order_complaint', name: '订单投诉' },
+  ]},
+  { key: 'withdraw', name: '提现记录' },
+  { group: '等级管理', children: [
+    { key: 'level', name: '等级列表' },
+  ]},
+  { group: '客服管理', children: [
+    { key: 'cs', name: '客服管理' },
+    { key: 'cs_account', name: '客服账号' },
+  ]},
+  { key: 'fine', name: '罚款管理' },
+  { group: '上传管理', children: [
+    { key: 'upload_storage', name: '存储配置' },
+  ]},
+  { group: '系统管理', children: [
+    { key: 'config', name: '系统设置' },
+    { key: 'decoration', name: '前端设置' },
+    { key: 'quick_entry', name: '快捷入口' },
+    { key: 'my_setting', name: '我的设置' },
+    { key: 'admin_user', name: '管理员管理' },
+    { key: 'role', name: '角色管理' },
+    { key: 'cron', name: '计划任务' },
+    { key: 'wechat_robot', name: '企业微信机器人' },
+    { key: 'logs', name: '日志管理' },
+    { key: 'bill', name: '账单管理' },
+    { key: 'package', name: '我的套餐' },
+    { key: 'auth', name: '平台授权对接' },
+    { key: 'profile', name: '个人中心' },
+  ]},
+  { group: '财务管理', children: [
+    { key: 'balance', name: '余额明细' },
+    { key: 'recharge_order', name: '充值订单' },
+    { key: 'order_commission', name: '订单佣金' },
+    { key: 'commission_detail', name: '佣金明细' },
+    { key: 'refund', name: '退款记录' },
+    { key: 'deposit', name: '保证金记录' },
+  ]},
+  { group: '通知管理', children: [
+    { key: 'wechat_notice', name: '公众号通知' },
+  ]},
+  { group: '短信管理', children: [
+    { key: 'sms_config', name: '短信配置' },
+  ]},
 ]
+const openGroups = new Set(['用户管理', '系统管理'])
+function flatMenus() {
+  const out = []
+  MENUS.forEach(m => { if (m.key) out.push(m); else (m.children || []).forEach(c => out.push(c)) })
+  return out
+}
 function renderMenu() {
-  $('#menu').innerHTML = MENUS.map(m => m.sec
-    ? `<div class="sec">${esc(m.sec)}</div>`
-    : `<a data-key="${m.key}" class="${state.page === m.key ? 'active' : ''}" onclick="go('${m.key}')"><span class="ic">${icon(m.key)}</span>${esc(m.name)}</a>`
-  ).join('')
+  const html = MENUS.map(m => {
+    if (m.key) {
+      return `<a data-key="${m.key}" class="${state.page === m.key ? 'active' : ''}" onclick="go('${m.key}')"><span class="ic">${icon(m.key)}</span>${esc(m.name)}</a>`
+    }
+    const open = openGroups.has(m.group)
+    const items = (m.children || []).map(c =>
+      `<a data-key="${c.key}" class="sub ${state.page === c.key ? 'active' : ''}" onclick="go('${c.key}')"><span class="ic">${icon(c.key)}</span>${esc(c.name)}</a>`
+    ).join('')
+    return `<div class="grp ${open ? 'open' : ''}" onclick="toggleGroup('${m.group}')">
+      <div class="grp-hd"><span class="ic">${icon(m.group)}</span>${esc(m.group)}<span class="caret">▾</span></div>
+      ${open ? `<div class="grp-bd">${items}</div>` : ''}
+    </div>`
+  }).join('')
+  $('#menu').innerHTML = html
+}
+function toggleGroup(name) {
+  if (openGroups.has(name)) openGroups.delete(name); else openGroups.add(name)
+  renderMenu()
 }
 
 /* ============ 路由 ============ */
@@ -273,10 +402,10 @@ const PAGES = {}
 function go(key) {
   state.page = key
   renderMenu()
-  $('#pageTitle').textContent = (MENUS.find(m => m.key === key) || {}).name || ''
+  $('#pageTitle').textContent = (flatMenus().find(m => m.key === key) || {}).name || ''
   const box = $('#content')
   box.innerHTML = '<div class="empty">加载中…</div>'
-  ;(PAGES[key] || (() => { box.innerHTML = '<div class="empty">页面建设中</div>' }))()
+  ;(PAGES[key] || placeholderPage(key))()
 }
 
 /* ============ 控制台 ============ */
@@ -566,6 +695,143 @@ async function cfgSave() {
     }
   })
   const r = await biz('config/save', { items }); toast(r.msg)
+}
+
+/* ============ 通用占位页（未接入功能） ============ */
+function placeholderPage(key) {
+  const name = (flatMenus().find(m => m.key === key) || {}).name || key
+  return () => {
+    $('#content').innerHTML = `<div class="card" style="padding:60px 20px;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px;color:#cbd5e1">${icon(key)}</div>
+      <h2 style="font-size:18px;margin-bottom:8px">${esc(name)}</h2>
+      <p style="color:#9ca3af;font-size:13px;margin-bottom:24px">该功能正在接入中，敬请期待</p>
+      <button class="btn btn-ghost" onclick="go('dashboard')">返回控制台</button>
+    </div>`
+  }
+}
+
+/* ============ 前端装修（主题配色 + 背景 + 实时预览） ============ */
+const THEME_PRESETS = [
+  { name: '蓝白经典', colors: { brand: '#2B6EFF', brand_gradient: '#5B8DEF', page_bg: '#F5F7FA', card_bg: '#FFFFFF', text_main: '#1A1A1A', text_sub: '#8A8A8A', price: '#2B6EFF', btn_text: '#FFFFFF', tabbar_bg: '#FFFFFF', top_text: '#FFFFFF', search_bg: '#F0F3F8', card_border: '#EAEAEA', notice_bg: '#E8F0FF', notice_text: '#2B6EFF' } },
+  { name: '活力橙', colors: { brand: '#F25109', brand_gradient: '#FF7C43', page_bg: '#F5F5F5', card_bg: '#FFFFFF', text_main: '#1A1A1A', text_sub: '#999999', price: '#EA3A1C', btn_text: '#FFFFFF', tabbar_bg: '#FFFFFF', top_text: '#FFFFFF', search_bg: '#FFF8F1', card_border: '#E8E8E8', notice_bg: '#FFF3E0', notice_text: '#F25109' } },
+  { name: '清新绿', colors: { brand: '#22C55E', brand_gradient: '#16A34A', page_bg: '#F4FAF5', card_bg: '#FFFFFF', text_main: '#1A1A1A', text_sub: '#8A8A8A', price: '#16A34A', btn_text: '#FFFFFF', tabbar_bg: '#FFFFFF', top_text: '#FFFFFF', search_bg: '#EFFAF1', card_border: '#E6E6E6', notice_bg: '#E8FAEE', notice_text: '#16A34A' } },
+  { name: '梦幻紫', colors: { brand: '#7C3AED', brand_gradient: '#A78BFA', page_bg: '#FAF8FF', card_bg: '#FFFFFF', text_main: '#1A1A1A', text_sub: '#8A8A8A', price: '#7C3AED', btn_text: '#FFFFFF', tabbar_bg: '#FFFFFF', top_text: '#FFFFFF', search_bg: '#F3EEFF', card_border: '#EAE6F2', notice_bg: '#F1EAFF', notice_text: '#7C3AED' } },
+  { name: '深石质感', colors: { brand: '#1F2937', brand_gradient: '#4B5563', page_bg: '#111827', card_bg: '#1F2937', text_main: '#F3F4F6', text_sub: '#9CA3AF', price: '#FBBF24', btn_text: '#111827', tabbar_bg: '#1F2937', top_text: '#F3F4F6', search_bg: '#374151', card_border: '#374151', notice_bg: '#374151', notice_text: '#FBBF24' } },
+]
+const COLOR_FIELDS = [
+  ['brand', '品牌主色'], ['brand_gradient', '辅助渐变色'],
+  ['page_bg', '页面背景'], ['card_bg', '卡片背景'],
+  ['text_main', '主要文字'], ['text_sub', '次要文字'],
+  ['price', '价格强调色'], ['btn_text', '按钮文字色'],
+  ['tabbar_bg', '底部导航背景'], ['top_text', '顶部文字色'],
+  ['search_bg', '搜索框背景'], ['card_border', '卡片边框色'],
+  ['notice_bg', '公告背景色'], ['notice_text', '公告文字色'],
+]
+let decoCfg = null
+let decoDirty = false
+PAGES.decoration = async () => {
+  const r = await biz('decoration')
+  decoCfg = r.data || { name: '活力橙', colors: THEME_PRESETS[1].colors, bg_image: '' }
+  decoDirty = false
+  renderDecoration()
+}
+function renderDecoration() {
+  const c = decoCfg.colors
+  const presetBtns = THEME_PRESETS.map(p =>
+    `<div class="preset" onclick="applyPreset('${p.name}')" style="--pc:${p.colors.brand};--pc2:${p.colors.brand_gradient}">
+      <div class="preset-dot"></div><span>${p.name}</span>
+      ${decoCfg.name === p.name ? '<span class="preset-check">✓</span>' : ''}
+    </div>`).join('')
+  const fields = COLOR_FIELDS.map(([k, label]) => `
+    <div class="color-row">
+      <label>${label}</label>
+      <div class="color-input">
+        <input type="color" value="${esc(c[k] || '#000000')}" onchange="setColor('${k}', this.value)" oninput="setColor('${k}', this.value)">
+        <input type="text" value="${esc(c[k] || '')}" oninput="setColor('${k}', this.value)" onchange="setColor('${k}', this.value)" style="flex:1">
+      </div>
+    </div>`).join('')
+  $('#content').innerHTML = `
+    <div class="deco-layout">
+      <div class="deco-left">
+        <div class="card">
+          <div class="card-head"><h2>前端装修 · 主题配色</h2>
+            <button class="btn btn-primary btn-sm" onclick="saveDecoration()">保存装修配置</button></div>
+          <div style="padding:16px 18px">
+            <div style="background:#eff6ff;border:1px solid #dbeafe;color:#1e40af;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px">
+              修改配色后左侧手机实时预览；点击「保存装修配置」后所有用户端正式生效。
+            </div>
+            <div style="font-size:13px;color:#374151;margin-bottom:10px;font-weight:600">主题预设</div>
+            <div class="preset-list">${presetBtns}</div>
+            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">自定义配色</div>
+            <div class="color-grid">${fields}</div>
+            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">背景图片（可选）</div>
+            <div class="color-row">
+              <label>背景图地址</label>
+              <input type="text" id="bg_image" value="${esc(decoCfg.bg_image || '')}" placeholder="https://... 留空则使用纯色背景" onchange="decoCfg.bg_image=this.value;decoDirty=true;livePreview()">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="deco-right">
+        <div class="card">
+          <div class="card-head"><h2>手机实时预览 <span class="muted">${decoDirty ? '有未保存修改' : '已同步'}</span></h2>
+            <button class="btn btn-ghost btn-sm" onclick="decoIframeRefresh()">刷新</button></div>
+          <div class="phone-wrap"><div class="phone" style="width:375px;height:720px">
+            <div class="notch"></div>
+            <iframe id="decoFrame" src="/h5/" onload="livePreview()"></iframe>
+          </div></div>
+          <div style="text-align:center;color:#9ca3af;font-size:12px;padding:8px 0 18px">预览基于当前主题实时渲染</div>
+        </div>
+      </div>
+    </div>`
+}
+function applyPreset(name) {
+  const p = THEME_PRESETS.find(x => x.name === name)
+  if (!p) return
+  decoCfg.name = name
+  decoCfg.colors = Object.assign({}, p.colors)
+  decoDirty = true
+  renderDecoration()
+}
+function setColor(key, val) {
+  decoCfg.colors[key] = val
+  decoCfg.name = '自定义'
+  decoDirty = true
+  livePreview()
+}
+function livePreview() {
+  const f = $('#decoFrame')
+  if (!f || !f.contentWindow) return
+  try {
+    const cw = f.contentWindow
+    // 优先调用 iframe 内注入的主题应用函数
+    if (typeof cw.__applyTheme === 'function') {
+      cw.__applyTheme(decoCfg)
+    }
+    // 兜底：直接操作 iframe DOM，确保背景色等关键变量即时生效
+    const doc = f.contentDocument
+    if (doc) {
+      const root = doc.documentElement
+      Object.keys(decoCfg.colors).forEach(k => root.style.setProperty('--theme-' + k, decoCfg.colors[k]))
+      const bg = decoCfg.colors.page_bg
+      if (bg) {
+        ;['html','body','#app','.uni-page-wrapper','.uni-page-body'].forEach(sel => {
+          doc.querySelectorAll(sel).forEach(el => { el.style.backgroundColor = bg })
+        })
+        doc.body.style.backgroundColor = bg
+      }
+      if (decoCfg.bg_image) {
+        doc.body.style.backgroundImage = 'url(' + decoCfg.bg_image + ')'
+        doc.body.style.backgroundSize = 'cover'
+      }
+    }
+  } catch (e) { /* 跨域忽略 */ }
+}
+function decoIframeRefresh() { const f = $('#decoFrame'); if (f) f.src = f.src }
+async function saveDecoration() {
+  const r = await biz('decoration/save', { name: decoCfg.name, colors: decoCfg.colors, bg_image: decoCfg.bg_image })
+  toast(r.msg)
+  if (r.code === 1) { decoDirty = false; renderDecoration() }
 }
 
 /* ============ 操作日志（yylAdmin 框架） ============ */
