@@ -399,13 +399,13 @@
 					}
 				},
 				{
-					"path": "cs-settings",
+					"path": "message",
 					"style": {
 						"navigationStyle": "custom"
 					}
 				},
 				{
-					"path": "cs-avatar",
+					"path": "cs-settings",
 					"style": {
 						"navigationStyle": "custom"
 					}

@@ -138,7 +138,7 @@ const todayGiftIncome = ref('0.00')
 const myBalance = ref('0.00')
 
 const goMessage = () => {
-	uni.reLaunch({ url: '/pages/message/index' })
+	uni.reLaunch({ url: '/pages/playerMain/message' })
 }
 
 onLoad((options) => {
