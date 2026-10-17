@@ -1,0 +1,455 @@
+{
+	"easycom": {
+		"autoscan": true,
+		// 注意一定要放在custom里，否则无效，https://ask.dcloud.net.cn/question/131175
+		"custom": {
+			"^u--(.*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^up-(.*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^u-([^-].*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^uv-(.*)": "@/uni_modules/uv-ui/components/uv-$1/uv-$1.vue",
+			"^xbc-(.*)": "@/compontents/xbc-$1/xbc-$1.vue",
+			"^player-tabbar": "@/compontents/player-tabbar.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/init/init",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/classify/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/message/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/message/chat",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/player/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/mine/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/init/banned",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/pay/index",
+			"style": {
+				"navigationBarTitleText": "支付",
+				"navigationStyle": "default"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "pagesA/index",
+			"pages": [
+				{
+					"path": "search",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "detail",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "order",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "desk",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesA/classify",
+			"pages": [
+				{
+					"path": "classify",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesA/player",
+			"pages": [
+				{
+					"path": "detail",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+				"root": "pagesA/im",
+				"pages": [
+					{
+						"path": "chat",
+						"style": {
+							"navigationStyle": "custom"
+						}
+					},
+					{
+						"path": "create-group",
+						"style": {
+							"navigationStyle": "custom"
+						}
+					}
+				]
+			},
+		{
+			"root": "pagesA/mine",
+			"pages": [
+				{
+					"path": "order/order",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "order/detail",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "order/tou",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "order/refun",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "order/refunInfo",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "info",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "notice/index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "notice/detail",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+				"path": "agreement",
+				"style": {
+					"navigationStyle": "custom"
+				}
+			},
+			{
+			"path": "feedback",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "csruzhu",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "invite",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "tousu",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "level",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "ruzhu",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "fenxiao",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "tui",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "balance",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "balanceLog",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/hatchet",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/playerHome",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/playerOrder",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/ranking",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/playRank",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/playerMain",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "fenxiao",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "bound",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "ti",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "settlement",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "withdrawLog",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "audio",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "fine",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "center",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "customer-service",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "qiangdan",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "invited",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "cs-center",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "cs-settings",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "cs-avatar",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		}
+	],
+	// "tabBar": {
+	// 	"color": "#999999",
+	// 	"selectedColor": "#333333",
+	// 	"fontSize": "20rpx",
+	// 	"list": [{
+	// 			"pagePath": "pages/index/index",
+	// 			"iconPath": "/static/tabbar/home.png",
+	// 			"selectedIconPath": "/static/tabbar/home_color.png",
+	// 			"text": "首页"
+	// 		},
+	// 		{
+	// 			"pagePath": "pages/classify/index",
+	// 			"iconPath": "/static/tabbar/classify.png",
+	// 			"selectedIconPath": "/static/tabbar/classify_color.png",
+	// 			"text": "分类"
+	// 		},
+	// 		{
+	// 			"pagePath": "pages/player/index",
+	// 			"iconPath": "/static/tabbar/player.png",
+	// 			"selectedIconPath": "/static/tabbar/player_color.png",
+	// 			"text": "打手"
+	// 		},
+	// 		{
+	// 			"pagePath": "pages/mine/index",
+	// 			"iconPath": "/static/tabbar/mine.png",
+	// 			"selectedIconPath": "/static/tabbar/mine_color.png",
+	// 			"text": "我的"
+	// 		}
+	// 	]
+	// },
+
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "创世网络",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8",
+		"navigationStyle": "custom"
+	},
+	"uniIdRouter": {}
+}

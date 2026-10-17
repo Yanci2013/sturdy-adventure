@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>创世网络 - 后台管理</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f0f0f5; color: #333; }
+.layout { display: flex; min-height: 100vh; }
+/* 侧边栏 */
+.sidebar { width: 220px; background: #1a1a2e; color: #ccc; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100; }
+.sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #2a2a4a; }
+.sidebar-header h2 { color: #fff; font-size: 18px; margin-bottom: 4px; }
+.sidebar-header p { font-size: 12px; color: #666; }
+.sidebar-menu { list-style: none; padding: 8px 0; }
+.sidebar-menu li { padding: 12px 20px; cursor: pointer; transition: all .2s; border-left: 3px solid transparent; }
+.sidebar-menu li:hover { background: #16213e; color: #fff; }
+.sidebar-menu li.active { background: #16213e; color: #3cc51f; border-left-color: #3cc51f; }
+.sidebar-menu li .icon { margin-right: 10px; }
+.sidebar-menu .section-title { padding: 8px 20px; font-size: 11px; color: #555; text-transform: uppercase; cursor: default; }
+.sidebar-menu .section-title:hover { background: transparent; }
+/* 主区域 */
+.main { flex: 1; margin-left: 220px; }
+.topbar { background: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,.08); position: sticky; top: 0; z-index: 50; }
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-left h1 { font-size: 16px; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-right .admin-info { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.topbar-right .avatar { width: 32px; height: 32px; border-radius: 50%; background: #3cc51f; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.content { padding: 20px 24px; }
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.stat-card .label { font-size: 13px; color: #999; margin-bottom: 8px; }
+.stat-card .value { font-size: 28px; font-weight: 700; }
+.stat-card .trend { font-size: 12px; margin-top: 4px; }
+.stat-card .trend.up { color: #3cc51f; }
+.stat-card .trend.down { color: #f5222d; }
+.stat-card.green .value { color: #3cc51f; }
+.stat-card.blue .value { color: #1890ff; }
+.stat-card.orange .value { color: #fa8c16; }
+.stat-card.purple .value { color: #722ed1; }
+/* 面板 */
+.panel { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 24px; }
+.panel-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+.panel-header h3 { font-size: 15px; font-weight: 600; }
+.panel-body { padding: 16px 20px; }
+/* 表格 */
+table { width: 100%; border-collapse: collapse; }
+table th, table td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+table th { color: #999; font-weight: 500; background: #fafafa; }
+table tr:hover td { background: #f5fff5; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+.badge.success { background: #f6ffed; color: #3cc51f; border: 1px solid #b7eb8f; }
+.badge.warning { background: #fffbe6; color: #faad14; border: 1px solid #ffe58f; }
+.badge.danger { background: #fff2f0; color: #f5222d; border: 1px solid #ffccc7; }
+.badge.info { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+/* 配置项 */
+.config-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.config-row:last-child { border-bottom: none; }
+.config-row .config-label { font-size: 14px; }
+.config-row .config-desc { font-size: 12px; color: #999; margin-top: 2px; }
+.config-row .config-value { font-size: 14px; font-weight: 600; }
+.toggle { position: relative; width: 40px; height: 22px; background: #ccc; border-radius: 11px; cursor: pointer; transition: .2s; }
+.toggle.on { background: #3cc51f; }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: .2s; }
+.toggle.on::after { left: 20px; }
+/* 按钮组 */
+.btn { display: inline-block; padding: 6px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; border: none; transition: .2s; }
+.btn-primary { background: #3cc51f; color: #fff; }
+.btn-primary:hover { background: #2ba012; }
+.btn-default { background: #f0f0f0; color: #333; }
+.btn-default:hover { background: #e0e0e0; }
+/* 分页 */
+.pagination { display: flex; gap: 4px; justify-content: flex-end; padding: 12px 0; }
+.pagination a { padding: 4px 10px; border: 1px solid #e0e0e0; border-radius: 3px; font-size: 12px; cursor: pointer; text-decoration: none; color: #333; }
+.pagination a.active { background: #3cc51f; color: #fff; border-color: #3cc51f; }
+/* 隐藏 */
+.hidden { display: none !important; }
+/* 表单 */
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #333; }
+.form-label .required { color: #f5222d; }
+.form-input { width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+.form-input:focus { outline: none; border-color: #3cc51f; }
+.form-desc { font-size: 12px; color: #999; margin-top: 4px; }
+.checkbox-group { display: flex; gap: 20px; }
+.checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.checkbox-item input { width: 16px; height: 16px; cursor: pointer; }
+.form-actions { display: flex; gap: 12px; margin-top: 24px; }
+/* 登录状态 */
+.login-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.login-status.enabled { background: #e8f5e9; color: #3cc51f; }
+.login-status.disabled { background: #fff1f0; color: #f5222d; }
+.login-tip { background: #fff7e6; border: 1px solid #ffe7ba; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #874d00; margin-bottom: 20px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="layout">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>创世网络</h2>
+            <p>后台管理系统 v1.0</p>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="section-title">管理</li>
+            <li class="active" onclick="showPage('dashboard')"><span class="icon">📊</span> 控制台</li>
+            <li onclick="showPage('thugs')"><span class="icon">👤</span> 打手管理</li>
+
+            <li class="section-title">系统管理</li>
+            <li onclick="showPage('finance')"><span class="icon">💰</span> 财务管理</li>
+            <li onclick="showPage('general')"><span class="icon">🔧</span> 常规管理</li>
+            <li onclick="showPage('login')"><span class="icon">🔐</span> 登录配置</li>
+        </ul>
+    </aside>
+
+    <!-- 主区域 -->
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1 id="pageTitle">控制台</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="admin-info">
+                    <div class="avatar">A</div>
+                    <span>Admin</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 控制台 -->
+            <div id="page-dashboard" class="page">
+                <div class="stats-grid">
+                    <div class="stat-card green">
+                        <div class="label">今日订单数</div>
+                        <div class="value">128</div>
+                        <div class="trend up">↑ 12.5% vs 昨日</div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="label">今日成交额</div>
+                        <div class="value">¥3,200</div>
+                        <div class="trend up">↑ 8.3% vs 昨日</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="label">活跃打手数</div>
+                        <div class="value">45</div>
+                        <div class="trend down">↓ 3 vs 昨日</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="label">总用户数</div>
+                        <div class="value">1,256</div>
+                        <div class="trend up">↑ 28 vs 昨日</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>最近订单记录</h3>
+                    </div>
+                    <div class="panel-body">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>订单号</th>
+                                    <th>打手</th>
+                                    <th>商品</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                    <th>时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrders"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 打手管理 -->
+            <div id="page-thugs" class="page hidden">
+                <div class="stats-grid">
+                    <div class="stat-card green">
+                        <div class="label">总打手数</div>
+                        <div class="value">156</div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="label">在线打手</div>
+                        <div class="value">89</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="label">今日新增</div>
+                        <div class="value">5</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="label">本月活跃</div>
+                        <div class="value">120</div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>打手列表</h3>
+                        <button class="btn btn-primary">添加打手</button>
+                    </div>
+                    <div class="panel-body">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>昵称</th>
+                                    <th>手机号</th>
+                                    <th>状态</th>
+                                    <th>客服身份</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="thugList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 财务管理 -->
+            <div id="page-finance" class="page hidden">
+                <div class="stats-grid">
+                    <div class="stat-card green">
+                        <div class="label">总收入</div>
+                        <div class="value">¥12,800</div>
+                    </div>
+                    <div class="stat-card blue">
+                        <div class="label">本月收入</div>
+                        <div class="value">¥3,200</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="label">待提现</div>
+                        <div class="value">¥1,500</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="label">总分成</div>
+                        <div class="value">¥8,960</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 常规管理 -->
+            <div id="page-general" class="page hidden">
+                <div class="panel">
+                    <div class="panel-header"><h3>系统配置</h3></div>
+                    <div class="panel-body">
+                        <div class="config-row">
+                            <div><div class="config-label">站点名称</div><div class="config-desc">网站标题</div></div>
+                            <div class="config-value">创世网络</div>
+                        </div>
+                        <div class="config-row">
+                            <div><div class="config-label">客服微信</div><div class="config-desc">联系方式</div></div>
+                            <div class="config-value">cs_network001</div>
+                        </div>
+                        <div class="config-row">
+                            <div><div class="config-label">提现门槛</div><div class="config-desc">最低提现金额</div></div>
+                            <div class="config-value">¥50</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录配置 -->
+            <div id="page-login" class="page hidden">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>聚合登录配置</h3>
+                        <div id="loginStatus" class="login-status disabled">未启用</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="login-tip">
+                            <strong>说明：</strong>配置聚合登录（聚合易支付旗下的聚合登录服务）后，前端将启用「微信一键授权登录」。需填写 <strong>APPID</strong> 和 <strong>APPKEY</strong> 后才会自动启用。
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">API 地址 <span class="required">*</span></label>
+                            <input type="text" id="cfg_apiurl" class="form-input" placeholder="https://u.suyanw.cn/">
+                            <div class="form-desc">聚合登录服务接口地址</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">APPID <span class="required">*</span></label>
+                            <input type="text" id="cfg_appid" class="form-input" placeholder="请输入聚合登录 APPID">
+                            <div class="form-desc">在聚合登录平台申请的应用 ID</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">APPKEY <span class="required">*</span></label>
+                            <input type="text" id="cfg_appkey" class="form-input" placeholder="请输入聚合登录 APPKEY">
+                            <div class="form-desc">在聚合登录平台申请的应用密钥</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">启用登录方式</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item"><input type="checkbox" id="type_qq" value="qq"> QQ</label>
+                                <label class="checkbox-item"><input type="checkbox" id="type_wx" value="wx" checked> 微信</label>
+                                <label class="checkbox-item"><input type="checkbox" id="type_alipay" value="alipay"> 支付宝</label>
+                            </div>
+                            <div class="form-desc">选择允许用户使用的登录方式</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">回调地址</label>
+                            <input type="text" id="cfg_callback" class="form-input" placeholder="https://你的域名/h5/">
+                            <div class="form-desc">聚合登录回调地址，一般为 H5 首页地址</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">登录模式</label>
+                            <select id="cfg_login_mode" class="form-input">
+                                <option value="juhe">一键登录（需配置聚合登录）</option>
+                                <option value="mock">游客模式（仅开发调试）</option>
+                            </select>
+                            <div class="form-desc">控制前端登录按钮的行为</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveLoginConfig()">保存配置</button>
+                            <button class="btn btn-default" onclick="loadLoginConfig()">重置</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const orders = [
+    {id:1, no:'QD20261004001', thug:'老王', goods:'王者荣耀-陪玩', amount:'25.00', status:'success', time:'2026-10-04 19:00'},
+    {id:2, no:'QD20261004002', thug:'阿明', goods:'英雄联盟-陪玩', amount:'30.00', status:'success', time:'2026-10-04 18:30'},
+    {id:3, no:'QD20261004003', thug:'大飞', goods:'和平精英-陪玩', amount:'20.00', status:'pending', time:'2026-10-04 18:00'},
+    {id:4, no:'QD20261004004', thug:'老王', goods:'王者荣耀-陪玩', amount:'25.00', status:'success', time:'2026-10-04 17:30'},
+    {id:5, no:'QD20261004005', thug:'小林', goods:'CSGO-陪玩', amount:'35.00', status:'failed', time:'2026-10-04 17:00'},
+];
+
+const thugs = [
+    {id:1, name:'老王', phone:'138****8888', status:'online', is_cs:1, reg_time:'2025-03-15'},
+    {id:2, name:'阿明', phone:'139****6666', status:'offline', is_cs:0, reg_time:'2025-06-20'},
+    {id:3, name:'大飞', phone:'137****7777', status:'online', is_cs:0, reg_time:'2025-08-01'},
+    {id:4, name:'小林', phone:'135****5555', status:'offline', is_cs:0, reg_time:'2025-09-10'},
+    {id:5, name:'阿杰', phone:'136****9999', status:'online', is_cs:1, reg_time:'2025-10-05'},
+];
+
+const statusMap = {success:'成功', pending:'待处理', failed:'失败'};
+
+function renderOrders(containerId, list) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = list.map(o => `
+        <tr>
+            <td>${o.id}</td>
+            <td>${o.no}</td>
+            <td>${o.thug}</td>
+            <td>${o.goods}</td>
+            <td>¥${o.amount}</td>
+            <td><span class="badge ${o.status}">${statusMap[o.status]}</span></td>
+            <td>${o.time}</td>
+        </tr>
+    `).join('');
+}
+
+function renderThugs() {
+    const el = document.getElementById('thugList');
+    el.innerHTML = thugs.map(t => `
+        <tr>
+            <td>${t.id}</td>
+            <td>${t.name}</td>
+            <td>${t.phone}</td>
+            <td><span class="badge ${t.status==='online'?'success':'info'}">${t.status==='online'?'在线':'离线'}</span></td>
+            <td><span class="badge ${t.is_cs?'info':'warning'}">${t.is_cs?'客服':'普通'}</span></td>
+            <td>${t.reg_time}</td>
+            <td><button class="btn btn-default">编辑</button></td>
+        </tr>
+    `).join('');
+}
+
+function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    document.getElementById('page-'+name).classList.remove('hidden');
+    document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+    event.target.closest('li').classList.add('active');
+    const titles = {dashboard:'控制台', thugs:'打手管理', finance:'财务管理', general:'常规管理', login:'登录配置'};
+    document.getElementById('pageTitle').textContent = titles[name];
+    if (name === 'login') loadLoginConfig();
+}
+
+// 加载聚合登录配置
+function loadLoginConfig() {
+    fetch('/api/config/get?group=ulogin')
+        .then(r => r.json())
+        .then(res => {
+            if (res.code === 1 && Array.isArray(res.data)) {
+                const map = {};
+                res.data.forEach(item => { map[item.name] = item.value; });
+                document.getElementById('cfg_apiurl').value = map.ulogin_apiurl || '';
+                document.getElementById('cfg_appid').value = map.ulogin_appid || '';
+                document.getElementById('cfg_appkey').value = map.ulogin_appkey || '';
+                document.getElementById('cfg_callback').value = map.ulogin_callback || '';
+                const types = (map.ulogin_types || 'wx').split(',');
+                document.getElementById('type_qq').checked = types.includes('qq');
+                document.getElementById('type_wx').checked = types.includes('wx');
+                document.getElementById('type_alipay').checked = types.includes('alipay');
+                updateLoginStatus();
+            }
+        })
+        .catch(() => {
+            // 加载登录模式
+            fetch('/api/config/get?name=login_mode').then(r => r.json()).then(r2 => {
+                if (r2.code === 1 && r2.data) {
+                    document.getElementById('cfg_login_mode').value = r2.data.value || 'juhe';
+                }
+            });
+        });
+
+    // 单独加载登录模式
+    fetch('/api/config/get?name=login_mode').then(r => r.json()).then(r2 => {
+        if (r2.code === 1 && r2.data) {
+            document.getElementById('cfg_login_mode').value = r2.data.value || 'both';
+        }
+    });
+}
+
+// 更新启用状态显示
+function updateLoginStatus() {
+    const appid = document.getElementById('cfg_appid').value.trim();
+    const appkey = document.getElementById('cfg_appkey').value.trim();
+    const statusEl = document.getElementById('loginStatus');
+    if (appid && appkey) {
+        statusEl.textContent = '已启用';
+        statusEl.className = 'login-status enabled';
+    } else {
+        statusEl.textContent = '未启用';
+        statusEl.className = 'login-status disabled';
+    }
+}
+
+// 保存聚合登录配置
+function saveLoginConfig() {
+    const apiurl = document.getElementById('cfg_apiurl').value.trim();
+    const appid = document.getElementById('cfg_appid').value.trim();
+    const appkey = document.getElementById('cfg_appkey').value.trim();
+    const callback = document.getElementById('cfg_callback').value.trim();
+    const loginMode = document.getElementById('cfg_login_mode').value;
+    const types = [];
+    if (document.getElementById('type_qq').checked) types.push('qq');
+    if (document.getElementById('type_wx').checked) types.push('wx');
+    if (document.getElementById('type_alipay').checked) types.push('alipay');
+
+    const items = [
+        { name: 'ulogin_apiurl', value: apiurl || 'https://u.suyanw.cn/' },
+        { name: 'ulogin_appid', value: appid },
+        { name: 'ulogin_appkey', value: appkey },
+        { name: 'ulogin_callback', value: callback },
+        { name: 'ulogin_types', value: types.join(',') || 'wx' },
+        { name: 'login_mode', value: loginMode }
+    ];
+
+    fetch('/api/config/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.code === 1) {
+            alert('保存成功！' + (appid && appkey ? '\n一键登录已启用。' : '\n提示：填写 APPID 和 APPKEY 后将自动启用一键登录。'));
+            updateLoginStatus();
+        } else {
+            alert('保存失败：' + (res.msg || '未知错误'));
+        }
+    })
+    .catch(() => alert('网络错误，请重试'));
+}
+
+// 监听输入变化实时更新状态
+document.addEventListener('input', function(e) {
+    if (e.target.id === 'cfg_appid' || e.target.id === 'cfg_appkey') {
+        updateLoginStatus();
+    }
+});
+
+// 初始化
+renderOrders('recentOrders', orders.slice(0,4));
+renderThugs();
+</script>
+</body>
+</html>

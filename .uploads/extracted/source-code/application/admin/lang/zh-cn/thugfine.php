@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'Id'            => 'ID',
+    'Fine_no'       => '罚单编号',
+    'Thug_id'       => '打手',
+    'Order_id'      => '关联订单',
+    'Order_no'      => '订单编号',
+    'Amount'        => '罚款金额',
+    'Reason'        => '罚款理由',
+    'Target_type'   => '目标类型',
+    'Target_type 1' => '全部打手',
+    'Target_type 2' => '指定打手',
+    'Punish_type'   => '处罚类型',
+    'Punish_type 1' => '禁止接单+禁止提现',
+    'Punish_type 2' => '可正常接单但禁止提现',
+    'Status'        => '状态',
+    'Status 0'      => '待缴纳',
+    'Status 1'      => '已缴纳',
+    'Status 2'      => '已撤销',
+    'Fine_time'     => '罚款时间',
+    'Pay_time'      => '缴纳时间',
+    'Admin_id'      => '操作管理员',
+    'Createtime'    => '创建时间',
+    'Thug.name'     => '打手姓名',
+    'Thug.mobile'   => '打手手机',
+    'Order.order_no'=> '关联订单号',
+];

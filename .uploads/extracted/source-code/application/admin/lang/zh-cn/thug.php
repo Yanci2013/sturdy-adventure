@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'User_id'     => '用户',
+    'Avatar'      => '头像',
+    'Name'        => '姓名',
+    'Sex'         => '性别',
+    'Sex 0'       => '女',
+    'Sex 1'       => '男',
+    'Audio'       => '音频',
+    'Images'      => '相册',
+    'Synopsis'    => '简介',
+    'Grade'       => '评分',
+    'Type'        => '类型',
+    'Type 1'      => '普通打手',
+    'Type 2'      => '金牌打手',
+    'Type 3'      => '陪护打手（末开放）',
+    'Money'       => '佣金',
+    'Jd_status'   => '接单状态',
+    'Jd_status 0' => '不接单',
+    'Jd_status 1' => '接单',
+    'Sh_status'   => '审核状态',
+    'Sh_status 0' => '待审核',
+    'Sh_status 1' => '审核成功',
+    'Sh_status 2' => '审核失败',
+    'Remarks'     => '备注',
+    '接单区服'     => '接单区服',
+    '邀请码'      => '邀请码',
+    'Createtime'  => '创建时间'
+];

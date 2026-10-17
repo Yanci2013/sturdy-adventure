@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <title>地址选择器</title>
+    <link rel="stylesheet" href="__CDN__/assets/css/frontend.min.css"/>
+    <link rel="stylesheet" href="__CDN__/assets/libs/font-awesome/css/font-awesome.min.css"/>
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .confirm {
+            position: absolute;
+            bottom: 30px;
+            right: 4%;
+            z-index: 99;
+            height: 50px;
+            width: 50px;
+            line-height: 50px;
+            font-size: 15px;
+            text-align: center;
+            background-color: white;
+            background: #1ABC9C;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .search {
+            position: absolute;
+            width: 400px;
+            top: 0;
+            left: 50%;
+            padding: 5px;
+            margin-left: -200px;
+        }
+
+        .autocomplete-search {
+            text-align: left;
+            cursor: default;
+            background: #fff;
+            border-radius: 2px;
+            -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+            -moz-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+            background-clip: padding-box;
+            position: absolute;
+            display: none;
+            z-index: 1036;
+            max-height: 254px;
+            overflow: hidden;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .autocomplete-search .autocomplete-suggestion {
+            padding: 5px;
+        }
+
+        .autocomplete-search .autocomplete-suggestion:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div class="search">
+    <div class="input-group">
+        <input type="text" id="place" name="q" class="form-control" placeholder="输入地点"/>
+        <span class="input-group-btn">
+            <button type="button" name="search" id="search-btn" class="btn btn-success">
+                <i class="fa fa-search"></i>
+            </button>
+        </span>
+    </div>
+</div>
+<div class="confirm">确定</div>
+<div id="container"></div>
+
+<script charset="utf-8" src="//map.qq.com/api/js?v=2.exp&libraries=place&key={$config.tencentkey|default=''}"></script>
+<script src="__CDN__/assets/libs/jquery/dist/jquery.min.js"></script>
+<script src="__CDN__/assets/addons/address/js/gcoord.min.js"></script>
+<script src="__CDN__/assets/addons/address/js/jquery.autocomplete.js"></script>
+
+<script type="text/javascript">
+    $(function () {
+        var map, marker, geocoder, infoWin, searchService, keyword, address, fromtype, totype;
+        address = "{$address|htmlentities}";
+        var lng = Number("{$lng}");
+        var lat = Number("{$lat}");
+        fromtype = "GCJ02";
+        totype = "{$config.coordtype|default='DEFAULT'}"
+        totype = totype === 'DEFAULT' ? "GCJ02" : totype;
+
+        if (lng && lat && fromtype !== totype) {
+            var result = gcoord.transform([lng, lat], gcoord[totype], gcoord[fromtype]);
+            lng = result[0] || lng;
+            lat = result[1] || lat;
+        }
+
+        var init = function () {
+            var center = new qq.maps.LatLng(lat, lng);
+            map = new qq.maps.Map(document.getElementById('container'), {
+                center: center,
+                zoom: parseInt("{$config.zoom}")
+            });
+
+            //实例化信息窗口
+            infoWin = new qq.maps.InfoWindow({
+                map: map
+            });
+
+            geocoder = {
+                getAddress: function (latLng) {
+                    $.ajax({
+                        url: "https://apis.map.qq.com/ws/geocoder/v1/?location=" + latLng.lat + "," + latLng.lng + "&key={$config.tencentkey|default=''}&output=jsonp",
+                        dataType: "jsonp",
+                        type: 'GET',
+                        cache: true,
+                        crossDomain: true,
+                        success: function (ret) {
+                            console.log("getAddress:", ret)
+                            if (ret.status === 0) {
+                                var component = ret.result.address_component;
+                                if (ret.result.formatted_addresses && ret.result.formatted_addresses.recommend) {
+                                    var recommend = ret.result.formatted_addresses.recommend;
+                                    var standard_address = ret.result.formatted_addresses.standard_address;
+                                    var address = component.province !== component.city ? component.province + component.city : component.province;
+
+                                    address = address + (recommend.indexOf(component.district) === 0 ? '' : component.district) + recommend;
+                                } else {
+                                    address = ret.result.address;
+                                }
+                                showMarker(ret.result.location, address);
+                                showInfoWin(ret.result.location, address);
+                            }
+                        },
+                        error: function (e) {
+                            console.log(e, 'error')
+                        }
+                    });
+                }
+            };
+
+            //初始化marker
+            showMarker(center);
+            if (address) {
+                showInfoWin(center, address);
+            } else {
+                geocoder.getAddress(center);
+            }
+
+            var place = $("#place");
+            place.autoComplete({
+                minChars: 1,
+                cache: 0,
+                menuClass: 'autocomplete-search',
+                source: function (term, response) {
+                    try {
+                        xhr.abort();
+                    } catch (e) {
+                    }
+                    xhr = $.ajax({
+                        url: "https://apis.map.qq.com/ws/place/v1/suggestion?keyword=" + term + "&key={$config.tencentkey|default=''}&output=jsonp",
+                        dataType: "jsonp",
+                        type: 'GET',
+                        cache: true,
+                        success: function (ret) {
+                            if (ret.status === 0) {
+                                if(ret.data.length === 0){
+                                    $(".autocomplete-suggestions.autocomplete-search").html('');
+                                }
+                                response(ret.data);
+                            } else {
+                                console.log(ret);
+                            }
+                        }
+                    });
+                },
+                renderItem: function (item, search) {
+                    search = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    var regexp = new RegExp("(" + search.replace(/[\,|\u3000|\uff0c]/, ' ').split(' ').join('|') + ")", "gi");
+                    return "<div class='autocomplete-suggestion' data-item='" + JSON.stringify(item) + "' data-title='" + item.title + "' data-val='" + item.title + "'>" + item.title.replace(regexp, "<b>$1</b>") + "</div>";
+                },
+                onSelect: function (e, term, sel) {
+                    e.preventDefault();
+                    var item = $(sel).data("item");
+                    //调用获取位置方法
+                    geocoder.getAddress(item.location);
+
+                    var position = new qq.maps.LatLng(item.location.lat, item.location.lng);
+                    map.setCenter(position);
+                }
+            });
+
+            //地图点击
+            qq.maps.event.addListener(map, 'click', function (event) {
+                    try {
+                        //调用获取位置方法
+                        geocoder.getAddress(event.latLng);
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            );
+        };
+
+        //显示info窗口
+        var showInfoWin = function (latLng, title) {
+            var position = new qq.maps.LatLng(latLng.lat, latLng.lng);
+            infoWin.open();
+            infoWin.setContent(title);
+            infoWin.setPosition(position);
+        };
+
+        //实例化marker和监听拖拽结束事件
+        var showMarker = function (latLng, title) {
+            console.log("showMarker", latLng, title)
+            var position = new qq.maps.LatLng(latLng.lat, latLng.lng);
+            marker && marker.setMap(null);
+            marker = new qq.maps.Marker({
+                map: map,
+                position: position,
+                draggable: true,
+                title: title || '拖动图标选择位置'
+            });
+
+            //监听拖拽结束
+            qq.maps.event.addListener(marker, 'dragend', function (event) {
+                //调用获取位置方法
+                geocoder.getAddress(event.latLng);
+            });
+        };
+
+        var close = function (data) {
+            var index = parent.Layer.getFrameIndex(window.name);
+            var callback = parent.$("#layui-layer" + index).data("callback");
+            //再执行关闭
+            parent.Layer.close(index);
+            //再调用回传函数
+            if (typeof callback === 'function') {
+                callback.call(undefined, data);
+            }
+        };
+
+        //点击确定后执行回调赋值
+        $(document).on('click', '.confirm', function () {
+            var zoom = map.getZoom();
+            var data = {lat: infoWin.position.lat.toFixed(5), lng: infoWin.position.lng.toFixed(5), zoom: zoom, address: infoWin.content};
+            if (fromtype !== totype) {
+                var result = gcoord.transform([data.lng, data.lat], gcoord[fromtype], gcoord[totype]);
+                data.lng = (result[0] || data.lng).toFixed(5);
+                data.lat = (result[1] || data.lat).toFixed(5);
+                console.log(data, result, fromtype, totype);
+            }
+
+            close(data);
+        });
+
+        //点击搜索按钮
+        $(document).on('click', '#search-btn', function () {
+            if ($("#place").val() === '')
+                return;
+            var first = $(".autocomplete-search > .autocomplete-suggestion:first");
+            if (!first.length) {
+                return;
+            }
+            var item = first.data("item");
+
+            //调用获取位置方法
+            geocoder.getAddress(item.location);
+
+            var position = new qq.maps.LatLng(item.location.lat, item.location.lng);
+            map.setCenter(position);
+        });
+
+        init();
+    });
+</script>
+</body>
+</html>

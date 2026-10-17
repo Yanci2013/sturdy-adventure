@@ -1,0 +1,58 @@
+<form id="balance-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="{:url('user/balance/change')}">
+    {:token()}
+    <input type="hidden" name="user_id" value="{$user.id}">
+    <input type="hidden" name="action" value="{$action}">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-3">当前用户:</label>
+        <div class="col-xs-12 col-sm-8">
+            <p class="form-control-static">{$user.nickname} (ID: {$user.id})</p>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-3">当前余额:</label>
+        <div class="col-xs-12 col-sm-8">
+            <p class="form-control-static" style="color:#ff6600;font-weight:bold;">{$user.balance} 元</p>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-3">操作类型:</label>
+        <div class="col-xs-12 col-sm-8">
+            <p class="form-control-static">
+                {if $action == 'add'}
+                    <span class="label label-success">添加余额</span>
+                {elseif $action == 'sub'}
+                    <span class="label label-danger">扣减余额</span>
+                {else}
+                    <span class="label label-warning">修改余额</span>
+                {/if}
+            </p>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="c-amount" class="control-label col-xs-12 col-sm-3">
+            {if $action == 'set'}目标余额{else}金额{/if}:
+        </label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-amount" data-rule="required" class="form-control" name="amount" type="number" step="0.01" min="0" value="" placeholder="{if $action == 'set'}请输入修改后的余额{else}请输入金额{/if}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="c-memo" class="control-label col-xs-12 col-sm-3">备注:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-memo" class="form-control" name="memo" type="text" value="" placeholder="可选，填写操作原因">
+        </div>
+    </div>
+
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-3"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">确定</button>
+            <button type="reset" class="btn btn-default btn-embossed">重置</button>
+        </div>
+    </div>
+</form>

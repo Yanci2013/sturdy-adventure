@@ -1,0 +1,171 @@
+<div class="panel panel-default panel-intro">
+    {:build_heading()}
+    <div class="panel-heading">
+        <div class="panel-lead"><em>礼物墙统计</em></div>
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#tab1" data-toggle="tab">统计数据</a></li>
+            <li><a href="javascript:;" onclick="location.href='index'" title="返回"><i class="fa fa-arrow-left"></i> 返回</a></li>
+        </ul>
+    </div>
+    <div class="panel-body">
+        <!-- 总统计 -->
+        <div class="row">
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <i class="fa fa-gift fa-3x"></i>
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <h3>{$allStats.total_gifts}</h3>
+                                <div>总赠送次数</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <i class="fa fa-cny fa-3x"></i>
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <h3>{$allStats.total_income}</h3>
+                                <div>总收入(元)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <i class="fa fa-calendar fa-3x"></i>
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <h3>{$allStats.today_gifts}</h3>
+                                <div>今日赠送次数</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6">
+                <div class="panel panel-warning">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <i class="fa fa-money fa-3x"></i>
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <h3>{$allStats.today_income}</h3>
+                                <div>今日收入(元)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {if condition="isset($stats)"}
+        <!-- 单个打手统计 -->
+        <div class="row" style="margin-top: 20px;">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4>打手ID: {$thug_id} 统计详情</h4>
+                    </div>
+                    <div class="panel-body">
+                        <div class="col-lg-3 col-md-3 col-sm-6">
+                            <div class="stat-item">
+                                <div class="stat-value">{$stats.total_gifts}</div>
+                                <div class="stat-label">该打手总赠送次数</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-6">
+                            <div class="stat-item">
+                                <div class="stat-value">{$stats.total_income}</div>
+                                <div class="stat-label">该打手总收入(元)</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-6">
+                            <div class="stat-item">
+                                <div class="stat-value">{$stats.today_gifts}</div>
+                                <div class="stat-label">今日赠送次数</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-6">
+                            <div class="stat-item">
+                                <div class="stat-value">{$stats.today_income}</div>
+                                <div class="stat-label">今日收入(元)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/if}
+
+        {if condition="isset($hotGifts) && !empty($hotGifts)"}
+        <!-- 热门礼物TOP10 -->
+        <div class="row" style="margin-top: 20px;">
+            <div class="col-sm-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4>热门礼物 TOP10 {if condition="isset($thug_id)"} - 打手ID: {$thug_id}{/if}</h4>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>礼物图标</th>
+                                    <th>礼物名称</th>
+                                    <th>赠送次数</th>
+                                    <th>赠送总数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {foreach name="hotGifts" item="vo" key="key"}
+                                <tr>
+                                    <td>{$key + 1}</td>
+                                    <td><img src="{$vo.gift_icon}" style="width: 40px; height: 40px;" /></td>
+                                    <td>{$vo.gift_name}</td>
+                                    <td>{$vo.total_times}</td>
+                                    <td>{$vo.total_count}</td>
+                                </tr>
+                                {/foreach}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/if}
+    </div>
+</div>
+
+<style>
+.stat-item {
+    text-align: center;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+}
+.stat-label {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+}
+</style>

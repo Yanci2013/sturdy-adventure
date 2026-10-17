@@ -1,0 +1,32 @@
+<form id="add-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('选择打手')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-thug_id" data-rule="required" data-source="thuggift/selectThug" data-field="name" class="form-control selectpage" name="row[thug_id]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('选择礼物')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-gift_ids" data-source="gift/selectpage" data-field="name" class="form-control selectpage" name="row[gift_ids]" type="text" value="" data-multiple="true">
+            <span class="help-block">{:__('选择该打手礼物墙上显示的礼物，不选则显示所有启用礼物')}</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('状态')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-status" class="form-control selectpicker" name="row[status]">
+                <option value="1" selected>{:__('启用')}</option>
+                <option value="0">{:__('禁用')}</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-success btn-embossed disabled">{:__('Submit')}</button>
+            <button type="reset" class="btn btn-default btn-embossed">{:__('Reset')}</button>
+        </div>
+    </div>
+</form>

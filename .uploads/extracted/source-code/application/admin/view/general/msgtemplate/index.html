@@ -1,0 +1,119 @@
+<div class="panel panel-default panel-intro">
+    <div class="panel-heading">
+        <div class="panel-lead"><em>模板消息推送配置</em>配置微信公众号模板消息，老板下单支付后自动推送通知给打手，点击可跳转小程序打手个人中心</div>
+    </div>
+    <div class="panel-body">
+        <form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+            {:token()}
+
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">模板信息</label>
+                <div class="col-xs-12 col-sm-8">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr><td width="120">模板ID</td><td>bHvjvHXkmkJO32poc3VznGWAVdrolmgJ1kifhLL_Ono</td></tr>
+                            <tr><td>模板编号</td><td>43198</td></tr>
+                            <tr><td>标题</td><td>收到下单通知</td></tr>
+                            <tr><td>所属类目</td><td>软件/建站/技术开发</td></tr>
+                            <tr><td>场景说明</td><td>收到下单通知</td></tr>
+                            <tr><td>详细内容</td><td>
+                                下单类型 <code>{{phrase9.DATA}}</code><br>
+                                下单项目 <code>{{thing3.DATA}}</code><br>
+                                商品名称 <code>{{thing27.DATA}}</code><br>
+                                下单时间 <code>{{time4.DATA}}</code><br>
+                            </td></tr>
+                            <tr><td>跳转文案</td><td>点击查看详情</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">模板ID</label>
+                <div class="col-xs-12 col-sm-8">
+                    <input type="text" class="form-control" name="row[order_notify_template_id]" value="{$config.order_notify_template_id}" data-rule="required" placeholder="请输入微信公众号模板消息ID" />
+                    <span class="help-block">微信公众号模板消息ID，在微信公众平台 -> 模板消息 中获取</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">跳转页面</label>
+                <div class="col-xs-12 col-sm-8">
+                    <input type="text" class="form-control" name="row[order_notify_page]" value="{$config.order_notify_page}" data-rule="required" placeholder="https://yuniop.xitifk.cn/h5/" />
+                    <span class="help-block">点击模板消息后跳转的链接地址，默认跳转到H5首页</span>
+                </div>
+            </div>
+
+            <div class="form-group layer-footer">
+                <label class="control-label col-xs-12 col-sm-2"></label>
+                <div class="col-xs-12 col-sm-8">
+                    <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+                </div>
+            </div>
+        </form>
+
+        <hr style="margin:30px 0;">
+        <h4 style="padding-left:15px;">模板消息推送测试</h4>
+        <form id="test-form" class="form-horizontal" role="form" style="margin-top:20px;">
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">打手ID</label>
+                <div class="col-xs-12 col-sm-8">
+                    <input type="text" class="form-control" id="test_thug_id" placeholder="输入打手ID（thug表的id）" />
+                    <span class="help-block">输入打手ID后点击测试，将向该打手关联用户的公众号发送一条测试模板消息</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2"></label>
+                <div class="col-xs-12 col-sm-8">
+                    <button type="button" class="btn btn-success" id="btn-test-send"><i class="fa fa-paper-plane"></i> 发送测试</button>
+                    <span id="test-result" style="margin-left:15px;"></span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    function bindTestBtn() {
+        var btn = document.getElementById('btn-test-send');
+        if (!btn) {
+            setTimeout(bindTestBtn, 50);
+            return;
+        }
+        btn.onclick = function() {
+            var thugId = (document.getElementById('test_thug_id').value || '').replace(/^\s+|\s+$/g, '');
+            var result = document.getElementById('test-result');
+            if (!thugId) {
+                result.innerHTML = '<span style="color:red;">请输入打手ID</span>';
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 发送中...';
+            result.innerHTML = '';
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{:url("general/msgtemplate/test")}', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-paper-plane"></i> 发送测试';
+                    try {
+                        var ret = JSON.parse(xhr.responseText);
+                        if (ret.code === 1) {
+                            result.innerHTML = '<span style="color:green;">' + ret.msg + '</span>';
+                        } else {
+                            result.innerHTML = '<span style="color:red;">' + ret.msg + '</span>';
+                        }
+                    } catch(e) {
+                        result.innerHTML = '<span style="color:red;">请求失败: ' + xhr.status + '</span>';
+                    }
+                }
+            };
+            xhr.send('thug_id=' + encodeURIComponent(thugId));
+        };
+    }
+    bindTestBtn();
+})();
+</script>

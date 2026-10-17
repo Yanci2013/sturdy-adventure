@@ -1,0 +1,65 @@
+/* 全局样式 */
+.text-main{
+	color:#FF7A45;
+}
+.text-main-hover{
+	color:#FF9D6E;
+}
+.text-main-disabled{
+	color:#FFB38A;
+}
+.text-light-3{
+	color:#303133;
+}
+.text-light-6{
+	color:#606266;
+}
+.text-light-9{
+	color:#909399;
+}
+.text-light-gb{
+	color:#C0C4CC;
+}
+.text-black{
+	color:#000;
+}
+.text-white{
+	color:#fff;
+}
+.text-light-blue{
+	color:#FF7A45;
+}
+.text-light-red{
+	color:#F56C6C;
+}
+.text-light-green{
+	color:#67C23A;
+}
+
+/* 背景 */
+.bg-main{
+	background-color:#FF7A45;
+}
+.bg-main-hover{
+	background-color:#FF9D6E;
+}
+.bg-main-disabled{
+	background-color:#FFB38A;
+}
+.bg-white{
+	background-color:#fff;
+}
+.bg-black{
+	background-color:#000;
+}
+
+/* 边框 */
+.border-main{
+	border-color:#FF7A45 !important;
+}
+
+/* 分割线 */
+.f-divider{
+	height: 20rpx;
+	background-color: #F2F3F5;
+}

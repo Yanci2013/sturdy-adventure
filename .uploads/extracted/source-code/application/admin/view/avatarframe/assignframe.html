@@ -1,0 +1,63 @@
+<form id="assignframe-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">打手:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input type="text" class="form-control" value="{$thug.name|htmlentities}" readonly>
+        </div>
+    </div>
+    
+    {if $currentAvatarFrame}
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">当前头像框:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="row">
+                <div class="col-xs-4">
+                    <img src="{$currentAvatarFrame.image|htmlentities}" style="max-width:120px;max-height:120px;border-radius:8px;">
+                </div>
+                <div class="col-xs-8">
+                    <p style="font-size:16px;">{$currentAvatarFrame.name|htmlentities}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {/if}
+    
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">选择头像框:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select name="avatar_frame_id" class="form-control selectpicker" required>
+                <option value="">不使用头像框</option>
+                {foreach name="avatarFrameList" item="frame"}
+                <option value="{$frame.id}" {if $currentAvatarFrame && $currentAvatarFrame.id == $frame.id}selected{/if}>{$frame.name}</option>
+                {/foreach}
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">保存</button>
+            <button type="reset" class="btn btn-default btn-embossed">重置</button>
+        </div>
+    </div>
+</form>
+
+<script>
+    // 绑定FastAdmin的表单提交事件
+    $(document).ready(function() {
+        Form.api.bindevent($("#assignframe-form"), function(data) {
+            // 成功后关闭弹窗并刷新父页面
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
+            
+            // 延迟刷新，确保弹窗已关闭
+            setTimeout(function() {
+                // 刷新打手列表
+                if (parent.$("#thugTable").length) {
+                    parent.$("#thugTable").bootstrapTable('refresh');
+                }
+            }, 300);
+        });
+    });
+</script>
