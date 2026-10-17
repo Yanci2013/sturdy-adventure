@@ -64,6 +64,7 @@
 		z-index: 9999;
 		padding: 0 24rpx calc(env(safe-area-inset-bottom));
 		background: transparent;
+		pointer-events: auto;
 	}
 	.tabbar-capsule {
 		display: flex;

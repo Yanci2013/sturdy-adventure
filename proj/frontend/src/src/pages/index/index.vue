@@ -1,8 +1,8 @@
 <template>
 	<view>
+	<commonTabbar :current="0" :placeholder="false"></commonTabbar>
 	<z-paging ref="paging" v-model="dataList" @query="queryList" :auto="false" auto-show-back-to-top
 		@scrollTopChange="scrollTopChange">
-		<commonTabbar :current="0" :placeholder="false"></commonTabbar>
 		<view class="order-broadcast" :key="(currentOrderBroadcast.id || orderBroadcastIndex) + '-' + orderBroadcastPlayKey" v-if="pageMode === 'goods' && orderBroadcastList.length">
 			<image class="order-broadcast__avatar" :src="currentOrderBroadcast.avatar" mode="aspectFill"></image>
 			<view class="order-broadcast__text-wrap">
@@ -51,22 +51,6 @@
 					</view>
 				</view>
 
-				<!-- 公告弹窗 -->
-				<view class="notice-popup-mask" v-if="showNotice" @click="closeNotice">
-					<view class="notice-popup" @click.stop>
-						<view class="notice-popup-header">
-							<text class="notice-title">公告</text>
-						</view>
-						<view class="notice-popup-body">
-							<text class="notice-label">{{ notice }}</text>
-							<rich-text class="notice-desc" :nodes="noticeContent" v-if="noticeContent"></rich-text>
-							<image v-if="noticeImage" class="notice-cover" :src="noticeImage" mode="widthFix"></image>
-						</view>
-						<view class="notice-popup-close" @click="closeNotice">
-							<text class="close-icon">×</text>
-						</view>
-					</view>
-				</view>
 
 				<block v-if="pageMode === 'goods'">
 
@@ -359,6 +343,23 @@
 		<view style="height: 150rpx;"></view>
 
 	</z-paging>
+	<!-- 公告弹窗 -->
+	<view class="notice-popup-mask" v-if="showNotice" @click="closeNotice">
+		<view class="notice-popup" @click.stop>
+			<view class="notice-popup-header">
+				<text class="notice-title">公告</text>
+			</view>
+			<view class="notice-popup-body">
+				<text class="notice-label">{{ notice }}</text>
+				<rich-text class="notice-desc" :nodes="noticeContent" v-if="noticeContent"></rich-text>
+				<image v-if="noticeImage" class="notice-cover" :src="noticeImage" mode="widthFix"></image>
+			</view>
+			<view class="notice-popup-close" @click="closeNotice">
+				<text class="close-icon">×</text>
+			</view>
+		</view>
+	</view>
+
 
 	<!-- 客服列表弹窗 -->
 	<uv-modal ref="customerServiceModal" title="客服列表" :showConfirmButton="true" confirmText="确认" @confirm="closeCustomerService">
