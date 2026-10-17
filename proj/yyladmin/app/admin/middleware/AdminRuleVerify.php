@@ -36,32 +36,24 @@ class AdminRuleVerify
             $admin_user_id = admin_user_id();
             $admin_ids     = Config::get('admin.admin_ids');
 
-            if (!in_array($admin_user_id, $admin_ids)) {
-                $admin_user = AdminUserCache::get($admin_user_id);
-
-                if (empty($admin_user)) {
-                    exception('登录已失效，请重新登录', 401);
-                }
-
-                if ($admin_user['is_disable'] == 1) {
-                    exception('账号已禁用，请联系管理员', 401);
-                }
-
-                if (!in_array($menu_url, $admin_user['roles'])) {
-                    $admin_menu = AdminMenuService::info($menu_url);
-                    exception('你没有权限操作：' . $admin_menu['menu_name'], 403);
-                }
+            // 超级管理员跳过所有权限和菜单验证
+            if (in_array($admin_user_id, $admin_ids)) {
+                return $next($request);
             }
 
-            $admin_menu_url = AdminMenuService::list('url')['list'];
+            $admin_user = AdminUserCache::get($admin_user_id);
 
-            if (!in_array($menu_url, $admin_menu_url)) {
-                $msg   = '接口地址错误';
-                $debug = Env::get('app_debug');
-                if ($debug) {
-                    $msg .= '：' . $menu_url;
-                }
-                exception($msg, 404);
+            if (empty($admin_user)) {
+                exception('登录已失效，请重新登录', 401);
+            }
+
+            if ($admin_user['is_disable'] == 1) {
+                exception('账号已禁用，请联系管理员', 401);
+            }
+
+            if (!in_array($menu_url, $admin_user['roles'])) {
+                $admin_menu = AdminMenuService::info($menu_url);
+                exception('你没有权限操作：' . $admin_menu['menu_name'], 403);
             }
         }
 

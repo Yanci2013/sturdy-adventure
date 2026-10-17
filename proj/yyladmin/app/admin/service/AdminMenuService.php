@@ -92,7 +92,7 @@ class AdminMenuService
                 ->find();
 
             if (empty($admin_menu)) {
-                exception('菜单不存在：' . $admin_menu_id);
+                return [];
             }
 
             AdminMenuCache::set($admin_menu_id, $admin_menu);

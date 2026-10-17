@@ -5,7 +5,7 @@
 
 return [
     // 默认使用的数据库连接配置
-    'default'         => env('database.driver', 'mysql'),
+    'default'         => env('database.driver', 'sqlite'),
 
     // 自定义时间查询规则
     'time_query_rule' => [],
