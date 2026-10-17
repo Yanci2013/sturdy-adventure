@@ -169,6 +169,18 @@ def init_db():
         UNIQUE(platform, openid)
     )''')
     db.commit()
+    # 表结构迁移（新增字段，兼容旧库）
+    for col, ddl in [
+        ('session_timeout', "ALTER TABLE customer_services ADD COLUMN session_timeout INTEGER DEFAULT 3"),
+        ('cs_mode', "ALTER TABLE customer_services ADD COLUMN cs_mode TEXT DEFAULT 'built_in'"),
+        ('wecom_url', "ALTER TABLE customer_services ADD COLUMN wecom_url TEXT DEFAULT ''"),
+        ('auto_assign', "ALTER TABLE customer_services ADD COLUMN auto_assign INTEGER DEFAULT 0"),
+    ]:
+        try:
+            cur.execute(ddl)
+        except Exception:
+            pass
+    db.commit()
     # 初始化默认数据
     cur.execute('SELECT COUNT(*) FROM notices')
     if cur.fetchone()[0] == 0:
@@ -298,6 +310,12 @@ DEFAULT_DECORATION = {
         "tabbar_radius": "999",
     },
     "bg_image": "",
+    "nav_style": "float_ellipse",
+    "floating_nav": [
+        {"text": "首页", "icon": "home", "color": "#22c55e", "link": "/pages/index/index"},
+        {"text": "分类", "icon": "grid", "color": "#22c55e", "link": "/pages/classify/index"},
+        {"text": "我的", "icon": "user", "color": "#22c55e", "link": "/pages/mine/index"},
+    ],
 }
 
 def get_decoration_config():
@@ -310,6 +328,8 @@ def get_decoration_config():
             merged['colors'].update(cfg.get('colors', {}))
             merged['name'] = cfg.get('name', DEFAULT_DECORATION['name'])
             merged['bg_image'] = cfg.get('bg_image', '')
+            merged['nav_style'] = cfg.get('nav_style', DEFAULT_DECORATION['nav_style'])
+            merged['floating_nav'] = cfg.get('floating_nav', DEFAULT_DECORATION['floating_nav'])
             return merged
         except Exception:
             pass
@@ -370,6 +390,9 @@ class Handler(BaseHTTPRequestHandler):
   function applyTheme(cfg){
     var c = (cfg && cfg.colors) || {};
     var bg = cfg && cfg.bg_image ? cfg.bg_image : '';
+    window.__floatingNav = (cfg && cfg.floating_nav) || [];
+    window.__navStyle = (cfg && cfg.nav_style) || 'float_ellipse';
+    if (window.__onNavConfig) { try { window.__onNavConfig(); } catch(e){} }
     var root = document.documentElement;
     var map = {
       brand:'--theme-brand', brand_gradient:'--theme-brand-gradient',
@@ -1488,6 +1511,9 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute('UPDATE thug SET is_customer_service = ? WHERE id = ?',
                                (1 if body.get('is_customer_service') else 0, tid))
                     msg = '客服权限已更新'
+                elif action == 'delete':
+                    db.execute('DELETE FROM thug WHERE id = ?', (tid,))
+                    msg = '已删除该打手'
                 else:
                     db.execute('UPDATE thug SET name = ? WHERE id = ?', (body.get('name'), tid))
                     msg = '保存成功'
@@ -1532,13 +1558,22 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == '/api/admin/cs/save':
                 cid = int(body.get('id') or 0)
+                cs_mode = body.get('cs_mode', 'built_in')
                 if cid:
-                    db.execute('UPDATE customer_services SET name = ?, avatar = ?, online = ? WHERE id = ?',
-                               (body.get('name'), body.get('avatar', ''), int(body.get('online') or 0), cid))
+                    db.execute(
+                        'UPDATE customer_services SET name = ?, avatar = ?, online = ?, session_timeout = ?, '
+                        'cs_mode = ?, wecom_url = ?, auto_assign = ? WHERE id = ?',
+                        (body.get('name'), body.get('avatar', ''), int(body.get('online') or 0),
+                         int(body.get('session_timeout') or 3), cs_mode, body.get('wecom_url', ''),
+                         int(body.get('auto_assign') or 0), cid))
                 else:
-                    db.execute('INSERT INTO customer_services (name, user_id, type, avatar, online) VALUES (?,?,?,?,?)',
-                               (body.get('name'), int(body.get('user_id') or 0),
-                                body.get('type', 'im'), body.get('avatar', ''), int(body.get('online') or 1)))
+                    db.execute(
+                        'INSERT INTO customer_services (name, user_id, type, avatar, online, session_timeout, cs_mode, wecom_url, auto_assign) '
+                        'VALUES (?,?,?,?,?,?,?,?,?)',
+                        (body.get('name'), int(body.get('user_id') or 0), body.get('type', 'im'),
+                         body.get('avatar', ''), int(body.get('online') or 1),
+                         int(body.get('session_timeout') or 3), cs_mode, body.get('wecom_url', ''),
+                         int(body.get('auto_assign') or 0)))
                 db.commit()
                 ok(None, '保存成功')
                 return
@@ -1609,22 +1644,64 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if path == '/api/admin/invite/save':
+                import random, string
                 iid = int(body.get('id') or 0)
+                itype = body.get('type', 'thug')
+                code = (body.get('code') or '').strip()
+                if not code:
+                    prefix = 'CS' if itype == 'cs' else 'THUG'
+                    while True:
+                        code = prefix + ''.join(random.choices(string.digits, k=6))
+                        if not db.execute('SELECT id FROM invite_codes WHERE code = ?', (code,)).fetchone():
+                            break
                 if iid:
                     db.execute('UPDATE invite_codes SET code = ?, type = ?, name = ? WHERE id = ?',
-                               (body.get('code'), body.get('type', 'thug'), body.get('name', ''), iid))
+                               (code, itype, body.get('name', ''), iid))
                 else:
                     db.execute('INSERT INTO invite_codes (code, type, user_id, name, createtime) VALUES (?,?,?,?,?)',
-                               (body.get('code'), body.get('type', 'thug'), int(body.get('user_id') or 0),
+                               (code, itype, int(body.get('user_id') or 0),
                                 body.get('name', ''), now_ts()))
                 db.commit()
-                ok(None, '保存成功')
+                ok({'code': code}, '保存成功')
                 return
 
             if path == '/api/admin/invite/delete':
                 db.execute('DELETE FROM invite_codes WHERE id = ?', (int(body.get('id') or 0),))
                 db.commit()
                 ok(None, '已删除')
+                return
+
+            # 按用户ID直接开通权限（打手/客服）
+            if path == '/api/admin/invite/grant':
+                uid = int(body.get('user_id') or 0)
+                itype = body.get('type', 'thug')
+                if uid <= 0:
+                    ok(None, '请输入有效的用户ID')
+                    return
+                u = db.execute('SELECT id, nickname FROM users WHERE id = ?', (uid,)).fetchone()
+                if not u:
+                    ok(None, '用户不存在')
+                    return
+                if itype == 'thug':
+                    ex = db.execute('SELECT id FROM thug WHERE user_id = ?', (uid,)).fetchone()
+                    if ex:
+                        db.execute('UPDATE thug SET sh_status = 1, status = 1 WHERE id = ?', (ex['id'],))
+                    else:
+                        db.execute('INSERT INTO thug (user_id, name, status, sh_status, is_customer_service, createtime) '
+                                   'VALUES (?,?,?,?,?,?)', (uid, u['nickname'] or '打手' + str(uid), 1, 1, 0, now_ts()))
+                    db.commit()
+                    ok(None, '已为用户开通打手权限')
+                elif itype == 'cs':
+                    ex = db.execute('SELECT id FROM thug WHERE user_id = ?', (uid,)).fetchone()
+                    if ex:
+                        db.execute('UPDATE thug SET sh_status = 1, status = 1, is_customer_service = 1 WHERE id = ?', (ex['id'],))
+                    else:
+                        db.execute('INSERT INTO thug (user_id, name, status, sh_status, is_customer_service, createtime) '
+                                   'VALUES (?,?,?,?,?,?)', (uid, u['nickname'] or '客服' + str(uid), 1, 1, 1, now_ts()))
+                    db.commit()
+                    ok(None, '已为用户开通客服权限')
+                else:
+                    ok(None, '未知类型')
                 return
 
             # 系统配置
@@ -1656,6 +1733,8 @@ class Handler(BaseHTTPRequestHandler):
                     'name': body.get('name') or '自定义',
                     'colors': body.get('colors') or {},
                     'bg_image': body.get('bg_image') or '',
+                    'nav_style': body.get('nav_style', 'float_ellipse'),
+                    'floating_nav': body.get('floating_nav') or [],
                 }
                 set_config('frontend_decoration', json.dumps(cfg, ensure_ascii=False))
                 ok(None, '装修配置已保存，前端将实时生效')

@@ -363,6 +363,7 @@ const MENUS = [
     { key: 'cs', name: '客服管理' },
     { key: 'cs_account', name: '客服账号' },
   ]},
+  { key: 'invites', name: '邀请码管理' },
   { key: 'fine', name: '罚款管理' },
   { group: '上传管理', children: [
     { key: 'upload_storage', name: '存储配置' },
@@ -521,10 +522,7 @@ function userEdit(id, name, money, level) {
       closeModal(); toast(r.msg); PAGES.users()
     } }])
 }
-async function userDel(id) {
-  if (!confirm('确定删除该会员？此操作不可恢复')) return
-  const r = await biz('user/save', { id, action: 'delete' }); toast(r.msg); PAGES.users()
-}
+function userDel(id) { confirmModal('删除会员', '确定删除该会员？此操作不可恢复。', async () => { const r = await biz('user/save', { id, action: 'delete' }); toast(r.msg); PAGES.users() }) }
 
 /* ============ 打手管理 ============ */
 let thugFilter = ''
@@ -550,6 +548,7 @@ PAGES.thugs = async () => {
         ${st !== '1' ? `<button class="btn btn-ghost btn-sm" onclick="thugAudit(${t.id},'approve')">通过</button>` : ''}
         ${st !== '2' ? `<button class="btn btn-ghost btn-sm" onclick="thugAudit(${t.id},'reject')">驳回</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="thugToggleCs(${t.id},${t.is_customer_service == 1 ? 0 : 1})">${t.is_customer_service == 1 ? '取消客服' : '设为客服'}</button>
+        <button class="btn btn-danger btn-sm" onclick="thugDel(${t.id})">删除</button>
       </td></tr>`
   }).join('')
   $('#content').innerHTML = `<div class="card">
@@ -606,38 +605,61 @@ async function thugAudit(id, action) {
 async function thugToggleCs(id, v) {
   const r = await biz('thug/audit', { id, action: 'toggle_cs', is_customer_service: !!v }); toast(r.msg); PAGES.thugs()
 }
+function thugDel(id) { confirmModal('删除打手', '确定删除该打手？此操作不可恢复。', async () => { const r = await biz('thug/audit', { id, action: 'delete' }); toast(r.msg); PAGES.thugs() }) }
 
 /* ============ 客服管理 ============ */
 PAGES.cs = async () => {
   const r = await biz('cs')
   const list = (r.data || {}).list || []
-  const rows = list.map(c => `<tr>
+  const rows = list.map(c => {
+    const modeTag = c.cs_mode === 'wecom'
+      ? '<span class="tag blue">企微外部</span>'
+      : '<span class="tag green">内置客服</span>'
+    return `<tr>
     <td>${esc(c.id)}</td>
     <td><img class="row-img" src="${esc(c.avatar || '/static/yun/default_avatar.png')}" onerror="this.style.visibility='hidden'"> ${esc(c.name)}</td>
-    <td>${esc(c.type === 'im' ? '在线客服' : c.type)}</td>
+    <td>${modeTag}</td>
     <td>${esc(c.user_nickname || '-')}</td>
     <td>${c.online == 1 ? '<span class="tag green">在线</span>' : '<span class="tag gray">离线</span>'}</td>
+    <td class="muted">${esc(c.session_timeout || 3)} 分钟</td>
     <td>
-      <button class="btn btn-ghost btn-sm" onclick="csEdit(${c.id},'${esc(c.name)}','${esc(c.avatar || '')}',${c.online})">编辑</button>
+      <button class="btn btn-ghost btn-sm" onclick="csEdit(${c.id},${JSON.stringify(c).replace(/"/g, '&quot;')})">编辑</button>
       <button class="btn btn-danger btn-sm" onclick="csDel(${c.id})">删除</button>
-    </td></tr>`).join('')
+    </td></tr>`
+  }).join('')
   $('#content').innerHTML = `<div class="card">
-    <div class="card-head"><h2>客服管理 <span class="muted">共 ${list.length} 条</span></h2>
-      <button class="btn btn-primary btn-sm" onclick="csEdit(0,'','',1)">+ 新增客服</button></div>
-    <table><thead><tr><th>ID</th><th>客服名称</th><th>类型</th><th>绑定用户</th><th>在线状态</th><th>操作</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="6"><div class="empty">暂无客服数据</div></td></tr>'}</tbody></table></div>`
+    <div class="card-head"><h2>客服管理 <span class="muted">共 ${list.length} 条 · 全部已接入</span></h2>
+      <button class="btn btn-primary btn-sm" onclick="csEdit(0,null)">+ 新增客服</button></div>
+    <table><thead><tr><th>ID</th><th>客服名称</th><th>接入模式</th><th>绑定用户</th><th>在线状态</th><th>会话超时</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7"><div class="empty">暂无客服数据</div></td></tr>'}</tbody></table></div>`
 }
-function csEdit(id, name, avatar, online) {
+function csEdit(id, c) {
+  c = c || { name: '', avatar: '', online: 1, session_timeout: 3, cs_mode: 'built_in', wecom_url: '', auto_assign: 0 }
+  const mode = c.cs_mode || 'built_in'
   openModal(id ? '编辑客服' : '新增客服', `
-    <div class="field"><label>客服名称</label><input id="m_name" value="${esc(name)}"></div>
-    <div class="field"><label>头像地址</label><input id="m_avatar" value="${esc(avatar)}" placeholder="/static/... 或 http 地址"></div>
-    <div class="field"><label>在线状态</label><select id="m_online"><option value="1" ${online == 1 ? 'selected' : ''}>在线</option><option value="0" ${online != 1 ? 'selected' : ''}>离线</option></select></div>`,
+    <div class="field"><label>客服名称</label><input id="m_name" value="${esc(c.name)}"></div>
+    <div class="field"><label>头像地址</label><input id="m_avatar" value="${esc(c.avatar || '')}" placeholder="/static/... 或 http 地址"></div>
+    <div class="field"><label>在线状态</label><select id="m_online"><option value="1" ${c.online == 1 ? 'selected' : ''}>在线</option><option value="0" ${c.online != 1 ? 'selected' : ''}>离线</option></select></div>
+    <div class="field"><label>会话超时（分钟）<span class="muted" style="font-size:12px;font-weight:400"> · 默认 3 分钟，用户无操作自动结束会话</span></label><input type="number" id="m_timeout" value="${esc(c.session_timeout || 3)}" min="1"></div>
+    <div class="field"><label>接入模式</label><select id="m_mode" onchange="document.getElementById('m_wecom_row').style.display=this.value==='wecom'?'block':'none'">
+      <option value="built_in" ${mode==='built_in'?'selected':''}>内置客服（IM 会话）</option>
+      <option value="wecom" ${mode==='wecom'?'selected':''}>外部企微客服链接</option>
+    </select></div>
+    <div class="field" id="m_wecom_row" style="display:${mode==='wecom'?'block':'none'}"><label>企微客服链接</label><input id="m_wecom" value="${esc(c.wecom_url || '')}" placeholder="https://work.weixin.qq.com/..."></div>
+    <div class="field" style="display:flex;align-items:center;gap:10px"><label>自动分配客服</label>
+      <label class="switch"><input type="checkbox" id="m_auto" ${c.auto_assign==1?'checked':''}><span class="slider"></span></label>
+      <span class="muted" style="font-size:12px">开启后用户进线将自动分配在线客服</span>
+    </div>`,
     [{ text: '保存', cls: 'btn-primary', fn: async () => {
-      const r = await biz('cs/save', { id, name: $('#m_name').value, avatar: $('#m_avatar').value, online: Number($('#m_online').value) })
+      const r = await biz('cs/save', {
+        id, name: $('#m_name').value, avatar: $('#m_avatar').value, online: Number($('#m_online').value),
+        session_timeout: Number($('#m_timeout').value) || 3, cs_mode: $('#m_mode').value,
+        wecom_url: $('#m_wecom').value, auto_assign: $('#m_auto').checked ? 1 : 0
+      })
       closeModal(); toast(r.msg); PAGES.cs()
     } }])
 }
-async function csDel(id) { if (!confirm('确定删除该客服？')) return; const r = await biz('cs/delete', { id }); toast(r.msg); PAGES.cs() }
+function csDel(id) { confirmModal('删除客服', '确定删除该客服？此操作不可恢复。', async () => { const r = await biz('cs/delete', { id }); toast(r.msg); PAGES.cs() }) }
 
 /* ============ 订单管理 ============ */
 let orderQuery = { keyword: '', status: '', page: 1, limit: 20 }
@@ -708,7 +730,7 @@ function noticeEdit(n) {
       closeModal(); toast(r.msg); PAGES.notices()
     } }])
 }
-async function noticeDel(id) { if (!confirm('确定删除该公告？')) return; const r = await biz('notice/delete', { id }); toast(r.msg); PAGES.notices() }
+function noticeDel(id) { confirmModal('删除公告', '确定删除该公告？此操作不可恢复。', async () => { const r = await biz('notice/delete', { id }); toast(r.msg); PAGES.notices() }) }
 
 /* ============ 邀请码管理 ============ */
 PAGES.invites = async () => {
@@ -720,24 +742,47 @@ PAGES.invites = async () => {
     <td>${v.type === 'cs' ? '<span class="tag blue">客服邀请码</span>' : '<span class="tag orange">打手邀请码</span>'}</td>
     <td>${esc(v.name || '-')}</td>
     <td class="muted">${fmtTime(v.createtime)}</td>
-    <td><button class="btn btn-danger btn-sm" onclick="inviteDel(${v.id})">删除</button></td></tr>`).join('')
+    <td>
+      <button class="btn btn-ghost btn-sm" onclick="inviteCopy('${esc(v.code)}')">复制</button>
+      <button class="btn btn-danger btn-sm" onclick="inviteDel(${v.id})">删除</button>
+    </td></tr>`).join('')
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>邀请码管理 <span class="muted">共 ${list.length} 条</span></h2>
-      <button class="btn btn-primary btn-sm" onclick="inviteEdit()">+ 新增邀请码</button></div>
+      <div class="toolbar">
+        <button class="btn btn-primary btn-sm" onclick="inviteEdit()">+ 生成邀请码</button>
+        <button class="btn btn-ghost btn-sm" onclick="inviteGrant()">按用户ID开通权限</button>
+      </div></div>
     <table><thead><tr><th>ID</th><th>邀请码</th><th>类型</th><th>备注名称</th><th>创建时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6"><div class="empty">暂无邀请码</div></td></tr>'}</tbody></table></div>`
 }
 function inviteEdit() {
-  openModal('新增邀请码', `
-    <div class="field"><label>邀请码</label><input id="m_code" placeholder="如 CS8888 / THUG666"></div>
-    <div class="field"><label>类型</label><select id="m_type"><option value="thug">打手邀请码</option><option value="cs">客服邀请码</option></select></div>
-    <div class="field"><label>备注名称</label><input id="m_name"></div>`,
+  openModal('生成邀请码', `
+    <div class="field"><label>客服类型</label><select id="m_type"><option value="thug">打手邀请码</option><option value="cs">客服邀请码</option></select></div>
+    <div class="field"><label>邀请码 <span class="muted" style="font-size:12px;font-weight:400">留空则系统随机生成</span></label><input id="m_code" placeholder="自动生成"></div>
+    <div class="field"><label>备注名称</label><input id="m_name" placeholder="如：客服小创"></div>`,
     [{ text: '保存', cls: 'btn-primary', fn: async () => {
       const r = await biz('invite/save', { code: $('#m_code').value.trim(), type: $('#m_type').value, name: $('#m_name').value.trim() })
+      if (r.code === 1 && r.data && r.data.code) inviteCopy(r.data.code)
       closeModal(); toast(r.msg); PAGES.invites()
     } }])
 }
-async function inviteDel(id) { if (!confirm('确定删除该邀请码？')) return; const r = await biz('invite/delete', { id }); toast(r.msg); PAGES.invites() }
+function inviteGrant() {
+  openModal('按用户ID开通权限', `
+    <div class="field"><label>权限类型</label><select id="g_type"><option value="thug">打手权限</option><option value="cs">客服权限</option></select></div>
+    <div class="field"><label>用户ID</label><input id="g_uid" type="number" placeholder="请输入用户ID"></div>
+    <div style="font-size:12px;color:#9ca3af">直接为指定用户开通打手或客服权限，无需用户提交入驻申请。</div>`,
+    [{ text: '开通', cls: 'btn-primary', fn: async () => {
+      const uid = Number($('#g_uid').value)
+      if (!uid) { toast('请输入用户ID', false); return }
+      const r = await biz('invite/grant', { user_id: uid, type: $('#g_type').value })
+      closeModal(); toast(r.msg); 
+    } }])
+}
+function inviteCopy(code) {
+  if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => toast('已复制: ' + code), () => toast('复制失败'))
+  else toast('邀请码: ' + code)
+}
+function inviteDel(id) { confirmModal('删除邀请码', '确定删除该邀请码？删除后不可使用。', async () => { const r = await biz('invite/delete', { id }); toast(r.msg); PAGES.invites() }) }
 
 /* ============ 系统配置 ============ */
 let cfgGroup = 'basic'
@@ -876,6 +921,38 @@ function renderDecoration() {
               <label class="switch"><input type="checkbox" ${rnEnabled ? 'checked' : ''} onchange="toggleRealname(this.checked)"><span class="slider"></span></label>
               <span class="muted" style="font-size:12px">${rnEnabled ? '已开启 · 打手需提交证件照片' : '已关闭 · 前端不显示实名认证'}</span>
             </div>
+            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">底部悬浮导航</div>
+            <div class="color-row" style="align-items:center">
+              <label>导航形态</label>
+              <select id="nav_style" onchange="decoCfg.nav_style=this.value;decoDirty=true">
+                <option value="float_ellipse" ${decoCfg.nav_style==='float_ellipse'?'selected':''}>① 悬浮椭圆胶囊</option>
+                <option value="float_circle" ${decoCfg.nav_style==='float_circle'?'selected':''}>② 圆形主按钮 + 圆环弹出菜单</option>
+                <option value="float_row" ${decoCfg.nav_style==='float_row'?'selected':''}>③ 容器内横向平行排布</option>
+              </select>
+            </div>
+            ${(decoCfg.floating_nav || []).map((it, i) => `
+              <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-top:10px;background:#fafafa">
+                <div style="font-size:12px;color:#6b7280;margin-bottom:8px;font-weight:600">第 ${i + 1} 项</div>
+                <div class="color-row" style="border:none;padding:0;margin-bottom:8px">
+                  <label>文字</label>
+                  <input type="text" value="${esc(it.text||'')}" oninput="decoCfg.floating_nav[${i}].text=this.value;decoDirty=true" placeholder="如：首页">
+                </div>
+                <div class="color-row" style="border:none;padding:0;margin-bottom:8px">
+                  <label>图标</label>
+                  <input type="text" value="${esc(it.icon||'')}" oninput="decoCfg.floating_nav[${i}].icon=this.value;decoDirty=true" placeholder="home / grid / user ...">
+                </div>
+                <div class="color-row" style="border:none;padding:0;margin-bottom:8px">
+                  <label>跳转链接</label>
+                  <input type="text" value="${esc(it.link||'')}" oninput="decoCfg.floating_nav[${i}].link=this.value;decoDirty=true" placeholder="/pages/index/index">
+                </div>
+                <div class="color-row" style="border:none;padding:0">
+                  <label>图标颜色</label>
+                  <div class="color-input">
+                    <input type="color" value="${esc(it.color||'#22c55e')}" onchange="decoCfg.floating_nav[${i}].color=this.value;decoDirty=true" oninput="decoCfg.floating_nav[${i}].color=this.value;decoDirty=true">
+                    <input type="text" value="${esc(it.color||'')}" oninput="decoCfg.floating_nav[${i}].color=this.value;decoDirty=true" onchange="decoCfg.floating_nav[${i}].color=this.value;decoDirty=true" style="flex:1">
+                  </div>
+                </div>
+              </div>`).join('')}
           </div>
         </div>
       </div>
@@ -941,7 +1018,11 @@ async function toggleRealname(v) {
   if (r.code === 1) PAGES.decoration()
 }
 async function saveDecoration() {
-  const r = await biz('decoration/save', { name: decoCfg.name, colors: decoCfg.colors, bg_image: decoCfg.bg_image })
+  const navStyle = $('#nav_style') ? $('#nav_style').value : (decoCfg.nav_style || 'float_ellipse')
+  const r = await biz('decoration/save', {
+    name: decoCfg.name, colors: decoCfg.colors, bg_image: decoCfg.bg_image,
+    nav_style: navStyle, floating_nav: decoCfg.floating_nav || []
+  })
   toast(r.msg)
   if (r.code === 1) { decoDirty = false; renderDecoration() }
 }
@@ -1007,6 +1088,14 @@ function openModal(title, body, buttons) {
 }
 function closeModal() { $('#modal').classList.remove('show') }
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal() })
+
+// 二次确认弹窗（替代原生 confirm）
+function confirmModal(title, msg, onOk) {
+  openModal(title, `<div style="font-size:14px;color:#374151;line-height:1.6;padding:6px 0">${esc(msg)}</div>`, [
+    { text: '取消', cls: 'btn-ghost', fn: closeModal },
+    { text: '确定', cls: 'btn-primary', fn: () => { closeModal(); onOk && onOk() } }
+  ])
+}
 
 /* ============ 启动 ============ */
 async function enterApp() {
