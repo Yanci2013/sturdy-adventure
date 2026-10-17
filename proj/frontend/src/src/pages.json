@@ -327,6 +327,12 @@
 					}
 				},
 				{
+					"path": "realname",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
 					"path": "fenxiao",
 					"style": {
 						"navigationStyle": "custom"

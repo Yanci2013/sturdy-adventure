@@ -159,7 +159,9 @@
 		orderFinish,
 		orderConfirm,
 		thugorderCancel,
-		thugthugAppoint
+		thugthugAppoint,
+		configure,
+		thugRealnameInfo
 	} from '../request/api';
 	import router from '../utils/router';
 	import {
@@ -257,7 +259,32 @@
 
 	}
 
-	const connectClick = () => {
+	const connectClick = async () => {
+		// 打手实名认证校验
+		if (type === '打手') {
+			try {
+				const cfgRes = await configure();
+				const required = cfgRes.data && cfgRes.data.thug_realname_required === 1;
+				if (required) {
+					const rnRes = await thugRealnameInfo();
+					const status = rnRes.data && rnRes.data.real_name_status;
+					if (status !== 2) {
+						const tip = status === 1 ? '实名认证审核中，请耐心等待' : status === 3 ? '实名认证未通过，请重新提交' : '请先完成实名认证';
+						uni.showModal({
+							title: '提示',
+							content: tip,
+							confirmText: '去认证',
+							success: (r) => {
+								if (r.confirm) {
+									uni.navigateTo({ url: '/pages/playerMain/realname' });
+								}
+							}
+						});
+						return;
+					}
+				}
+			} catch (e) {}
+		}
 		orderConnect({
 			id: props.item.id
 		}).then(res => {

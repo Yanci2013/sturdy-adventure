@@ -80,7 +80,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { thugorderList, orderConnect } from '../../request/api'
+import { thugorderList, orderConnect, configure, thugRealnameInfo } from '../../request/api'
 
 const paging = ref(null)
 const dataList = ref([])
@@ -102,7 +102,28 @@ const queryList = (pageNo, pageSize) => {
 	})
 }
 
-const acceptOrder = (item) => {
+const acceptOrder = async (item) => {
+	// 实名认证校验
+	try {
+		const cfgRes = await configure();
+		const required = cfgRes.data && cfgRes.data.thug_realname_required === 1;
+		if (required) {
+			const rnRes = await thugRealnameInfo();
+			const status = rnRes.data && rnRes.data.real_name_status;
+			if (status !== 2) {
+				const tip = status === 1 ? '实名认证审核中，请耐心等待' : status === 3 ? '实名认证未通过，请重新提交' : '请先完成实名认证';
+				uni.showModal({
+					title: '提示',
+					content: tip,
+					confirmText: '去认证',
+					success: (r) => {
+						if (r.confirm) uni.navigateTo({ url: '/pages/playerMain/realname' });
+					}
+				});
+				return;
+			}
+		}
+	} catch (e) {}
 	uni.showModal({
 		title: '接受邀请',
 		content: `确定接受订单「${item.title}」吗？`,

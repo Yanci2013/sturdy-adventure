@@ -165,6 +165,10 @@ export const thugorderCancel = (data) => http.post('thug/orderCancel', data)
 export const thugBond = (data) => http.post('thug/bond', data)
 //修改打手信息
 export const thugEdit = (data) => http.post('thug/thugEdit', data)
+//打手实名认证提交
+export const thugRealname = (data) => http.post('thug/realname', data)
+//打手实名认证信息
+export const thugRealnameInfo = (params) => http.get('thug/realnameInfo', { params })
 //指定打手
 export const thugthugAppoint = (params) => http.get('thug/thugAppoint', {
 	params

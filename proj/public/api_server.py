@@ -66,8 +66,19 @@ def init_db():
         status INTEGER DEFAULT 0,
         sh_status INTEGER DEFAULT 0,
         is_customer_service INTEGER DEFAULT 0,
+        real_name TEXT,
+        id_card TEXT,
+        id_card_front TEXT,
+        id_card_back TEXT,
+        real_name_status INTEGER DEFAULT 0,
         createtime INTEGER
     )''')
+    # 迁移：为已存在的打手表添加实名字段
+    for col, ctype in [('real_name','TEXT'),('id_card','TEXT'),('id_card_front','TEXT'),('id_card_back','TEXT'),('real_name_status','INTEGER DEFAULT 0')]:
+        try:
+            cur.execute(f"ALTER TABLE thug ADD COLUMN {col} {ctype}")
+        except Exception:
+            pass
     # 订单表
     cur.execute('''CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -229,6 +240,8 @@ def init_db():
         ('builtin_cs_enabled', 'basic', '内置客服开关', '开启/关闭 App 内置 IM 客服入口（1开启 0关闭）', 'radio', '', '1', '{"1":"开启","0":"关闭"}', '', '', ''),
         # 发布控制
         ('publish_mode', 'basic', '发布模式', '前端装修发布方式', 'radio', '', 'admin', '{"admin":"仅管理员发布","auto":"立即发布"}', '', '', ''),
+        # 打手实名认证
+        ('thug_realname_required', 'basic', '打手实名认证', '打手接单是否需要实名认证（1需要 0不需要）', 'radio', '', '0', '{"1":"需要","0":"不需要"}', '', '', ''),
     ]
     for item in extra_items:
         cur.execute('INSERT OR IGNORE INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
@@ -680,6 +693,8 @@ class Handler(BaseHTTPRequestHandler):
             badge_color = get_config('badge_color', '#FF3B30') or '#FF3B30'
             builtin_cs_enabled = get_config('builtin_cs_enabled', '1')
             builtin_cs_enabled = 0 if str(builtin_cs_enabled) == '0' else 1
+            thug_realname_required = get_config('thug_realname_required', '0')
+            thug_realname_required = 1 if str(thug_realname_required) == '1' else 0
             # 客服列表（内置 + 外置，仅在线的）
             db = get_db()
             cs_rows = db.execute('SELECT * FROM customer_services WHERE online = 1 ORDER BY id ASC').fetchall()
@@ -719,6 +734,7 @@ class Handler(BaseHTTPRequestHandler):
                     "tabbar_ellipse_color": tabbar_ellipse_color,
                     "badge_color": badge_color,
                     "builtin_cs_enabled": builtin_cs_enabled,
+                    "thug_realname_required": thug_realname_required,
                     "customer_services": customer_services,
                     "external_services": external_services
                 }
@@ -1209,6 +1225,52 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "已重置为未使用"})
             return
 
+        # ===== 管理员：打手实名认证列表 =====
+        if path == '/api/admin/realnameList':
+            db = get_db()
+            rows = db.execute('''SELECT t.id, t.user_id, t.name as thug_name, t.real_name, t.id_card,
+                t.id_card_front, t.id_card_back, t.real_name_status, t.createtime,
+                u.nickname, u.avatar
+                FROM thug t LEFT JOIN users u ON t.user_id = u.id
+                WHERE t.real_name IS NOT NULL AND t.real_name != ''
+                ORDER BY t.real_name_status ASC, t.id DESC''').fetchall()
+            db.close()
+            status_map = {0: '未认证', 1: '审核中', 2: '已通过', 3: '已拒绝'}
+            list_data = [{
+                "id": r['id'],
+                "user_id": r['user_id'],
+                "thug_name": r['thug_name'],
+                "nickname": r['nickname'],
+                "avatar": r['avatar'],
+                "real_name": r['real_name'],
+                "id_card": r['id_card'],
+                "id_card_front": r['id_card_front'],
+                "id_card_back": r['id_card_back'],
+                "real_name_status": r['real_name_status'],
+                "real_name_status_text": status_map.get(r['real_name_status'], '未知'),
+                "createtime": r['createtime']
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": list_data})
+            return
+
+        # ===== 管理员：实名认证审核 =====
+        if path == '/api/admin/realnameReview':
+            cid = int(body.get('id') or 0)
+            action = body.get('action') or ''  # pass / reject
+            if not cid:
+                self.send_json({"code": 0, "msg": "缺少ID"})
+                return
+            if action not in ('pass', 'reject'):
+                self.send_json({"code": 0, "msg": "参数错误"})
+                return
+            new_status = 2 if action == 'pass' else 3
+            db = get_db()
+            db.execute('UPDATE thug SET real_name_status = ? WHERE id = ?', (new_status, cid))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "审核成功"})
+            return
+
         # ===== 打手入驻（邀请码） =====
         if path == '/api/thug/thugAdd':
             u = get_user_by_token(token)
@@ -1282,6 +1344,11 @@ class Handler(BaseHTTPRequestHandler):
                     "status": t['status'],
                     "sh_status": t['sh_status'],
                     "is_customer_service": t['is_customer_service'],
+                    "real_name": t['real_name'],
+                    "id_card": t['id_card'],
+                    "id_card_front": t['id_card_front'],
+                    "id_card_back": t['id_card_back'],
+                    "real_name_status": t['real_name_status'],
                     "jd_status": "1",
                     "frozen_money": "0.00",
                     "available_money": "0.00",
@@ -1289,6 +1356,73 @@ class Handler(BaseHTTPRequestHandler):
                     "bond": "0.00",
                     "level": 1,
                     "createtime": t['createtime']
+                }
+            })
+            return
+
+        # ===== 打手实名认证提交 =====
+        if path == '/api/thug/realname':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            real_name = (body.get('real_name') or '').strip()
+            id_card = (body.get('id_card') or '').strip()
+            id_card_front = (body.get('id_card_front') or '').strip()
+            id_card_back = (body.get('id_card_back') or '').strip()
+            if not real_name or not id_card:
+                self.send_json({"code": 0, "msg": "请填写真实姓名和身份证号"})
+                return
+            if not id_card_front or not id_card_back:
+                self.send_json({"code": 0, "msg": "请上传身份证正反面照片"})
+                return
+            db = get_db()
+            row = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "请先申请打手入驻"})
+                return
+            if row['real_name_status'] == 1:
+                db.close()
+                self.send_json({"code": 0, "msg": "实名认证审核中，请勿重复提交"})
+                return
+            if row['real_name_status'] == 2:
+                db.close()
+                self.send_json({"code": 0, "msg": "您已通过实名认证"})
+                return
+            db.execute(
+                'UPDATE thug SET real_name=?, id_card=?, id_card_front=?, id_card_back=?, real_name_status=1 WHERE user_id=?',
+                (real_name, id_card, id_card_front, id_card_back, u['id'])
+            )
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "实名认证提交成功，等待审核"})
+            return
+
+        # ===== 打手实名认证信息 =====
+        if path == '/api/thug/realnameInfo':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            db = get_db()
+            row = db.execute('SELECT real_name, id_card, id_card_front, id_card_back, real_name_status FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            db.close()
+            if not row:
+                self.send_json({"code": 0, "msg": "请先申请打手入驻"})
+                return
+            # 身份证号脱敏
+            masked_id = row['id_card']
+            if masked_id and len(masked_id) >= 10:
+                masked_id = masked_id[:4] + '****' + masked_id[-4:]
+            self.send_json({
+                "code": 1, "msg": "成功",
+                "data": {
+                    "real_name": row['real_name'],
+                    "id_card": masked_id,
+                    "id_card_front": row['id_card_front'],
+                    "id_card_back": row['id_card_back'],
+                    "real_name_status": row['real_name_status']
                 }
             })
             return

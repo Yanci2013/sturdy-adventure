@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>打手实名认证管理</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f7; color: #333; }
+  .header { background: linear-gradient(135deg, #FF7A45, #FF9D6E); color: #fff; padding: 24px 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .container { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #1a1a1a; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+  .setting-label { font-size: 14px; color: #333; }
+  .setting-desc { font-size: 12px; color: #999; margin-top: 4px; }
+  .toggle { position: relative; width: 48px; height: 26px; background: #ddd; border-radius: 13px; cursor: pointer; transition: background 0.3s; flex-shrink: 0; }
+  .toggle.on { background: #FF7A45; }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
+  .toggle.on::after { transform: translateX(22px); }
+  .toolbar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .btn { padding: 8px 18px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #FF7A45; color: #fff; }
+  .btn-success { background: #4CAF50; color: #fff; }
+  .btn-danger { background: #F44336; color: #fff; }
+  .btn-default { background: #f0f0f0; color: #333; }
+  .filter-select { padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+  th { background: #fafafa; font-weight: 600; color: #666; font-size: 12px; }
+  tr:hover { background: #fafafa; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+  .status-0 { background: #f0f0f0; color: #999; }
+  .status-1 { background: #FFF3E0; color: #FF9800; }
+  .status-2 { background: #E8F5E9; color: #4CAF50; }
+  .status-3 { background: #FFEBEE; color: #F44336; }
+  .id-img { width: 80px; height: 52px; border-radius: 4px; object-fit: cover; cursor: pointer; border: 1px solid #eee; }
+  .id-img:hover { border-color: #FF7A45; }
+  .action-btns { display: flex; gap: 8px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+  .name-cell { display: flex; align-items: center; gap: 10px; }
+  .name-info { display: flex; flex-direction: column; }
+  .name-info .nick { font-weight: 500; color: #333; }
+  .name-info .thug-name { font-size: 12px; color: #999; }
+  .empty { text-align: center; padding: 60px 20px; color: #999; }
+  .modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .modal-img { max-width: 90%; max-height: 90vh; border-radius: 8px; }
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 6px; color: #fff; font-size: 14px; z-index: 10000; animation: fadeIn 0.3s; }
+  .toast.success { background: #4CAF50; }
+  .toast.error { background: #F44336; }
+  @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>打手实名认证管理</h1>
+  <p>查看打手提交的实名信息并进行审核</p>
+</div>
+
+<div class="container">
+  <!-- 实名认证开关 -->
+  <div class="card">
+    <div class="card-title">实名认证设置</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">打手接单需要实名认证</div>
+        <div class="setting-desc">开启后，打手必须完成实名认证审核通过才能接单</div>
+      </div>
+      <div class="toggle" id="realnameToggle" onclick="toggleRealname()"></div>
+    </div>
+  </div>
+
+  <!-- 实名认证列表 -->
+  <div class="card">
+    <div class="card-title">实名认证申请列表</div>
+    <div class="toolbar">
+      <select class="filter-select" id="statusFilter" onchange="loadList()">
+        <option value="">全部状态</option>
+        <option value="1">审核中</option>
+        <option value="2">已通过</option>
+        <option value="3">已拒绝</option>
+      </select>
+      <button class="btn btn-default" onclick="loadList()">刷新</button>
+    </div>
+    <div id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>打手</th>
+            <th>真实姓名</th>
+            <th>身份证号</th>
+            <th>身份证人像面</th>
+            <th>身份证国徽面</th>
+            <th>状态</th>
+            <th>提交时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="8" class="empty">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '';
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || 'success');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+function formatTime(ts) {
+  if (!ts) return '-';
+  const d = new Date(ts * 1000);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// 加载实名认证开关状态
+async function loadToggle() {
+  try {
+    const res = await fetch(API_BASE + '/api/config/get?name=thug_realname_required');
+    const data = await res.json();
+    if (data.code === 1 && data.data) {
+      const on = data.data.value === '1';
+      document.getElementById('realnameToggle').classList.toggle('on', on);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// 切换实名认证开关
+async function toggleRealname() {
+  const el = document.getElementById('realnameToggle');
+  const currentOn = el.classList.contains('on');
+  const newValue = currentOn ? '0' : '1';
+  try {
+    const res = await fetch(API_BASE + '/api/config/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: [{ name: 'thug_realname_required', value: newValue }] })
+    });
+    const data = await res.json();
+    if (data.code === 1) {
+      el.classList.toggle('on', !currentOn);
+      showToast(newValue === '1' ? '已开启实名认证' : '已关闭实名认证', 'success');
+    } else {
+      showToast(data.msg || '操作失败', 'error');
+    }
+  } catch (e) {
+    showToast('网络错误', 'error');
+  }
+}
+
+// 加载列表
+async function loadList() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '<tr><td colspan="8" class="empty">加载中...</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/admin/realnameList');
+    const data = await res.json();
+    if (data.code === 1) {
+      let list = data.data || [];
+      const filter = document.getElementById('statusFilter').value;
+      if (filter) list = list.filter(item => String(item.real_name_status) === filter);
+      renderList(list);
+    } else {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">加载失败</td></tr>';
+    }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">网络错误</td></tr>';
+  }
+}
+
+function renderList(list) {
+  const tbody = document.getElementById('tbody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">暂无实名认证申请</td></tr>';
+    return;
+  }
+  const statusMap = { 0: '未认证', 1: '审核中', 2: '已通过', 3: '已拒绝' };
+  tbody.innerHTML = list.map(item => `
+    <tr>
+      <td>
+        <div class="name-cell">
+          <img class="avatar" src="${item.avatar || ''}" onerror="this.style.display='none'">
+          <div class="name-info">
+            <span class="nick">${item.nickname || '-'}</span>
+            <span class="thug-name">打手: ${item.thug_name || '-'}</span>
+          </div>
+        </div>
+      </td>
+      <td>${item.real_name || '-'}</td>
+      <td>${item.id_card || '-'}</td>
+      <td>${item.id_card_front ? `<img class="id-img" src="${item.id_card_front}" onclick="showImg('${item.id_card_front}')">` : '-'}</td>
+      <td>${item.id_card_back ? `<img class="id-img" src="${item.id_card_back}" onclick="showImg('${item.id_card_back}')">` : '-'}</td>
+      <td><span class="status-badge status-${item.real_name_status}">${statusMap[item.real_name_status] || '未知'}</span></td>
+      <td>${formatTime(item.createtime)}</td>
+      <td>
+        <div class="action-btns">
+          ${item.real_name_status === 1 ? `
+            <button class="btn btn-success" onclick="review(${item.id}, 'pass')">通过</button>
+            <button class="btn btn-danger" onclick="review(${item.id}, 'reject')">拒绝</button>
+          ` : '-'}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// 审核
+async function review(id, action) {
+  const tip = action === 'pass' ? '确定通过该实名认证吗？' : '确定拒绝该实名认证吗？';
+  if (!confirm(tip)) return;
+  try {
+    const res = await fetch(API_BASE + '/api/admin/realnameReview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action })
+    });
+    const data = await res.json();
+    if (data.code === 1) {
+      showToast(action === 'pass' ? '已通过' : '已拒绝', 'success');
+      loadList();
+    } else {
+      showToast(data.msg || '操作失败', 'error');
+    }
+  } catch (e) {
+    showToast('网络错误', 'error');
+  }
+}
+
+// 查看大图
+function showImg(src) {
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.onclick = () => mask.remove();
+  mask.innerHTML = `<img class="modal-img" src="${src}">`;
+  document.body.appendChild(mask);
+}
+
+// 初始化
+loadToggle();
+loadList();
+</script>
+</body>
+</html>

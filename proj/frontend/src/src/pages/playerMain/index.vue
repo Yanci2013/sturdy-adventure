@@ -121,7 +121,7 @@
 			</view>
 		</view>
 		<!-- 底部导航栏 -->
-		<player-tabbar :current="1"></player-tabbar>
+		<player-tabbar :current="3"></player-tabbar>
 	</view>
 </template>
 
@@ -161,6 +161,7 @@ const identityList = [
 const moreList = [
 	{ label: '打手等级', icon: 'level', action: 'level' },
 	{ label: '打手排行', icon: 'star', action: 'ranking' },
+	{ label: '实名认证', icon: 'account', action: 'realname' },
 	{ label: '打手客服', icon: 'kefu-ermai', action: 'kefu' },
 	{ label: '客服端', icon: 'chat', action: 'customer-service' },
 	{ label: '平台通知', icon: 'volume', action: 'notice' },
@@ -360,6 +361,7 @@ const handleMoreClick = (item) => {
 		}
 		router.navigateTo({ url: 'pages/playerMain/customer-service' })
 	}
+	else if (item.action === 'realname') uni.navigateTo({ url: '/pages/playerMain/realname' })
 	else if (item.action === 'notice') uni.navigateTo({ url: 'pagesA/mine/notice/index' })
 	else if (item.action === 'bond') router.navigateTo({ url: 'pages/playerMain/bound' })
 	else if (item.action === 'myorder') router.navigateTo({ url: 'pages/playerOrder/index' })

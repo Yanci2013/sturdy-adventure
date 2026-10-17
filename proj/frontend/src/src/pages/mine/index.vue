@@ -75,21 +75,6 @@
 			</view>
 		</view>
 
-		<!-- 会员等级 + 联系客服 双卡片 -->
-		<view class="dual-card-row">
-			<view class="level-card" @click="goLevelPage">
-				<view class="level-card-top">
-					<text class="level-card-label">会员等级</text>
-					<image class="level-card-arrow" src="/static/images/right.png" mode="aspectFit"></image>
-				</view>
-				<text class="level-card-num">{{ levelNum }}</text>
-			</view>
-			<view class="cs-card" @click="openCustomerService">
-				<text class="cs-card-sub">实时在线</text>
-				<text class="cs-card-main">联系客服</text>
-			</view>
-		</view>
-
 		<!-- 更多功能 -->
 		<view class="section more-section">
 			<text class="section-title more-title">常用功能</text>
@@ -252,8 +237,8 @@ const moreList = computed(() => {
 	const isCs = isThug && String(thug.is_customer_service || '0') === '1'
 	const list = [
 		{ label: '会员等级', icon: 'level', action: 'level' },
-		{ label: '打手入驻', icon: 'integral', action: 'ruzhu' },
-		{ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' },
+		{ label: '打手入驻', icon: 'integral', action: 'ruzhu', show: () => !isThugApproved },
+		{ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu', show: () => !isCs },
 		{ label: '投诉陪玩', icon: 'warning', action: 'companion' }
 	]
 	if (isThugApproved) list.push({ label: '打手端', icon: 'account', action: 'player' })
