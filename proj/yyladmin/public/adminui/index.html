@@ -577,14 +577,18 @@ async function renderInviteCode(){
   const rows=(list.code===1&&list.data)?list.data:[];
   const html=rows.map(r=>{
     const u=users.find(u=>u.id===r.user_id);
+    const usedBadge=r.used?`<span class="badge gray">已使用</span>`:`<span class="badge on">未使用</span>`;
+    const resetBtn=r.used?`<button class="mini" onclick="resetInvite(${r.id})">重置</button>`:'';
     return `<tr>
       <td>${r.id}</td>
       <td><b>${r.code}</b></td>
       <td><span class="badge ${r.type==='thug'?'blue':'on'}">${r.type_text||r.type}</span></td>
       <td>${r.name||'-'}</td>
       <td>${u?u.label:'（未指定）'}</td>
+      <td>${usedBadge}</td>
       <td style="white-space:nowrap">
         <button class="mini" onclick="editInvite(${r.id})">编辑</button>
+        ${resetBtn}
         <button class="mini danger" onclick="delInvite(${r.id})">删除</button>
       </td>
     </tr>`;
@@ -595,10 +599,10 @@ async function renderInviteCode(){
         <button class="mini primary" onclick="editInvite(0)">+ 新增邀请码</button>
       </div>
       <div class="panel-bd">
-        <p style="color:#8a94a6;font-size:13px;margin:0 0 12px">邀请码用于<b>打手入驻</b>和<b>客服入驻</b>。类型为「打手」的邀请码用于打手入驻，类型为「客服」的邀请码用于客服入驻。可分配给指定用户（使用ID），也可留空（user_id=0）作为通用邀请码。</p>
+        <p style="color:#8a94a6;font-size:13px;margin:0 0 12px">邀请码用于<b>打手入驻</b>和<b>客服入驻</b>，每个邀请码<b>仅限使用一次</b>。类型为「打手」的邀请码用于打手入驻，类型为「客服」的邀请码用于客服入驻。已使用的邀请码可点击「重置」恢复为未使用。</p>
         <table>
-          <thead><tr><th>ID</th><th>邀请码</th><th>类型</th><th>名称</th><th>使用ID</th><th>操作</th></tr></thead>
-          <tbody>${html||'<tr><td colspan="6" style="text-align:center;color:#8a94a6;padding:30px">暂无邀请码</td></tr>'}</tbody>
+          <thead><tr><th>ID</th><th>邀请码</th><th>类型</th><th>名称</th><th>使用ID</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>${html||'<tr><td colspan="7" style="text-align:center;color:#8a94a6;padding:30px">暂无邀请码</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -673,6 +677,11 @@ async function delInvite(id){
   if(!confirm('确定删除该邀请码？'))return;
   const j=await req('api/invite/delete',{id},'POST');
   if(j.code===1){toast('删除成功');renderInviteCode();}else toast(j.msg||'删除失败',true);
+}
+async function resetInvite(id){
+  if(!confirm('确定将该邀请码重置为未使用？重置后可再次用于入驻。'))return;
+  const j=await req('api/invite/reset',{id},'POST');
+  if(j.code===1){toast('已重置为未使用');renderInviteCode();}else toast(j.msg||'重置失败',true);
 }
 
 /* ================= 系统配置 ================= */

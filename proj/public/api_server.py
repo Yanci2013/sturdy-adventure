@@ -115,8 +115,13 @@ def init_db():
         type TEXT DEFAULT 'thug',
         user_id INTEGER DEFAULT 0,
         name TEXT,
+        used INTEGER DEFAULT 0,
         createtime INTEGER
     )''')
+    try:
+        cur.execute('ALTER TABLE invite_codes ADD COLUMN used INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
     # 系统配置表（对应 FastAdmin fa_config）
     cur.execute('''CREATE TABLE IF NOT EXISTS fa_config (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1116,6 +1121,8 @@ class Handler(BaseHTTPRequestHandler):
             data = [dict(r) for r in rows]
             for d in data:
                 d['type_text'] = '打手' if d.get('type') == 'thug' else ('客服' if d.get('type') == 'cs' else d.get('type', ''))
+                d['used'] = d.get('used', 0)
+                d['used_text'] = '已使用' if d.get('used') else '未使用'
             self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
@@ -1189,6 +1196,19 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "删除成功"})
             return
 
+        if path == '/api/invite/reset':
+            # 重置邀请码使用状态（管理员将已使用的邀请码恢复为未使用）
+            cid = int(body.get('id') or 0)
+            if not cid:
+                self.send_json({"code": 0, "msg": "缺少ID"})
+                return
+            db = get_db()
+            db.execute('UPDATE invite_codes SET used = 0 WHERE id = ?', (cid,))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已重置为未使用"})
+            return
+
         # ===== 打手入驻（邀请码） =====
         if path == '/api/thug/thugAdd':
             u = get_user_by_token(token)
@@ -1211,6 +1231,11 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self.send_json({"code": 0, "msg": "邀请码不存在，请检查后重新输入"})
                 return
+            # 检查邀请码是否已被使用
+            if inv['used']:
+                db.close()
+                self.send_json({"code": 0, "msg": "该邀请码已使用，请让管理员重新给你一个"})
+                return
             # 检查是否已入驻
             existing = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
             if existing:
@@ -1223,6 +1248,8 @@ class Handler(BaseHTTPRequestHandler):
                 (u['id'], inv['name'], 1, 1, 0, now)
             )
             db.execute('UPDATE users SET type = 2 WHERE id = ?', (u['id'],))
+            # 标记邀请码为已使用
+            db.execute('UPDATE invite_codes SET used = 1 WHERE id = ?', (inv['id'],))
             db.commit()
             db.close()
             self.send_json({"code": 1, "msg": "打手入驻成功"})
@@ -1350,6 +1377,11 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self.send_json({"code": 0, "msg": "邀请码不存在，请检查后重新输入"})
                 return
+            # 检查邀请码是否已被使用
+            if inv['used']:
+                db.close()
+                self.send_json({"code": 0, "msg": "该邀请码已使用，请让管理员重新给你一个"})
+                return
             existing = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
             now = now_ts()
             if existing:
@@ -1359,6 +1391,8 @@ class Handler(BaseHTTPRequestHandler):
                     'INSERT INTO thug (user_id, name, status, sh_status, is_customer_service, createtime) VALUES (?,?,?,?,?,?)',
                     (u['id'], inv['name'], 1, 1, 1, now)
                 )
+            # 标记邀请码为已使用
+            db.execute('UPDATE invite_codes SET used = 1 WHERE id = ?', (inv['id'],))
             db.commit()
             db.close()
             self.send_json({"code": 1, "msg": "客服入驻成功"})
