@@ -178,9 +178,15 @@ async function req(path, data, method){
   const headers={'AdminToken':state.token,'AdminUserId':state.uid};
   if(path.indexOf('admin/')===0) path='adminapi/'+path.slice(6);
   let url='/'+path, opts={method:method, headers:headers};
+  const isApi=path.indexOf('api/')===0;
   if(method==='POST'){
-    headers['Content-Type']='application/x-www-form-urlencoded';
-    opts.body=buildParams(data).toString();
+    if(isApi){
+      headers['Content-Type']='application/json';
+      opts.body=JSON.stringify(data||{});
+    }else{
+      headers['Content-Type']='application/x-www-form-urlencoded';
+      opts.body=buildParams(data).toString();
+    }
   }else{
     const qs=buildParams(data).toString();
     if(qs) url+='?'+qs;
@@ -560,12 +566,13 @@ async function renderSetting(){
   document.getElementById('crumb').innerHTML='常规管理 <span>· 系统配置</span>';
   const c=document.getElementById('content');
   c.innerHTML='<div class="loading">加载中...</div>';
-  const [info,verify,token,theme,cs]=await Promise.all([
+  const [info,verify,token,theme,cs,appui]=await Promise.all([
     req('admin/AdminSetting/serverInfo'),
     req('admin/AdminSetting/settingVerify'),
     req('admin/AdminSetting/settingToken'),
     req('admin/AdminSetting/settingTheme'),
     req('admin/AdminSetting/settingCustomerService'),
+    (async()=>{ try{ return await req('api/config/get?group=basic'); }catch(e){ return {data:[]}; } })(),
   ]);
   const si=(info.data||{});
   const vf=(verify.data||{});
@@ -573,6 +580,8 @@ async function renderSetting(){
   const th=(theme.data||{});
   const csf=(cs.data||{});
   const csOn=String(csf.builtin_enabled)==='1'||csf.builtin_enabled==='';
+  const au=(appui.data||[]);
+  const auv={}; (Array.isArray(au)?au:[]).forEach(i=>{ auv[i.name]=i.value; });
   const kv=k=>`<div class="k">${k[0]}</div><div class="v">${k[1]}</div>`;
   c.innerHTML=`
     <div class="panel">
@@ -639,6 +648,41 @@ async function renderSetting(){
     </div>
 
     <div class="panel">
+      <div class="panel-hd"><h3>前端 UI 设置（H5 背景与主题）</h3></div>
+      <div class="panel-bd" style="padding:16px 18px">
+        <p style="color:#8a94a6;font-size:13px;margin-bottom:12px">以下配置作用于<b>前端 H5 页面</b>，保存后刷新前端即生效。</p>
+        <div class="form-row" style="max-width:460px"><label>页面背景颜色</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="au_bg_color" value="${auv.app_bg_color||'#FFFFFF'}" oninput="document.getElementById('au_bg_color_t').value=this.value" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+            <input id="au_bg_color_t" value="${auv.app_bg_color||'#FFFFFF'}" style="flex:1" placeholder="#FFFFFF（留空使用默认渐变）">
+          </div></div>
+        <div class="form-row" style="max-width:620px"><label>页面背景图片</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input id="au_bg_image" value="${auv.app_bg_image||''}" style="flex:1;min-width:200px" placeholder="背景图 URL，留空使用纯色/渐变">
+            <input type="file" id="au_bg_file" accept="image/*" style="display:none" onchange="uploadBg(this)">
+            <button class="mini" onclick="document.getElementById('au_bg_file').click()">上传图片</button>
+            ${auv.app_bg_image?`<img src="${auv.app_bg_image.startsWith('http')?auv.app_bg_image:'/h5'+auv.app_bg_image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">`:''}
+          </div></div>
+        <div class="form-row" style="max-width:460px"><label>前端主色</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="au_primary" value="${auv.theme_primary||'#FF7A45'}" oninput="document.getElementById('au_primary_t').value=this.value" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+            <input id="au_primary_t" value="${auv.theme_primary||'#FF7A45'}" style="flex:1">
+          </div></div>
+        <div class="form-row" style="max-width:460px"><label>前端辅助色</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="au_secondary" value="${auv.theme_secondary||'#FFB199'}" oninput="document.getElementById('au_secondary_t').value=this.value" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+            <input id="au_secondary_t" value="${auv.theme_secondary||'#FFB199'}" style="flex:1">
+          </div></div>
+        <div class="form-row" style="max-width:460px"><label>底部导航选中色</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="color" id="au_tab_active" value="${auv.tabbar_active_color||auv.theme_primary||'#FF7A45'}" oninput="document.getElementById('au_tab_active_t').value=this.value" style="width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;cursor:pointer">
+            <input id="au_tab_active_t" value="${auv.tabbar_active_color||auv.theme_primary||'#FF7A45'}" style="flex:1">
+          </div></div>
+        <button class="mini primary" onclick="saveSetting('appui')">保存前端 UI 设置</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="panel-hd"><h3>客服设置</h3></div>
       <div class="panel-bd" style="padding:16px 18px">
         <p style="color:#8a94a6;font-size:13px;margin-bottom:12px">内置客服指 App 内的 IM 在线聊天客服入口；关闭后前端不再展示内置客服入口，可改用外置客服。</p>
@@ -681,13 +725,38 @@ async function saveSetting(type){
     j=await req('admin/AdminSetting/settingCustomerService',{
       builtin_enabled:document.getElementById('cs_builtin').value,
     },'POST');
+  }else if(type==='appui'){
+    const items=[
+      {name:'app_bg_color',value:document.getElementById('au_bg_color_t').value.trim()},
+      {name:'app_bg_image',value:document.getElementById('au_bg_image').value.trim()},
+      {name:'theme_primary',value:document.getElementById('au_primary_t').value.trim()},
+      {name:'theme_secondary',value:document.getElementById('au_secondary_t').value.trim()},
+      {name:'tabbar_active_color',value:document.getElementById('au_tab_active_t').value.trim()},
+    ];
+    j=await req('api/config/save',{items},'POST');
   }else{
     j=await req('admin/AdminSetting/settingToken',{
       iss:document.getElementById('tk_iss').value,
       exp:document.getElementById('tk_exp').value,
     },'POST');
   }
-  if(j.code===200) toast('保存成功'); else toast(j.msg||'保存失败',true);
+  if(j.code===200||j.code===1) toast('保存成功'); else toast(j.msg||'保存失败',true);
+}
+async function uploadBg(input){
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const fd=new FormData();
+  fd.append('file',file);
+  let j;
+  try{
+    const res=await fetch('/api/config/uploadBg',{method:'POST',body:fd,headers:{'AdminToken':state.token,'AdminUserId':state.uid}});
+    j=await res.json();
+  }catch(e){ toast('上传失败',true); return; }
+  if(j.code===1){
+    const url=j.data&&j.data.url;
+    if(url){ document.getElementById('au_bg_image').value=url; toast('上传成功'); }
+    else toast('上传失败',true);
+  }else{ toast(j.msg||'上传失败',true); }
 }
 async function clearCache(){
   if(!confirm('确定清空缓存？')) return;
