@@ -143,11 +143,11 @@
 				</scroll-view>
 			</view>
 
-			<!-- 截单审核 -->
+			<!-- 结单审核 -->
 			<view v-else-if="currentTab === 3" class="tab-pane">
 				<view class="sub-header">
 					<view class="sub-close" @click="goBack"><text class="close-icon">×</text></view>
-					<text class="sub-title">截单审核</text>
+					<text class="sub-title">结单审核</text>
 					<view class="sub-manage">
 						<up-icon name="grid" size="18" color="#666"></up-icon>
 						<text class="manage-text">管理</text>
@@ -300,7 +300,7 @@ const tabbarList = [
 	{ icon: 'chat', text: '接入池' },
 	{ icon: 'account', text: '打手' },
 	{ icon: 'order', text: '订单' },
-	{ icon: 'checkmark-circle', text: '截单审核' },
+	{ icon: 'checkmark-circle', text: '结单审核' },
 	{ icon: 'account-fill', text: '我的' }
 ]
 
