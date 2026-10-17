@@ -4,6 +4,16 @@
 		<view class="top-section">
 			<image class="top-bg" src="/static/images/header_background_panda.png" mode="aspectFill"></image>
 			<view class="top-content" :style="{paddingTop: statusBarHeight + 'px'}">
+				<!-- 顶部右侧：切换身份 + 设置 -->
+				<view class="profile-top-row">
+					<view class="switch-btn" @click="openIdentityPopup">
+						<uv-icon name="reload" size="15" color="#333"></uv-icon>
+						<text class="switch-text">切换身份</text>
+					</view>
+					<view class="setting-btn-card" @click="updateUserInfo">
+						<uv-icon name="setting" size="18" color="#333"></uv-icon>
+					</view>
+				</view>
 				<!-- 头像 + 名字 + 等级 + 切换按钮 -->
 				<view class="profile-row">
 					<!-- 左侧头像 -->
@@ -62,25 +72,6 @@
 				<view class="order-item" v-for="(item, index) in orderStatusList" :key="index" @click="toOrder(item.status)">
 					<text class="order-count">{{ getOrderCount(item) }}</text>
 					<text class="order-label">{{ item.label }}</text>
-				</view>
-			</view>
-		</view>
-
-		<!-- 会员等级 + 联系客服 双卡片 -->
-		<view class="cards-row">
-			<view class="card-diamond" @click="goLevelPage">
-				<view class="card-diamond-left">
-					<view class="card-diamond-title-row">
-						<text class="card-diamond-title">会员等级</text>
-					</view>
-					<text class="card-diamond-num">{{ levelNum }}</text>
-				</view>
-				<text class="card-diamond-arrow">›</text>
-			</view>
-			<view class="card-service" @click="openCustomerService">
-				<view class="card-service-left">
-					<text class="card-service-online">实时在线</text>
-					<text class="card-service-cta">联系客服</text>
 				</view>
 			</view>
 		</view>
@@ -245,9 +236,7 @@ const moreList = computed(() => {
 	const isThug = dataInfo.value.type == '2' && thug && !Array.isArray(thug)
 	const isThugApproved = isThug && String(thug.sh_status || '') === '1'
 	const isCs = isThug && String(thug.is_customer_service || '0') === '1'
-	const list = [
-		{ label: '会员等级', icon: 'level', action: 'level' }
-	]
+	const list = []
 	// 打手入口组：已通过审核显示「打手端」，未入驻显示「打手入驻」
 	if (isThugApproved) {
 		list.push({ label: '打手端', icon: 'account', action: 'player' })
@@ -261,15 +250,8 @@ const moreList = computed(() => {
 		list.push({ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' })
 	}
 	list.push({ label: '投诉陪玩', icon: 'warning', action: 'companion' })
-	list.push(
-		{ label: '用户隐私政策', icon: 'info-circle', action: 'agreement' },
-		{ label: '联系客服', icon: 'phone', action: 'service' },
-		{ label: '关于平台', icon: 'info-circle', action: 'about' },
-		{ label: '意见反馈', icon: 'edit-pen', action: 'feedback' },
-		{ label: '切换身份', icon: 'reload', action: 'switch' }
-	)
+	list.push({ label: '意见反馈', icon: 'edit-pen', action: 'feedback' })
 	if (!!token.value) list.push({ label: '退出登陆', icon: 'account', action: 'logout' })
-	list.push({ label: '设置', icon: 'setting', action: 'setting' })
 	return list
 })
 

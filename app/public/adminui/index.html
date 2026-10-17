@@ -98,6 +98,12 @@ td .muted{color:var(--muted);font-size:12px}
 .tag.orange{background:#ffedd5;color:#c2410c}
 .tag.red{background:#fee2e2;color:#b91c1c}
 .tag.blue{background:#dbeafe;color:#1d4ed8}
+.switch{position:relative;display:inline-block;width:46px;height:26px;flex:0 0 auto;margin-right:8px}
+.switch input{display:none}
+.switch .slider{position:absolute;inset:0;background:#cbd5e1;border-radius:20px;transition:.2s;cursor:pointer}
+.switch .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .slider{background:var(--accent)}
+.switch input:checked + .slider:before{transform:translateX(20px)}
 .empty{padding:46px 0;text-align:center;color:#9ca3af;font-size:13px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
 .tabs .tab{padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:#64748b;background:#f1f5f9}
@@ -525,17 +531,22 @@ let thugFilter = ''
 PAGES.thugs = async () => {
   const r = await biz(`thugs?sh_status=${thugFilter}`)
   const list = (r.data || {}).list || []
+  window.__thugMap = {}
+  list.forEach(t => { window.__thugMap[t.id] = t })
   const rows = list.map(t => {
     const st = String(t.sh_status)
     const tag = st === '1' ? '<span class="tag green">已通过</span>' : st === '2' ? '<span class="tag red">已驳回</span>' : '<span class="tag orange">待审核</span>'
+    const rn = rnTag(t.realname_status)
     return `<tr>
       <td>${esc(t.id)}</td>
       <td>${esc(t.name || '-')}</td>
       <td>${esc(t.user_nickname || ('用户#' + t.user_id))}</td>
       <td>${tag}</td>
+      <td>${rn}</td>
       <td>${t.is_customer_service == 1 ? '<span class="tag blue">客服权限</span>' : '<span class="tag gray">普通打手</span>'}</td>
       <td class="muted">${fmtTime(t.createtime)}</td>
       <td>
+        <button class="btn btn-ghost btn-sm" onclick="thugViewRealname(${t.id})">认证信息</button>
         ${st !== '1' ? `<button class="btn btn-ghost btn-sm" onclick="thugAudit(${t.id},'approve')">通过</button>` : ''}
         ${st !== '2' ? `<button class="btn btn-ghost btn-sm" onclick="thugAudit(${t.id},'reject')">驳回</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="thugToggleCs(${t.id},${t.is_customer_service == 1 ? 0 : 1})">${t.is_customer_service == 1 ? '取消客服' : '设为客服'}</button>
@@ -546,8 +557,47 @@ PAGES.thugs = async () => {
       <div class="tabs">
         ${[['', '全部'], ['0', '待审核'], ['1', '已通过'], ['2', '已驳回']].map(t => `<div class="tab ${thugFilter === t[0] ? 'active' : ''}" onclick="thugSet('${t[0]}')">${t[1]}</div>`).join('')}
       </div></div>
-    <table><thead><tr><th>ID</th><th>打手名</th><th>所属用户</th><th>审核状态</th><th>客服权限</th><th>申请时间</th><th>操作</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="7"><div class="empty">暂无打手数据</div></td></tr>'}</tbody></table></div>`
+    <table><thead><tr><th>ID</th><th>打手名</th><th>所属用户</th><th>审核状态</th><th>实名认证</th><th>客服权限</th><th>申请时间</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="8"><div class="empty">暂无打手数据</div></td></tr>'}</tbody></table></div>`
+}
+function rnTag(s) {
+  s = Number(s || 0)
+  if (s === 2) return '<span class="tag green">已认证</span>'
+  if (s === 1) return '<span class="tag orange">待审核</span>'
+  if (s === 3) return '<span class="tag red">已驳回</span>'
+  return '<span class="tag gray">未提交</span>'
+}
+function thugViewRealname(id) {
+  const t = (window.__thugMap || {})[id] || {}
+  const img = (u) => u ? `<img src="${esc(u)}" style="width:100%;border-radius:8px;border:1px solid var(--line)" />` : '<div class="muted">未上传</div>'
+  const body = `
+    <div style="display:grid;gap:14px">
+      <div><label class="muted">真实姓名</label><div style="font-weight:600;margin-top:4px">${esc(t.real_name || '-')}</div></div>
+      <div><label class="muted">身份证号</label><div style="font-weight:600;margin-top:4px">${esc(t.id_card || '-')}</div></div>
+      ${t.realname_reason ? `<div><label class="muted">驳回原因</label><div style="color:#b91c1c;margin-top:4px">${esc(t.realname_reason)}</div></div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label class="muted">身份证正面</label><div style="margin-top:6px">${img(t.realname_front)}</div></div>
+        <div><label class="muted">身份证反面</label><div style="margin-top:6px">${img(t.realname_back)}</div></div>
+      </div>
+    </div>`
+  const buttons = []
+  if (Number(t.realname_status) !== 2) buttons.push({ text: '通过认证', cls: 'btn-primary', fn: () => realnameAudit(id, 'approve') })
+  if (Number(t.realname_status) !== 3) buttons.push({ text: '驳回', fn: () => { closeModal(); realnameReject(id) } })
+  buttons.push({ text: '关闭', fn: closeModal })
+  openModal('实名认证信息', body, buttons)
+}
+async function realnameAudit(id, action) {
+  const r = await biz('realname/audit', { id, action })
+  toast(r.msg); closeModal(); PAGES.thugs()
+}
+function realnameReject(id) {
+  const reason = prompt('请输入驳回原因', '证件照片不清晰')
+  if (reason === null) return
+  realnameAudit2(id, reason)
+}
+async function realnameAudit2(id, reason) {
+  const r = await biz('realname/audit', { id, action: 'reject', reason })
+  toast(r.msg); PAGES.thugs()
 }
 function thugSet(v) { thugFilter = v; PAGES.thugs() }
 async function thugAudit(id, action) {
@@ -762,16 +812,28 @@ const COLOR_FIELDS = [
   ['page_bg', '页面背景'], ['card_bg', '卡片背景'],
   ['text_main', '主要文字'], ['text_sub', '次要文字'],
   ['price', '价格强调色'], ['btn_text', '按钮文字色'],
-  ['tabbar_bg', '底部导航背景'], ['top_text', '顶部文字色'],
+  ['tabbar_bg', '底部导航背景'], ['tabbar_active', '导航选中色'],
+  ['tabbar_text', '导航文字色'], ['tabbar_text_active', '导航选中文字色'],
+  ['top_text', '顶部文字色'],
   ['search_bg', '搜索框背景'], ['card_border', '卡片边框色'],
   ['notice_bg', '公告背景色'], ['notice_text', '公告文字色'],
 ]
 let decoCfg = null
 let decoDirty = false
+let rnEnabled = true
+function fillDecoDefaults(c) {
+  c.tabbar_active = c.tabbar_active || c.brand || '#F25109'
+  c.tabbar_text = c.tabbar_text || '#999999'
+  c.tabbar_text_active = c.tabbar_text_active || c.tabbar_active || c.brand || '#F25109'
+  return c
+}
 PAGES.decoration = async () => {
   const r = await biz('decoration')
   decoCfg = r.data || { name: '活力橙', colors: THEME_PRESETS[1].colors, bg_image: '' }
+  decoCfg.colors = fillDecoDefaults(decoCfg.colors || {})
   decoDirty = false
+  const rr = await biz('realname/config')
+  rnEnabled = !!(rr.data && rr.data.enabled)
   renderDecoration()
 }
 function renderDecoration() {
@@ -808,6 +870,12 @@ function renderDecoration() {
               <label>背景图地址</label>
               <input type="text" id="bg_image" value="${esc(decoCfg.bg_image || '')}" placeholder="https://... 留空则使用纯色背景" onchange="decoCfg.bg_image=this.value;decoDirty=true;livePreview()">
             </div>
+            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">账号与认证</div>
+            <div class="color-row" style="align-items:center">
+              <label>打手实名认证</label>
+              <label class="switch"><input type="checkbox" ${rnEnabled ? 'checked' : ''} onchange="toggleRealname(this.checked)"><span class="slider"></span></label>
+              <span class="muted" style="font-size:12px">${rnEnabled ? '已开启 · 打手需提交证件照片' : '已关闭 · 前端不显示实名认证'}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -828,7 +896,7 @@ function applyPreset(name) {
   const p = THEME_PRESETS.find(x => x.name === name)
   if (!p) return
   decoCfg.name = name
-  decoCfg.colors = Object.assign({}, p.colors)
+  decoCfg.colors = fillDecoDefaults(Object.assign({}, p.colors))
   decoDirty = true
   renderDecoration()
 }
@@ -867,6 +935,11 @@ function livePreview() {
   } catch (e) { /* 跨域忽略 */ }
 }
 function decoIframeRefresh() { const f = $('#decoFrame'); if (f) f.src = f.src }
+async function toggleRealname(v) {
+  const r = await biz('realname/config/save', { enabled: v })
+  toast(r.msg)
+  if (r.code === 1) PAGES.decoration()
+}
 async function saveDecoration() {
   const r = await biz('decoration/save', { name: decoCfg.name, colors: decoCfg.colors, bg_image: decoCfg.bg_image })
   toast(r.msg)

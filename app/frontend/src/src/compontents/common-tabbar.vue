@@ -89,7 +89,7 @@
 		width: 100% !important;
 		max-width: 690rpx !important;
 		margin: 0 auto !important;
-		background: #fff !important;
+		background: var(--theme-tabbar-bg, #fff) !important;
 		border-radius: 999rpx !important;
 		box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
 		pointer-events: auto;
@@ -101,7 +101,7 @@
 		flex-direction: column !important;
 		align-items: center !important;
 		justify-content: center !important;
-		height: 100% !important;
+		height: 76rpx !important;
 		min-width: 60rpx !important;
 		padding: 0 10rpx !important;
 		background: transparent !important;
@@ -109,11 +109,12 @@
 		cursor: pointer;
 		flex: 1 !important;
 		border-radius: 999rpx;
-		transition: all 0.2s ease;
+		transition: all 0.25s ease;
 	}
 
 	.tabbar-active {
-		background: transparent !important;
+		background: var(--theme-tabbar-active, rgba(255, 122, 69, 0.12)) !important;
+		box-shadow: 0 8rpx 20rpx rgba(255, 122, 69, 0.2);
 	}
 
 	.tabbar-icon {
@@ -122,19 +123,24 @@
 		margin-bottom: 4rpx !important;
 		pointer-events: none;
 		display: block !important;
+		transition: transform 0.25s ease;
+	}
+
+	.tabbar-active .tabbar-icon {
+		transform: translateY(-2rpx) scale(1.06);
 	}
 
 	.tabbar-text {
 		font-size: 20rpx !important;
 		line-height: 1 !important;
-		color: #999 !important;
+		color: var(--theme-tabbar-text, #999) !important;
 		font-weight: 400;
 		pointer-events: none;
 		display: block !important;
 	}
 
 	.tabbar-active .tabbar-text {
-		color: #FF7A45 !important;
-		font-weight: 500;
+		color: var(--theme-tabbar-text-active, var(--theme-tabbar-active, #FF7A45)) !important;
+		font-weight: 700;
 	}
 </style>

@@ -1,1 +1,0 @@
-import{o as e,c as a,a as s,t as n,g as r,s as t,r as i,i as p}from"./index-B-15bddO.js";const u={__name:"init",setup:u=>(e(()=>{n.isEmpty(r("type"))?(t("type","用户"),i.reLaunch({url:"pages/index/index"})):"用户"==r("type")?i.reLaunch({url:"pages/index/index"}):i.reLaunch({url:"pages/playerMain/index"})}),(e,n)=>{const r=p;return s(),a(r)})};export{u as default};

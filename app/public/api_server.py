@@ -409,11 +409,6 @@ class Handler(BaseHTTPRequestHandler):
       '}',
       'html,body,#app,.uni-page-wrapper,.uni-page-body{background-color:var(--theme-page-bg)!important;background-image:none!important;}',
       '.uni-tabbar,.uni-tabbar__item,.uni-tabbar-nav{background:var(--theme-tabbar-bg)!important;}',
-      // 自定义底部导航栏（三端）
-      '.tabbar-capsule,.cs-tabbar{background:var(--theme-tabbar-bg)!important;}',
-      '.tabbar-text,.cs-tabbar-text{color:var(--theme-tabbar-text)!important;}',
-      '.tabbar-active .tabbar-text,.cs-tabbar-item.active .cs-tabbar-text{color:var(--theme-tabbar-text-active)!important;}',
-      '.cs-tabbar-item.active{background:linear-gradient(135deg,var(--theme-tabbar-active),var(--theme-tabbar-active))!important;}',
       // 通用按钮/主色覆盖
       'button,.uv-button--primary,[class*="primary"]{background:linear-gradient(90deg,var(--theme-brand),var(--theme-brand-gradient))!important;color:var(--theme-btn-text)!important;border-color:var(--theme-brand)!important;}',
       // 卡片/容器背景
@@ -810,6 +805,33 @@ class Handler(BaseHTTPRequestHandler):
                     "full_url": '/h5' + url
                 }
             })
+            return
+
+        if path == '/api/upload/image':
+            # 通用图片上传（实名认证证件照等，不修改用户头像）
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            files = files or {}
+            f = files.get('file') or files.get('image')
+            if not f or not f.get('filename'):
+                self.send_json({"code": 0, "msg": "未上传文件"})
+                return
+            ext = os.path.splitext(f['filename'])[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp'):
+                self.send_json({"code": 0, "msg": "图片格式不支持"})
+                return
+            if len(f['data']) > 5 * 1024 * 1024:
+                self.send_json({"code": 0, "msg": "图片大小不能超过5MB"})
+                return
+            uploads_dir = os.path.join(WEB_ROOT, 'uploads')
+            os.makedirs(uploads_dir, exist_ok=True)
+            filename = f"upload_{int(time.time())}_{secrets.token_hex(6)}{ext}"
+            with open(os.path.join(uploads_dir, filename), 'wb') as fp:
+                fp.write(f['data'])
+            url = '/uploads/' + filename
+            self.send_json({"code": 1, "msg": "上传成功", "data": {"url": url, "full_url": url}})
             return
 
         # ===== 配置 =====
@@ -1341,7 +1363,8 @@ class Handler(BaseHTTPRequestHandler):
                 args += ['%' + kw + '%', '%' + kw + '%', '%' + kw + '%']
             db = get_db()
             rows = db.execute(
-                'SELECT t.id, t.name, t.real_name, t.sh_status, t.is_customer_service, t.realname_status, '
+                'SELECT t.id, t.name, t.real_name, t.id_card, t.realname_front, t.realname_back, '
+                't.sh_status, t.is_customer_service, t.realname_status, '
                 'u.nickname AS user_nickname, u.id AS user_id '
                 'FROM thug t LEFT JOIN users u ON u.id = t.user_id ' + where + ' ORDER BY t.id DESC', args).fetchall()
             db.close()

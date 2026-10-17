@@ -20,7 +20,7 @@
 			<view v-if="currentTab === 0" class="tab-pane">
 				<view class="sub-header">
 					<text class="sub-title">客服会话</text>
-					<view class="sub-manage">
+					<view class="sub-manage" @click="switchTab(1)">
 						<up-icon name="grid" size="18" color="#666"></up-icon>
 						<text class="manage-text">管理</text>
 					</view>
@@ -74,8 +74,45 @@
 				</scroll-view>
 			</view>
 
-			<!-- 订单 -->
+			<!-- 管理打手 -->
 			<view v-else-if="currentTab === 1" class="tab-pane">
+				<view class="sub-header">
+					<text class="sub-title">管理打手</text>
+					<view class="sub-manage" @click="loadThugList">
+						<up-icon name="reload" size="18" color="#666"></up-icon>
+						<text class="manage-text">刷新</text>
+					</view>
+				</view>
+				<view class="thug-search">
+					<up-icon name="search" size="18" color="#bbb"></up-icon>
+					<input class="thug-search-input" v-model="thugKeyword" placeholder="搜索打手名称 / 用户" />
+				</view>
+				<scroll-view scroll-y class="session-scroll">
+					<view v-if="filteredThugs.length" class="session-list">
+						<view class="thug-item" v-for="t in filteredThugs" :key="t.id" @click="openThugDetail(t)">
+							<view class="thug-avatar" :style="{background: avatarColor(t.name || t.user_nickname)}">{{ avatarChar(t.name || t.user_nickname) }}</view>
+							<view class="thug-main">
+								<view class="thug-top">
+									<text class="name">{{ t.name || ('打手#' + t.id) }}</text>
+									<text :class="['thug-tag', t.sh_status == 1 ? 'ok' : (t.sh_status == 2 ? 'no' : 'wait')]">{{ thugStatusText(t.sh_status) }}</text>
+								</view>
+								<text class="thug-sub">用户：{{ t.user_nickname || ('用户#' + t.user_id) }}</text>
+								<text class="thug-sub">实名认证：{{ realnameText(t.realname_status) }}</text>
+							</view>
+							<up-icon name="arrow-right" size="16" color="#ccc"></up-icon>
+						</view>
+					</view>
+					<view v-else class="empty-wrap">
+						<view class="empty-icon">
+							<up-icon name="account" size="48" color="#ccc"></up-icon>
+						</view>
+						<text class="empty-text">暂无打手</text>
+					</view>
+				</scroll-view>
+			</view>
+
+			<!-- 订单 -->
+			<view v-else-if="currentTab === 2" class="tab-pane">
 				<view class="sub-header">
 					<text class="sub-title">订单列表</text>
 				</view>
@@ -147,9 +184,9 @@
 			</view>
 
 			<!-- 结单审核 -->
-				<view v-else-if="currentTab === 2" class="tab-pane">
-					<view class="sub-header">
-						<text class="sub-title">结单审核</text>
+			<view v-else-if="currentTab === 3" class="tab-pane">
+				<view class="sub-header">
+					<text class="sub-title">结单审核</text>
 				</view>
 				<!-- 统计卡片 -->
 				<view class="review-summary">
@@ -209,7 +246,7 @@
 			</view>
 
 			<!-- 我的 -->
-			<view v-else-if="currentTab === 3" class="tab-pane mine-pane">
+			<view v-else-if="currentTab === 4" class="tab-pane mine-pane">
 				<view class="sub-header">
 					<text class="sub-title">我的</text>
 				</view>
@@ -290,6 +327,29 @@
 			</view>
 		</view>
 
+		<!-- 打手详情弹窗 -->
+		<view class="identity-popup-mask" v-if="showThugPopup" @click="showThugPopup = false">
+			<view class="identity-popup thug-popup" @click.stop>
+				<view class="identity-popup-header">
+					<text class="identity-popup-title">打手详情</text>
+					<view class="identity-popup-close" @click="showThugPopup = false"><text class="close-icon-dark">×</text></view>
+				</view>
+				<view class="thug-detail" v-if="thugDetail">
+					<view class="detail-line"><text class="detail-k">打手名称</text><text class="detail-v">{{ thugDetail.name || '-' }}</text></view>
+					<view class="detail-line"><text class="detail-k">关联用户</text><text class="detail-v">{{ thugDetail.user_nickname || ('用户#' + thugDetail.user_id) }}</text></view>
+					<view class="detail-line"><text class="detail-k">入驻状态</text><text class="detail-v">{{ thugStatusText(thugDetail.sh_status) }}</text></view>
+					<view class="detail-line"><text class="detail-k">实名认证</text><text class="detail-v">{{ realnameText(thugDetail.realname_status) }}</text></view>
+					<view class="detail-line"><text class="detail-k">真实姓名</text><text class="detail-v">{{ thugDetail.real_name || '未提交' }}</text></view>
+					<view class="detail-line"><text class="detail-k">身份证号</text><text class="detail-v">{{ thugDetail.id_card || '未提交' }}</text></view>
+					<view class="idcard-row" v-if="thugDetail.realname_front || thugDetail.realname_back">
+						<image v-if="thugDetail.realname_front" class="idcard-img" :src="thugDetail.realname_front" mode="aspectFill" @click="previewImg(thugDetail.realname_front)"></image>
+						<image v-if="thugDetail.realname_back" class="idcard-img" :src="thugDetail.realname_back" mode="aspectFill" @click="previewImg(thugDetail.realname_back)"></image>
+					</view>
+					<text v-else class="idcard-empty">未上传身份证照片</text>
+				</view>
+			</view>
+		</view>
+
 		<!-- 切换身份弹窗 -->
 		<view class="identity-popup-mask" v-if="showIdentityPopup" @click="closeIdentityPopup">
 			<view class="identity-popup" @click.stop>
@@ -339,17 +399,23 @@ const inPoolCount = ref(0)
 const replyPoolCount = ref(0)
 const showIdentityPopup = ref(false)
 const currentIdentity = ref(2)
+// 管理打手
+const thugKeyword = ref('')
+const thugList = ref([])
+const showThugPopup = ref(false)
+const thugDetail = ref(null)
 let timer = null
 
 const tabbarList = [
 	{ icon: 'chat', text: '接入池' },
+	{ icon: 'account-fill', text: '打手' },
 	{ icon: 'order', text: '订单' },
 	{ icon: 'checkmark-circle', text: '结单审核' },
 	{ icon: 'account', text: '我的' }
 ]
 
 const navTitle = computed(() => {
-	const map = ['客服会话', '订单列表', '结单审核', '我的']
+	const map = ['客服会话', '管理打手', '订单列表', '结单审核', '我的']
 	return map[currentTab.value] || '客服会话'
 })
 
@@ -374,6 +440,17 @@ const filteredList = computed(() => {
 	return conversationList.value.filter(it => it.accepted)
 })
 
+const filteredThugs = computed(() => {
+	const kw = thugKeyword.value.trim().toLowerCase()
+	if (!kw) return thugList.value
+	return thugList.value.filter(t => {
+		const name = (t.name || '').toLowerCase()
+		const real = (t.real_name || '').toLowerCase()
+		const nick = (t.user_nickname || '').toLowerCase()
+		return name.includes(kw) || real.includes(kw) || nick.includes(kw)
+	})
+})
+
 const pendingReviewCount = computed(() => reviewList.value.filter(it => it.status === 'pending').length)
 const passedCount = computed(() => reviewList.value.filter(it => it.status === 'passed').length)
 const rejectedCount = computed(() => reviewList.value.filter(it => it.status === 'rejected').length)
@@ -396,7 +473,7 @@ onUnmounted(() => {
 })
 
 const loadAll = async () => {
-	await Promise.all([loadConversationList(), loadOrders(), loadUserInfo()])
+	await Promise.all([loadConversationList(), loadOrders(), loadUserInfo(), loadThugList()])
 }
 
 const loadUserInfo = async () => {
@@ -413,6 +490,41 @@ const loadUserInfo = async () => {
 	} catch (e) {
 		console.log('获取客服信息失败', e)
 	}
+}
+
+// ===== 管理打手 =====
+const loadThugList = async () => {
+	try {
+		const resp = await fetch('/api/cs/thugList', { headers: { 'token': uni.getStorageSync('token') || '' } })
+		const res = await resp.json()
+		if (res.code === 1 && res.data) {
+			thugList.value = res.data.list || []
+		} else {
+			thugList.value = []
+		}
+	} catch (e) {
+		thugList.value = []
+	}
+}
+
+const thugStatusText = (s) => {
+	const map = { '1': '已通过', '2': '已驳回', '3': '已下架' }
+	return map[String(s)] || '待审核'
+}
+
+const realnameText = (s) => {
+	const map = { '1': '审核中', '2': '已认证', '3': '已驳回' }
+	return map[String(s)] || '未认证'
+}
+
+const openThugDetail = (t) => {
+	thugDetail.value = t
+	showThugPopup.value = true
+}
+
+const previewImg = (url) => {
+	if (!url) return
+	uni.previewImage({ urls: [url] })
 }
 
 const getLastText = (msg) => {
@@ -490,6 +602,7 @@ const switchPool = (pool) => {
 
 const switchTab = (index) => {
 	currentTab.value = index
+	if (index === 1) loadThugList()
 }
 
 const gotoChat = (item) => {
@@ -644,6 +757,7 @@ const selectIdentity = async (item) => {
 .nav-bar { height: 88rpx; padding: 0 24rpx; display: flex; align-items: center; justify-content: space-between; background: transparent; }
 .nav-back { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
 .close-icon { font-size: 44rpx; color: #fff; line-height: 1; }
+.close-icon-dark { font-size: 44rpx; color: #333; line-height: 1; }
 .nav-title { font-size: 34rpx; font-weight: 700; color: #fff; letter-spacing: 2rpx; }
 .nav-right { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; }
 
@@ -680,6 +794,20 @@ const selectIdentity = async (item) => {
 .last-text { font-size: 24rpx; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .session-action { flex-shrink: 0; }
 .action-btn { padding: 14rpx 36rpx; background: linear-gradient(135deg, #FF7A45 0%, #FF9F7A 100%); color: #fff; font-size: 26rpx; border-radius: 32rpx; font-weight: 600; box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.3); }
+
+/* ===== 管理打手 ===== */
+.thug-search { display: flex; align-items: center; gap: 12rpx; margin: 0 24rpx 20rpx; height: 76rpx; padding: 0 24rpx; background: #fff; border-radius: 38rpx; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04); }
+.thug-search-input { flex: 1; font-size: 26rpx; color: #333; }
+.thug-item { display: flex; align-items: center; gap: 20rpx; padding: 26rpx 0; border-bottom: 1rpx solid #f5f5f5; }
+.thug-item:last-child { border-bottom: none; }
+.thug-avatar { width: 84rpx; height: 84rpx; border-radius: 24rpx; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32rpx; font-weight: 600; flex-shrink: 0; }
+.thug-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8rpx; }
+.thug-top { display: flex; align-items: center; gap: 12rpx; }
+.thug-sub { font-size: 24rpx; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thug-tag { font-size: 20rpx; padding: 4rpx 14rpx; border-radius: 16rpx; font-weight: 600; flex-shrink: 0; }
+.thug-tag.ok { color: #3cc51f; background: #e8f8e4; }
+.thug-tag.no { color: #ff4d4f; background: #fde8e8; }
+.thug-tag.wait { color: #ff9500; background: #fff4e0; }
 
 .empty-wrap { padding: 100rpx 0; display: flex; flex-direction: column; align-items: center; gap: 20rpx; }
 .empty-icon { width: 140rpx; height: 140rpx; background: linear-gradient(135deg, #FFF1E8 0%, #FFE0C8 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -776,15 +904,15 @@ const selectIdentity = async (item) => {
 .menu-value { font-size: 24rpx; color: #999; }
 
 /* ===== 底部 tabbar（整体椭圆形包裹）===== */
-.cs-tabbar { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 16rpx); left: 24rpx; right: 24rpx; height: 112rpx; background: #fff; border-radius: 56rpx; display: flex; align-items: center; justify-content: space-around; box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.12); padding: 0 16rpx; z-index: 99; border: 1rpx solid rgba(0,0,0,0.04); }
+.cs-tabbar { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 16rpx); left: 24rpx; right: 24rpx; height: 112rpx; background: var(--theme-tabbar-bg, #fff); border-radius: 56rpx; display: flex; align-items: center; justify-content: space-around; box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.12); padding: 0 16rpx; z-index: 99; border: 1rpx solid rgba(0,0,0,0.04); }
 .cs-tabbar-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4rpx; padding: 10rpx 0; position: relative; border-radius: 48rpx; transition: all 0.25s ease; }
-.cs-tabbar-item.active { background: linear-gradient(135deg, #FF7A45 0%, #FF9F7A 100%); box-shadow: 0 6rpx 18rpx rgba(255, 122, 69, 0.4); }
+.cs-tabbar-item.active { background: linear-gradient(135deg, var(--theme-tabbar-active, #FF7A45) 0%, var(--theme-tabbar-active, #FF9F7A) 100%); box-shadow: 0 6rpx 18rpx rgba(255, 122, 69, 0.4); }
 .cs-tabbar-icon-wrap { display: flex; align-items: center; justify-content: center; transition: all 0.25s ease; }
 .cs-tabbar-item.active .cs-tabbar-icon-wrap { }
-.cs-tabbar-text { font-size: 20rpx; color: #999; transition: all 0.25s; }
-.cs-tabbar-item.active .cs-tabbar-text { color: #fff; font-weight: 700; }
+.cs-tabbar-text { font-size: 20rpx; color: var(--theme-tabbar-text, #999); transition: all 0.25s; }
+.cs-tabbar-item.active .cs-tabbar-text { color: var(--theme-tabbar-text-active, #fff); font-weight: 700; }
 
-/* ===== 切换身份弹窗 ===== */
+/* ===== 切换身份弹窗 / 打手详情 ===== */
 .identity-popup-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 0 32rpx; box-sizing: border-box; }
 .identity-popup { width: 100%; max-width: 640rpx; background: #fff; border-radius: 36rpx; padding: 36rpx 24rpx 40rpx; box-sizing: border-box; }
 .identity-popup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40rpx; }
@@ -801,4 +929,13 @@ const selectIdentity = async (item) => {
 .identity-desc { font-size: 24rpx; color: #666; }
 .identity-option.active .identity-title { color: #fff; }
 .identity-option.active .identity-desc { color: rgba(255,255,255,0.85); }
+
+.thug-popup { max-height: 80vh; overflow-y: auto; }
+.thug-detail { display: flex; flex-direction: column; gap: 4rpx; }
+.detail-line { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 0; border-bottom: 1rpx solid #f5f5f5; font-size: 26rpx; }
+.detail-k { color: #999; flex-shrink: 0; }
+.detail-v { color: #333; font-weight: 500; text-align: right; word-break: break-all; }
+.idcard-row { display: flex; gap: 16rpx; margin-top: 24rpx; }
+.idcard-img { flex: 1; height: 180rpx; border-radius: 12rpx; background: #f5f5f5; }
+.idcard-empty { display: block; text-align: center; font-size: 24rpx; color: #bbb; margin-top: 24rpx; }
 </style>
