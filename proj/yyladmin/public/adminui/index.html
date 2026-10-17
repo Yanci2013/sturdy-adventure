@@ -179,8 +179,8 @@ tbody tr:hover td{background:#f8faff}
 /* ================= 基础请求 ================= */
 const LS_KEY='ya_admin_token', LS_UID='ya_admin_uid', LS_NAME='ya_admin_name';
 const state={token:localStorage.getItem(LS_KEY)||'', uid:localStorage.getItem(LS_UID)||'', name:localStorage.getItem(LS_NAME)||''};
-// H5 前端地址（用于实时预览 iframe）
-const H5_URL='http://localhost:8000/h5/';
+// H5 前端地址（用于实时预览 iframe，同源相对路径）
+const H5_URL='/h5/';
 
 /* 模块配置：来自 modules.js（由 database/gen_biz_modules.py 生成） */
 const MODULES=window.MODULES, MENU=window.MENU;
