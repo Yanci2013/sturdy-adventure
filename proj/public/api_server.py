@@ -1124,31 +1124,39 @@ class Handler(BaseHTTPRequestHandler):
             itype = (body.get('type') or 'thug').strip()
             name = (body.get('name') or '').strip()
             user_id = int(body.get('user_id') or 0)
-            if not code:
-                self.send_json({"code": 0, "msg": "请输入邀请码"})
-                return
+            # 自动生成邀请码（英文大小写+数字，8位），不允许手动指定
+            def gen_code():
+                import string, secrets
+                chars = string.ascii_letters + string.digits
+                while True:
+                    c = ''.join(secrets.choice(chars) for _ in range(8))
+                    if not db.execute('SELECT id FROM invite_codes WHERE code = ?', (c,)).fetchone():
+                        return c
             if itype not in ('thug', 'cs'):
                 self.send_json({"code": 0, "msg": "类型只能为打手或客服"})
                 return
             now = now_ts()
             db = get_db()
-            exist = db.execute('SELECT id FROM invite_codes WHERE code = ?', (code,)).fetchone()
-            if exist:
-                db.close()
-                self.send_json({"code": 0, "msg": "邀请码已存在"})
-                return
+            code = gen_code()
             db.execute(
                 'INSERT INTO invite_codes (code, type, user_id, name, createtime) VALUES (?,?,?,?,?)',
                 (code, itype, user_id, name, now)
             )
             db.commit()
             db.close()
-            self.send_json({"code": 1, "msg": "添加成功"})
+            self.send_json({"code": 1, "msg": "添加成功", "data": {"code": code}})
+            return
+
+        if path == '/api/invite/gen':
+            # 仅生成一个随机邀请码返回给前端预览
+            import string, secrets
+            chars = string.ascii_letters + string.digits
+            code = ''.join(secrets.choice(chars) for _ in range(8))
+            self.send_json({"code": 1, "msg": "成功", "data": {"code": code}})
             return
 
         if path == '/api/invite/edit':
             cid = int(body.get('id') or 0)
-            code = (body.get('code') or '').strip()
             itype = (body.get('type') or 'thug').strip()
             name = (body.get('name') or '').strip()
             user_id = int(body.get('user_id') or 0)
@@ -1159,14 +1167,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"code": 0, "msg": "类型只能为打手或客服"})
                 return
             db = get_db()
-            exist = db.execute('SELECT id FROM invite_codes WHERE code = ? AND id != ?', (code, cid)).fetchone()
-            if exist:
-                db.close()
-                self.send_json({"code": 0, "msg": "邀请码已存在"})
-                return
+            # 邀请码不可修改，仅更新类型、名称、使用ID
             db.execute(
-                'UPDATE invite_codes SET code=?, type=?, name=?, user_id=? WHERE id=?',
-                (code, itype, name, user_id, cid)
+                'UPDATE invite_codes SET type=?, name=?, user_id=? WHERE id=?',
+                (itype, name, user_id, cid)
             )
             db.commit()
             db.close()

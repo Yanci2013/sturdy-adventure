@@ -611,13 +611,28 @@ async function editInvite(id){
     const all=(j.code===1&&j.data)?j.data:[];
     row=all.find(r=>r.id===id)||row;
   }
+  // 新增模式：从服务端取一个预览邀请码（只读展示，实际保存时由服务端重新生成以保证唯一）
+  let previewCode='';
+  if(!id){
+    try{ const g=await req('api/invite/gen'); if(g.code===1&&g.data) previewCode=g.data.code||''; }catch(e){}
+  }
+  const codeDisplay = id
+    ? `<div style="display:flex;align-items:center;gap:10px">
+         <span style="font-family:monospace;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--brand)">${row.code||''}</span>
+         <span class="badge gray">系统生成，不可修改</span>
+       </div>`
+    : `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+         <span id="iv_code_preview" style="font-family:monospace;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--brand)">${previewCode||'（保存时自动生成）'}</span>
+         <button type="button" class="mini" onclick="regenInvitePreview()">换一个</button>
+       </div>
+       <div class="hint">邀请码由系统自动生成（8位英文大小写+数字），无法手动输入或修改</div>`;
   const userOpts=`<option value="0">（通用，不指定）</option>`+users.map(u=>`<option value="${u.id}" ${u.id===row.user_id?'selected':''}>${u.label}</option>`).join('');
   const dlg=document.createElement('div');
   dlg.className='mask';
   dlg.innerHTML=`<div class="modal">
     <div class="modal-hd"><h3>${id?'编辑邀请码':'新增邀请码'}</h3><button class="x" onclick="this.closest('.mask').remove()">×</button></div>
     <div class="modal-bd">
-      <div class="form-row"><label>邀请码</label><input id="iv_code" value="${row.code}" placeholder="如 THUG666"></div>
+      <div class="form-row"><label>邀请码</label>${codeDisplay}</div>
       <div class="form-row"><label>类型</label><select id="iv_type"><option value="thug" ${row.type==='thug'?'selected':''}>打手</option><option value="cs" ${row.type==='cs'?'selected':''}>客服</option></select></div>
       <div class="form-row"><label>名称</label><input id="iv_name" value="${row.name||''}" placeholder="如 大神老王"></div>
       <div class="form-row"><label>使用ID（分配给指定用户）</label><select id="iv_uid">${userOpts}</select></div>
@@ -629,17 +644,30 @@ async function editInvite(id){
   document.body.appendChild(dlg);
   dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.remove();});
   dlg.querySelector('#iv_save').onclick=async()=>{
-    const code=dlg.querySelector('#iv_code').value.trim();
     const type=dlg.querySelector('#iv_type').value;
     const name=dlg.querySelector('#iv_name').value.trim();
     const user_id=parseInt(dlg.querySelector('#iv_uid').value)||0;
-    if(!code){toast('请输入邀请码',true);return;}
     const api=id?'api/invite/edit':'api/invite/add';
-    const body=id?{id,...{code,type,name,user_id}}:{code,type,name,user_id};
+    // 邀请码由服务端生成/不可修改，前端不提交 code 字段
+    const body=id?{id,type,name,user_id}:{type,name,user_id};
     const j=await req(api,body,'POST');
-    if(j.code===1){toast('保存成功');dlg.remove();renderInviteCode();}
+    if(j.code===1){
+      const gen=(!id&&j.data&&j.data.code)?`（邀请码：${j.data.code}）`:'';
+      toast('保存成功'+gen);
+      dlg.remove();
+      renderInviteCode();
+    }
     else toast(j.msg||'保存失败',true);
   };
+}
+async function regenInvitePreview(){
+  const el=document.getElementById('iv_code_preview');
+  if(!el) return;
+  el.textContent='生成中...';
+  try{
+    const g=await req('api/invite/gen');
+    if(g.code===1&&g.data) el.textContent=g.data.code||'（保存时自动生成）';
+  }catch(e){ el.textContent='（保存时自动生成）'; }
 }
 async function delInvite(id){
   if(!confirm('确定删除该邀请码？'))return;
