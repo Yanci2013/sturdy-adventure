@@ -242,6 +242,9 @@ def init_db():
         ('publish_mode', 'basic', '发布模式', '前端装修发布方式', 'radio', '', 'admin', '{"admin":"仅管理员发布","auto":"立即发布"}', '', '', ''),
         # 打手实名认证
         ('thug_realname_required', 'basic', '打手实名认证', '打手接单是否需要实名认证（1需要 0不需要）', 'radio', '', '0', '{"1":"需要","0":"不需要"}', '', '', ''),
+        # 站点 Logo 与名称（前端首页左上角）
+        ('site_logo', 'basic', '站点 Logo', '前端首页左上角显示的 Logo 图片 URL（留空使用默认）', 'string', '', '/static/eon.png', '', '', '', ''),
+        ('site_name', 'basic', '站点名称', '前端首页左上角显示的站点名称文字', 'string', '', '创世网络', '', '', '', ''),
     ]
     for item in extra_items:
         cur.execute('INSERT OR IGNORE INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
@@ -695,6 +698,9 @@ class Handler(BaseHTTPRequestHandler):
             builtin_cs_enabled = 0 if str(builtin_cs_enabled) == '0' else 1
             thug_realname_required = get_config('thug_realname_required', '0')
             thug_realname_required = 1 if str(thug_realname_required) == '1' else 0
+            # 站点 Logo 与名称
+            site_logo = get_config('site_logo', '/static/eon.png') or '/static/eon.png'
+            site_name = get_config('site_name', '创世网络') or '创世网络'
             # 客服列表（内置 + 外置，仅在线的）
             db = get_db()
             cs_rows = db.execute('SELECT * FROM customer_services WHERE online = 1 ORDER BY id ASC').fetchall()
@@ -717,8 +723,10 @@ class Handler(BaseHTTPRequestHandler):
                     "qiangdan_free_thugs": "1",
                     "club_name": "创世网络",
                     "brand_name": "创世网络",
-                    "site_logo": "/static/eon.png",
-                    "site_name": "创世网络",
+                    "site_logo": site_logo,
+                    "site_name": site_name,
+                    "site_icon": site_logo,
+                    "site_title": site_name,
                     "small_lunbo": small_lunbo.split(',') if small_lunbo else [],
                     "goods_card_col": int(goods_card_col) if goods_card_col.isdigit() else 2,
                     "app_bg_color": app_bg_color,
@@ -799,6 +807,34 @@ class Handler(BaseHTTPRequestHandler):
             db.execute("INSERT INTO fa_config (name, group_name, title, value) VALUES ('app_bg_image','basic','页面背景图片',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", (url,))
             db.commit()
             db.close()
+            self.send_json({
+                "code": 1,
+                "msg": "上传成功",
+                "data": {"url": url, "full_url": '/h5' + url}
+            })
+            return
+
+        if path == '/api/config/upload':
+            # 通用图片上传（仅返回URL，不写入特定配置）
+            files = files or {}
+            f = files.get('file') or files.get('image') or files.get('logo')
+            if not f or not f.get('filename'):
+                self.send_json({"code": 0, "msg": "未上传文件"})
+                return
+            ext = os.path.splitext(f['filename'])[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'):
+                self.send_json({"code": 0, "msg": "图片格式不支持"})
+                return
+            if len(f['data']) > 5 * 1024 * 1024:
+                self.send_json({"code": 0, "msg": "图片大小不能超过5MB"})
+                return
+            uploads_dir = os.path.join(WEB_ROOT, 'uploads')
+            os.makedirs(uploads_dir, exist_ok=True)
+            filename = f"upload_{int(time.time())}_{secrets.token_hex(6)}{ext}"
+            filepath = os.path.join(uploads_dir, filename)
+            with open(filepath, 'wb') as fp:
+                fp.write(f['data'])
+            url = '/uploads/' + filename
             self.send_json({
                 "code": 1,
                 "msg": "上传成功",
@@ -1149,7 +1185,7 @@ class Handler(BaseHTTPRequestHandler):
             user_id = int(body.get('user_id') or 0)
             # 自动生成邀请码（英文大小写+数字，8位），不允许手动指定
             def gen_code():
-                import string, secrets
+                import string
                 chars = string.ascii_letters + string.digits
                 while True:
                     c = ''.join(secrets.choice(chars) for _ in range(8))
@@ -1172,7 +1208,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == '/api/invite/gen':
             # 仅生成一个随机邀请码返回给前端预览
-            import string, secrets
+            import string
             chars = string.ascii_letters + string.digits
             code = ''.join(secrets.choice(chars) for _ in range(8))
             self.send_json({"code": 1, "msg": "成功", "data": {"code": code}})
