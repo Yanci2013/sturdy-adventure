@@ -1391,6 +1391,8 @@ class Handler(BaseHTTPRequestHandler):
                     'INSERT INTO thug (user_id, name, status, sh_status, is_customer_service, createtime) VALUES (?,?,?,?,?,?)',
                     (u['id'], inv['name'], 1, 1, 1, now)
                 )
+            # 客服入驻同样需要将用户类型设为打手(type=2)，否则前端身份切换校验不通过
+            db.execute('UPDATE users SET type = 2 WHERE id = ?', (u['id'],))
             # 标记邀请码为已使用
             db.execute('UPDATE invite_codes SET used = 1 WHERE id = ?', (inv['id'],))
             db.commit()
