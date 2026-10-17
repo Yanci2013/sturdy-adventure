@@ -91,9 +91,9 @@
 					<view class="quick-icon-wrap money-icon"><uv-icon name="rmb-circle" size="32" color="#FF7A45"></uv-icon></view>
 					<text class="quick-label">佣金提现</text>
 				</view>
-				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/qiangdan'})">
-					<view class="quick-icon-wrap grab-icon"><uv-icon name="lightning" size="32" color="#FF7A45"></uv-icon></view>
-					<text class="quick-label">抢单神器</text>
+				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/fine'})">
+					<view class="quick-icon-wrap grab-icon"><uv-icon name="info-circle" size="32" color="#FF7A45"></uv-icon></view>
+					<text class="quick-label">罚款缴纳</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/center'})">
 					<view class="quick-icon-wrap center-icon"><uv-icon name="account" size="32" color="#FF7A45"></uv-icon></view>

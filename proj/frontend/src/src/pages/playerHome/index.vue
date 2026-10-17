@@ -1,7 +1,5 @@
 <template>
 	<view class="main-container">
-	<z-paging ref="paging" v-model="dataList" @query="queryList" :auto="false" auto-show-back-to-top
-		@scrollTopChange="scrollTopChange" :show-refresher-update-time="false">
 		<!-- 导航栏 -->
 		<view class="navbar">
 			<view class="navbar-capsule">
@@ -14,9 +12,31 @@
 				</view>
 			</view>
 			<text class="navbar-title">抢单大厅</text>
-			<view class="navbar-placeholder"></view>
+			<view class="navbar-msg" @click="goMessage">
+				<up-icon name="chat" size="36rpx" color="#606266"></up-icon>
+			</view>
 		</view>
 
+		<!-- 收益卡片 -->
+		<view class="revenue-card">
+			<view class="revenue-item">
+				<text class="revenue-label">今日订单收益</text>
+				<text class="revenue-value">¥{{ todayOrderIncome }}</text>
+			</view>
+			<view class="revenue-divider"></view>
+			<view class="revenue-item">
+				<text class="revenue-label">今日礼物收益</text>
+				<text class="revenue-value">¥{{ todayGiftIncome }}</text>
+			</view>
+			<view class="revenue-divider"></view>
+			<view class="revenue-item">
+				<text class="revenue-label">我的余额</text>
+				<text class="revenue-value">¥{{ myBalance }}</text>
+			</view>
+		</view>
+
+	<z-paging ref="paging" v-model="dataList" @query="queryList" :auto="false" auto-show-back-to-top
+		@scrollTopChange="scrollTopChange" :show-refresher-update-time="false">
 		<!-- 搜索栏 -->
 		<view class="search-wrap">
 			<up-icon name="search" size="32rpx" color="#999"></up-icon>
@@ -113,6 +133,13 @@ const categoryName = ref('')
 const gameList = ref([])
 const selectedCategoryId = ref('')
 const selectedCategoryName = ref('')
+const todayOrderIncome = ref('0.00')
+const todayGiftIncome = ref('0.00')
+const myBalance = ref('0.00')
+
+const goMessage = () => {
+	uni.reLaunch({ url: '/pages/message/index' })
+}
 
 onLoad((options) => {
 	if (options.category_id) {
@@ -263,7 +290,13 @@ const scrollTopChange = (top) => {}
 .navbar-btn { padding: 4rpx 8rpx; }
 .navbar-divider { width: 1rpx; height: 32rpx; background: #dadbde; margin: 0 8rpx; }
 .navbar-title { font-size: 34rpx; font-weight: 600; color: #333; }
+.navbar-msg { width: 64rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .navbar-placeholder { width: 120rpx; }
+.revenue-card { margin: 24rpx 24rpx 0; padding: 28rpx 24rpx; border-radius: 24rpx; background: linear-gradient(135deg, #8b5cf6, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: space-around; box-shadow: 0 8rpx 24rpx rgba(99, 102, 241, 0.3); }
+.revenue-item { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.revenue-label { font-size: 22rpx; color: rgba(255,255,255,0.8); margin-bottom: 10rpx; }
+.revenue-value { font-size: 34rpx; font-weight: 700; color: #fff; }
+.revenue-divider { width: 1rpx; height: 56rpx; background: rgba(255,255,255,0.3); }
 .search-wrap { position: relative; z-index: 10; display: flex; align-items: center; padding: 12rpx 24rpx; margin: 24rpx 24rpx 0; background: rgba(255,255,255,0.45); backdrop-filter: blur(24rpx); -webkit-backdrop-filter: blur(24rpx); border: 1rpx solid rgba(255,255,255,0.6); box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04), inset 0 1rpx rgba(255,255,255,0.8); border-radius: 48rpx; }
 .search-input { flex: 1; height: 48rpx; font-size: 26rpx; color: #000; background: transparent; margin-left: 12rpx; }
 .search-placeholder { color: #999; }
