@@ -18,11 +18,11 @@
 					opacity: 0.85;
 				}
 				a, uni-a, .u-link, .uv-link, [class*="parse"] a, [class*="parse"] uni-a {
-					color: #FF7A45 !important;
+					color: #2B6EFF !important;
 					text-decoration: none !important;
 				}
 				a:hover, .u-link:hover {
-					color: #FF9D6E !important;
+					color: #5B8DEF !important;
 				}
 				/* uni-app 内置组件主色覆盖 */
 				html { --primary-color: #FF7A45 !important; }
@@ -139,18 +139,18 @@
 		opacity: 0.85;
 	}
 
-	/* 全局链接颜色 - 暖珊瑚橘 */
+	/* 全局链接颜色 - 蓝色 */
 	a, uni-a, .u-link, .uv-link, [class*="parse"] a, [class*="parse"] uni-a {
-		color: #FF7A45 !important;
+		color: #2B6EFF !important;
 		text-decoration: none;
 	}
 	a:hover, .u-link:hover {
-		color: #FF9D6E !important;
+		color: #5B8DEF !important;
 	}
 	/* up-parse / uv-parse 解析内容中的链接 */
 	:deep(.up-parse) a, :deep(.u-parse) a, :deep(.uv-parse) a,
 	.up-parse-content a, .parse-content a {
-		color: #FF7A45 !important;
+		color: #2B6EFF !important;
 	}
 
 	/* uni-app 内置组件主色覆盖 - 暖珊瑚橘 */
