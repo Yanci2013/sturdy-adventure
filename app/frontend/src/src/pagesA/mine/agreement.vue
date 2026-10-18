@@ -176,19 +176,19 @@ const privacyHtml = `<h1 style="text-align:center;font-size:36rpx;font-weight:70
 <p style="font-size:26rpx;color:#333;line-height:1.7;">如果您对本隐私政策有疑问、建议，或者需要处理个人信息相关诉求，请通过平台客服渠道联系我们。</p>
 <p style="font-size:24rpx;color:#666;line-height:1.7;text-align:center;margin-top:32rpx;">砚世易游·创世网络<br/>2026年10月</p>`;
 
-const aboutHtml = `<h1 style="text-align:center;font-size:40rpx;font-weight:800;color:#FF7A45;margin-bottom:8rpx;">砚世易游v2.0</h1>
-<p style="text-align:center;font-size:24rpx;color:#999;margin-bottom:24rpx;">由砚世易游v2.0·创世网络旗下运营俱乐部打造</p>
+const aboutHtml = `<h1 style="text-align:center;font-size:40rpx;font-weight:800;color:#FF7A45;margin-bottom:8rpx;">砚世易游pro</h1>
+<p style="text-align:center;font-size:24rpx;color:#999;margin-bottom:24rpx;">由砚世易游pro·创世网络旗下运营俱乐部打造</p>
 
 <p style="font-size:26rpx;color:#333;line-height:1.7;">专业的游戏服务平台，为玩家提供代练、陪玩等优质服务，汇聚众多高水平电竞打手，拥有扎实的游戏技术与丰富的实战经验。</p>
 
 <h3 style="font-size:30rpx;font-weight:700;color:#FF7A45;margin:32rpx 0 12rpx;">一、平台背景与愿景</h3>
 <p style="font-size:26rpx;color:#333;line-height:1.7;">在当今数字化时代，电子游戏已成为人们生活中不可或缺的娱乐方式。随着游戏市场的蓬勃发展和玩家对游戏体验的需求日益增长，其中不乏因时间、技能或资源限制而无法充分享受游戏乐趣的玩家。有的玩家平日忙于工作学习，缺少充足时间冲分；有的玩家想要体验高难度副本、赛事对局，却苦于自身操作不足。</p>
-<p style="font-size:26rpx;color:#333;line-height:1.7;">为满足这一市场需求，创世网络旗下运营俱乐部倾力打造砚世易游v2.0。平台坚持以用户需求为核心，搭建规范化的游戏服务对接体系，通过专业、高效、安全、便捷的服务流程，兼顾玩家与打手双方的诉求，为交易双方创造更稳妥可靠的价值体验。我们致力于打造口碑优良的电竞服务社区，持续优化服务标准，让每一位玩家都能获得满意的游戏服务。</p>
+<p style="font-size:26rpx;color:#333;line-height:1.7;">为满足这一市场需求，创世网络旗下运营俱乐部倾力打造砚世易游pro。平台坚持以用户需求为核心，搭建规范化的游戏服务对接体系，通过专业、高效、安全、便捷的服务流程，兼顾玩家与打手双方的诉求，为交易双方创造更稳妥可靠的价值体验。我们致力于打造口碑优良的电竞服务社区，持续优化服务标准，让每一位玩家都能获得满意的游戏服务。</p>
 
 <h3 style="font-size:30rpx;font-weight:700;color:#FF7A45;margin:32rpx 0 12rpx;">二、平台功能与特色</h3>
 
 <p style="font-size:26rpx;color:#333;line-height:1.7;font-weight:600;margin-top:16rpx;">1. 智能匹配系统</p>
-<p style="font-size:26rpx;color:#333;line-height:1.7;">砚世易游v2.0根据游戏类型、技能等级、服务需求和难度等多维度进行匹配，快速筛选适配的服务人员，帮助用户快速找到合适的服务提供者，减少沟通筛选成本。</p>
+<p style="font-size:26rpx;color:#333;line-height:1.7;">砚世易游pro根据游戏类型、技能等级、服务需求和难度等多维度进行匹配，快速筛选适配的服务人员，帮助用户快速找到合适的服务提供者，减少沟通筛选成本。</p>
 
 <p style="font-size:26rpx;color:#333;line-height:1.7;font-weight:600;margin-top:16rpx;">2. 实时派单机制</p>
 <p style="font-size:26rpx;color:#333;line-height:1.7;">平台采用公开透明的单据流转方式，所有注册并审核通过的打手均可参与接单。订单信息实时推送，竞争接单模式提升响应速度，从而提升服务效率与质量。</p>
@@ -197,12 +197,12 @@ const aboutHtml = `<h1 style="text-align:center;font-size:40rpx;font-weight:800;
 <p style="font-size:26rpx;color:#333;line-height:1.7;">打手完成任务后，可在线提交成果截图或视频凭证，由平台专人进行审核认证，核验服务完成情况，确保服务真实性，充分保障用户权益。</p>
 
 <p style="font-size:26rpx;color:#333;line-height:1.7;font-weight:600;margin-top:16rpx;">4. 安全支付与结算</p>
-<p style="font-size:26rpx;color:#333;line-height:1.7;">砚世易游v2.0支持安全支付与自动化结算，订单完成后按规则自动处理资金，尽量减少人为干预，提升资金流转效率，同时通过平台规则约束，保障交易双方权益。</p>
+<p style="font-size:26rpx;color:#333;line-height:1.7;">砚世易游pro支持安全支付与自动化结算，订单完成后按规则自动处理资金，尽量减少人为干预，提升资金流转效率，同时通过平台规则约束，保障交易双方权益。</p>
 
 <p style="font-size:26rpx;color:#333;line-height:1.7;font-weight:600;margin-top:16rpx;">5. 专业客服支持</p>
-<p style="font-size:26rpx;color:#333;line-height:1.7;">砚世易游v2.0提供持续的客服支持，在订单咨询、服务协作、售后纠纷等场景下及时响应，帮助用户与服务者处理各类问题。</p>
+<p style="font-size:26rpx;color:#333;line-height:1.7;">砚世易游pro提供持续的客服支持，在订单咨询、服务协作、售后纠纷等场景下及时响应，帮助用户与服务者处理各类问题。</p>
 
-<p style="font-size:24rpx;color:#666;line-height:1.7;text-align:center;margin-top:32rpx;">砚世易游v2.0·创世网络<br/>2026年10月</p>`;
+<p style="font-size:24rpx;color:#666;line-height:1.7;text-align:center;margin-top:32rpx;">砚世易游pro·创世网络<br/>2026年10月</p>`;
 
 onLoad((prop) => {
 	name.value = prop.name;

@@ -117,7 +117,7 @@
 			<view class="brand-banner">
 				<image class="brand-mascot" src="/static/eon.png" mode="aspectFit"></image>
 				<view class="brand-info">
-					<text class="brand-title">砚世易游v2.0</text>
+					<text class="brand-title">砚世易游pro</text>
 					<text class="brand-subtitle">创世网络提供技术支持</text>
 					<view class="build-same-btn" @click="goBuildSame">做俱乐部就找创世网络</view>
 				</view>

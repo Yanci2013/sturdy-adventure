@@ -83,56 +83,6 @@
 				}, true)
 			}
 
-			// ===== 截图水印：始终以极低透明度铺满全屏，保证任何截图都带「砚世易游Pro由砚辞提供技术支持」；检测到截图操作时临时加深 =====
-			if (!document.getElementById('__screenshot_watermark__')) {
-				const wmStyle = document.createElement('style')
-				wmStyle.textContent = `
-#__screenshot_watermark__{position:fixed;inset:0;z-index:999999;pointer-events:none;overflow:hidden;transition:opacity .25s ease;opacity:.04;}
-#__screenshot_watermark__.active{opacity:.55;}
-#__screenshot_watermark__ .wm-grid{position:absolute;inset:-50%;transform:rotate(-18deg);display:flex;flex-wrap:wrap;gap:60px 90px;align-content:center;justify-content:center;}
-#__screenshot_watermark__ .wm-grid span{color:#111;font-size:14px;font-weight:700;white-space:nowrap;letter-spacing:1px;user-select:none;-webkit-user-select:none;}
-#__screenshot_watermark__.active .wm-grid span{color:#000;text-shadow:0 0 3px rgba(255,255,255,.7);}`
-				document.head.appendChild(wmStyle)
-
-				const wm = document.createElement('div')
-				wm.id = '__screenshot_watermark__'
-				const grid = document.createElement('div')
-				grid.className = 'wm-grid'
-				const text = '砚世易游Pro由砚辞提供技术支持'
-				for (let i = 0; i < 160; i++) {
-					const s = document.createElement('span')
-					s.textContent = text
-					grid.appendChild(s)
-				}
-				wm.appendChild(grid)
-				document.body.appendChild(wm)
-
-				let flashTimer = null
-				function flash() {
-					wm.classList.add('active')
-					if (flashTimer) clearTimeout(flashTimer)
-					flashTimer = setTimeout(() => wm.classList.remove('active'), 2000)
-				}
-				function isEditable(t) {
-					return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
-				}
-				window.addEventListener('keydown', (e) => {
-					const k = (e.key || '').toLowerCase()
-					if (k === 'printscreen' || k === 'print' ||
-						(e.ctrlKey && k === 's') ||
-						(e.ctrlKey && e.shiftKey && k === 's') ||
-						(e.ctrlKey && k === 'p') ||
-						(e.metaKey && (k === '3' || k === '4' || k === '5'))) {
-						flash()
-					}
-				})
-				window.addEventListener('blur', () => flash())
-				document.addEventListener('visibilitychange', () => { if (document.hidden) flash() })
-				// 右键菜单 / 选中文本：仅在非输入框拦截，避免影响表单输入
-				window.addEventListener('contextmenu', (e) => { if (!isEditable(e.target)) e.preventDefault() })
-				document.addEventListener('selectstart', (e) => { if (!isEditable(e.target)) e.preventDefault() })
-			}
-
 			// #endif
 			// 拉取后端配置，缓存俱乐部名称（后台可改，默认创世网络）
 			configure().then(res => {
