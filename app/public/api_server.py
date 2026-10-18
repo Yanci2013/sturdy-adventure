@@ -29,6 +29,106 @@ JUHE_LOGIN_CONFIG = {
     'enabled': False  # 是否启用聚合登录（True=调用真实聚合登录，False=本地 mock）
 }
 
+# ===== 后台通用资源定义（用于后台各菜单的真实 CRUD 页面） =====
+def _rf(key, label, t='text', options=None):
+    return {'key': key, 'label': label, 'type': t, 'options': options or {}}
+
+RESOURCES = {
+    'goods_category': {'title': '商品分类管理', 'search': ['name'], 'columns': ['name', 'icon', 'sort', 'status'], 'fields': [
+        _rf('name', '分类名称'), _rf('icon', '分类图标URL'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
+    'goods': {'title': '商品管理', 'search': ['name'], 'columns': ['name', 'category_id', 'price', 'status'], 'fields': [
+        _rf('name', '商品名称'), _rf('category_id', '所属分类ID', 'number'), _rf('logo', '封面图URL'),
+        _rf('price', '价格', 'number'), _rf('unit', '计价单位'), _rf('status', '上架状态', 'switch'), _rf('remark', '商品简介', 'textarea')]},
+    'prize_pool': {'title': '奖池管理', 'search': ['name'], 'columns': ['name', 'rate', 'stock', 'status'], 'fields': [
+        _rf('name', '奖品名称'), _rf('icon', '奖品图URL'), _rf('rate', '中奖概率(%)', 'number'),
+        _rf('stock', '库存数量', 'number'), _rf('status', '是否启用', 'switch')]},
+    'banner': {'title': '轮播图管理', 'search': ['title'], 'columns': ['image', 'title', 'link', 'sort', 'status'], 'fields': [
+        _rf('title', '标题'), _rf('image', '图片URL'), _rf('link', '跳转链接'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
+    'order_complaint': {'title': '订单投诉', 'search': ['order_no', 'content'], 'columns': ['order_no', 'user_id', 'content', 'status'], 'fields': [
+        _rf('order_no', '订单号'), _rf('user_id', '投诉用户ID', 'number'), _rf('content', '投诉内容', 'textarea'),
+        _rf('status', '处理状态', 'select', {'0': '待处理', '1': '处理中', '2': '已解决', '3': '已驳回'})]},
+    'withdraw': {'title': '提现记录', 'search': ['user_id', 'account'], 'columns': ['user_id', 'amount', 'account', 'status'], 'fields': [
+        _rf('user_id', '用户ID', 'number'), _rf('amount', '提现金额', 'number'), _rf('account', '收款账号'),
+        _rf('status', '状态', 'select', {'0': '待审核', '1': '已打款', '2': '已驳回'}), _rf('remark', '备注')]},
+    'level': {'title': '等级列表', 'search': ['name'], 'columns': ['name', 'need_score', 'discount', 'remark'], 'fields': [
+        _rf('name', '等级名称'), _rf('icon', '等级图标'), _rf('need_score', '所需积分', 'number'),
+        _rf('discount', '折扣(0-1)', 'number'), _rf('remark', '权益说明', 'textarea')]},
+    'cs_account': {'title': '客服账号', 'search': ['name', 'username'], 'columns': ['name', 'username', 'thug_id', 'status'], 'fields': [
+        _rf('name', '客服名称'), _rf('username', '登录账号'), _rf('password', '登录密码'),
+        _rf('thug_id', '关联打手ID', 'number'), _rf('status', '状态', 'switch')]},
+    'fine': {'title': '罚款管理', 'search': ['name'], 'columns': ['name', 'amount', 'user_id', 'status'], 'fields': [
+        _rf('name', '罚款项目'), _rf('amount', '罚款金额', 'number'), _rf('user_id', '用户ID', 'number'),
+        _rf('reason', '罚款原因', 'textarea'), _rf('status', '状态', 'select', {'0': '待缴纳', '1': '已缴纳', '2': '已免除'})]},
+    'quick_entry': {'title': '快捷入口', 'search': ['name'], 'columns': ['name', 'icon', 'color', 'link', 'sort'], 'fields': [
+        _rf('name', '入口名称'), _rf('icon', '图标'), _rf('color', '图标颜色'), _rf('link', '跳转链接'),
+        _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
+    'admin_user': {'title': '管理员管理', 'search': ['username', 'nickname'], 'columns': ['username', 'nickname', 'role', 'status'], 'fields': [
+        _rf('username', '登录账号'), _rf('nickname', '昵称'), _rf('password', '登录密码'), _rf('role', '角色'), _rf('status', '状态', 'switch')]},
+    'role': {'title': '角色管理', 'search': ['name'], 'columns': ['name', 'auth', 'remark'], 'fields': [
+        _rf('name', '角色名称'), _rf('auth', '权限标识'), _rf('remark', '备注', 'textarea')]},
+    'cron': {'title': '计划任务', 'search': ['name'], 'columns': ['name', 'cron', 'command', 'status'], 'fields': [
+        _rf('name', '任务名称'), _rf('command', '执行命令'), _rf('cron', 'Cron表达式'), _rf('status', '是否启用', 'switch')]},
+    'bill': {'title': '账单管理', 'search': ['title'], 'columns': ['title', 'amount', 'type', 'remark'], 'fields': [
+        _rf('title', '账单标题'), _rf('amount', '金额', 'number'), _rf('type', '类型', 'select', {'1': '收入', '2': '支出'}), _rf('remark', '备注', 'textarea')]},
+    'package': {'title': '我的套餐', 'search': ['name'], 'columns': ['name', 'price', 'days', 'status'], 'fields': [
+        _rf('name', '套餐名称'), _rf('price', '价格', 'number'), _rf('days', '有效期(天)', 'number'),
+        _rf('desc', '套餐说明', 'textarea'), _rf('status', '是否上架', 'switch')]},
+    'balance': {'title': '余额明细', 'search': ['user_id', 'remark'], 'columns': ['user_id', 'amount', 'before', 'after', 'type', 'remark'], 'fields': [
+        _rf('user_id', '用户ID', 'number'), _rf('amount', '变动金额', 'number'), _rf('before', '变动前', 'number'),
+        _rf('after', '变动后', 'number'), _rf('type', '类型', 'select', {'1': '收入', '2': '支出'}), _rf('remark', '备注')]},
+    'recharge_order': {'title': '充值订单', 'search': ['order_no', 'user_id'], 'columns': ['order_no', 'user_id', 'amount', 'method', 'status'], 'fields': [
+        _rf('order_no', '订单号'), _rf('user_id', '用户ID', 'number'), _rf('amount', '充值金额', 'number'),
+        _rf('method', '支付方式'), _rf('status', '状态', 'select', {'0': '待支付', '1': '已支付', '2': '已退款'})]},
+    'order_commission': {'title': '订单佣金', 'search': ['order_no', 'user_id'], 'columns': ['order_no', 'user_id', 'amount', 'rate', 'status'], 'fields': [
+        _rf('order_no', '订单号'), _rf('user_id', '用户ID', 'number'), _rf('amount', '佣金金额', 'number'),
+        _rf('rate', '佣金比例', 'number'), _rf('status', '状态', 'select', {'0': '待结算', '1': '已结算'})]},
+    'commission_detail': {'title': '佣金明细', 'search': ['user_id', 'remark'], 'columns': ['user_id', 'amount', 'type', 'remark'], 'fields': [
+        _rf('user_id', '用户ID', 'number'), _rf('amount', '金额', 'number'),
+        _rf('type', '类型', 'select', {'1': '获得', '2': '提现'}), _rf('remark', '备注')]},
+    'refund': {'title': '退款记录', 'search': ['order_no', 'user_id'], 'columns': ['order_no', 'user_id', 'amount', 'status'], 'fields': [
+        _rf('order_no', '订单号'), _rf('user_id', '用户ID', 'number'), _rf('amount', '退款金额', 'number'),
+        _rf('reason', '退款原因', 'textarea'), _rf('status', '状态', 'select', {'0': '待处理', '1': '已退款', '2': '已驳回'})]},
+    'deposit': {'title': '保证金记录', 'search': ['user_id'], 'columns': ['user_id', 'amount', 'status', 'remark'], 'fields': [
+        _rf('user_id', '用户ID', 'number'), _rf('amount', '保证金金额', 'number'),
+        _rf('status', '状态', 'select', {'0': '已缴纳', '1': '已退还', '2': '已扣除'}), _rf('remark', '备注')]},
+    'wechat_notice': {'title': '公众号通知', 'search': ['title'], 'columns': ['title', 'template_id', 'status'], 'fields': [
+        _rf('title', '通知标题'), _rf('template_id', '模板ID'), _rf('content', '通知内容', 'textarea'), _rf('status', '是否启用', 'switch')]},
+    # ===== 单例配置型（表单页） =====
+    'upload_storage': {'title': '存储配置', 'singleton': True, 'fields': [
+        _rf('driver', '存储驱动', 'select', {'local': '本地存储', 'qiniu': '七牛云', 'oss': '阿里云OSS', 'cos': '腾讯云COS'}),
+        _rf('domain', '访问域名'), _rf('qiniu_key', '七牛 AccessKey'), _rf('qiniu_secret', '七牛 SecretKey'),
+        _rf('qiniu_bucket', '七牛 Bucket'), _rf('oss_key', 'OSS AccessKeyId'), _rf('oss_secret', 'OSS AccessKeySecret'), _rf('oss_bucket', 'OSS Bucket')]},
+    'my_setting': {'title': '我的设置', 'singleton': True, 'fields': [
+        _rf('site_name', '站点名称'), _rf('site_logo', '站点Logo'), _rf('copyright', '版权信息'),
+        _rf('customer_phone', '客服电话'), _rf('notice', '全局公告', 'textarea')]},
+    'wechat_robot': {'title': '企业微信机器人', 'singleton': True, 'fields': [
+        _rf('webhook', 'Webhook地址'), _rf('enabled', '是否启用', 'switch'), _rf('secret', '签名密钥')]},
+    'auth': {'title': '平台授权对接', 'singleton': True, 'fields': [
+        _rf('domain', '授权域名'), _rf('license', '授权码'), _rf('enabled', '是否启用', 'switch')]},
+    'sms_config': {'title': '短信配置', 'singleton': True, 'fields': [
+        _rf('provider', '短信服务商', 'select', {'aliyun': '阿里云', 'tencent': '腾讯云', 'yunpian': '云片'}),
+        _rf('access_key', 'AccessKey'), _rf('access_secret', 'AccessSecret'), _rf('sign', '短信签名'), _rf('template', '模板ID'), _rf('enabled', '是否启用', 'switch')]},
+    'profile': {'title': '个人中心', 'singleton': True, 'fields': [
+        _rf('nickname', '昵称'), _rf('avatar', '头像地址'), _rf('password', '登录密码'), _rf('signature', '个性签名')]},
+}
+
+# 资源表默认种子数据（仅在表为空时写入）
+RESOURCE_SEED = {
+    'level': [('V1 青铜', '', '10', '1', '初级会员'), ('V2 白银', '', '100', '0.98', '9.8折'),
+              ('V3 黄金', '', '500', '0.95', '9.5折'), ('V4 铂金', '', '2000', '0.92', '9.2折'), ('V5 钻石', '', '5000', '0.88', '8.8折')],
+    'goods_category': [('陪玩上分', '', '1', '1'), ('娱乐陪玩', '', '2', '1'), ('电竞教学', '', '3', '1')],
+    'prize_pool': [('一等奖 iPhone', '', '1', '10', '1'), ('二等奖 现金红包', '', '9', '100', '1'), ('谢谢惠顾', '', '90', '0', '1')],
+    'banner': [('首页横幅', '', '/pages/classify/index', '1', '1')],
+    'quick_entry': [('打手入驻', 'user', '#2B6EFF', '/pages/hatchet/index', '1', '1'),
+                    ('客服入驻', 'chat', '#FF7A45', '/pages/cs/index', '2', '1')],
+    'upload_storage': [('local', '', '', '', '', '', '', '')],
+    'my_setting': [('创世网络', '', '© 创世网络工作室', '', '根据国家法律规定，未成年人禁止下单！')],
+    'wechat_robot': [('', '0', '')],
+    'auth': [('', '', '1')],
+    'sms_config': [('aliyun', '', '', '创世网络', '', '0')],
+    'profile': [('超级管理员', '', '123456', '')],
+}
+
 # ===== SQLite 初始化 =====
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -226,6 +326,25 @@ def init_db():
         ]
         for item in config_items:
             cur.execute('INSERT INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
+    db.commit()
+    # ===== 通用资源表（后台各菜单 CRUD） =====
+    for _res, _spec in RESOURCES.items():
+        _cols = ', '.join([f['key'] + " TEXT DEFAULT ''" for f in _spec['fields']])
+        cur.execute('CREATE TABLE IF NOT EXISTS res_%s (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, createtime INTEGER)' % (_res, _cols))
+        # 单例资源确保存在 id=1 的一行
+        if _spec.get('singleton'):
+            cur.execute('SELECT COUNT(*) FROM res_%s WHERE id = 1' % _res)
+            if cur.fetchone()[0] == 0:
+                cur.execute('INSERT INTO res_%s (id) VALUES (1)' % _res)
+        # 种子数据（仅空表写入）
+        seed = RESOURCE_SEED.get(_res)
+        if seed and not _spec.get('singleton'):
+            cur.execute('SELECT COUNT(*) FROM res_%s' % _res)
+            if cur.fetchone()[0] == 0:
+                _keys = [f['key'] for f in _spec['fields']]
+                _ph = ','.join(['?'] * (len(_keys) + 1))
+                for row in seed:
+                    cur.execute('INSERT INTO res_%s (%s, createtime) VALUES (%s)' % (_res, ','.join(_keys), _ph), tuple(str(x) for x in row) + (int(time.time()),))
     db.commit()
     db.close()
 
@@ -1752,6 +1871,70 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 set_config('frontend_decoration', json.dumps(cfg, ensure_ascii=False))
                 ok(None, '装修配置已保存，前端将实时生效')
+                return
+
+            # ===== 通用资源（后台各菜单真实 CRUD） =====
+            if path == '/api/admin/resource/defs':
+                ok({'defs': RESOURCES})
+                return
+
+            if path == '/api/admin/resource':
+                res = q('res')
+                spec = RESOURCES.get(res)
+                if not spec:
+                    self.send_json({"code": 0, "msg": "未知资源: " + res})
+                    return
+                if spec.get('singleton'):
+                    row = db.execute('SELECT * FROM res_%s WHERE id = 1' % res).fetchone()
+                    if not row:
+                        db.execute('INSERT INTO res_%s (id) VALUES (1)' % res)
+                        db.commit()
+                        row = db.execute('SELECT * FROM res_%s WHERE id = 1' % res).fetchone()
+                    ok({'item': dict(row), 'singleton': True})
+                    return
+                kw = q('keyword')
+                page = max(1, int(q('page', 1) or 1))
+                limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = '', []
+                if kw and spec.get('search'):
+                    where = 'WHERE ' + ' OR '.join([c + ' LIKE ?' for c in spec['search']])
+                    args = ['%' + kw + '%'] * len(spec['search'])
+                total = db.execute('SELECT COUNT(*) FROM res_%s %s' % (res, where), args).fetchone()[0]
+                rows = db.execute('SELECT * FROM res_%s %s ORDER BY id DESC LIMIT ? OFFSET ?' % (res, where),
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit, 'singleton': False})
+                return
+
+            if path == '/api/admin/resource/save':
+                res = body.get('res')
+                spec = RESOURCES.get(res)
+                if not spec:
+                    self.send_json({"code": 0, "msg": "未知资源: " + str(res)})
+                    return
+                keys = [f['key'] for f in spec['fields']]
+                vals = [str(body.get(k, '')) for k in keys]
+                rid = int(body.get('id') or 0)
+                if spec.get('singleton') and not rid:
+                    rid = 1
+                if rid:
+                    sets = ', '.join([k + ' = ?' for k in keys])
+                    db.execute('UPDATE res_%s SET %s WHERE id = ?' % (res, sets), vals + [rid])
+                else:
+                    db.execute('INSERT INTO res_%s (%s, createtime) VALUES (%s, ?)' % (res, ','.join(keys), ','.join(['?'] * len(keys))),
+                               vals + [now_ts()])
+                    rid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+                db.commit()
+                ok({'id': rid}, '保存成功')
+                return
+
+            if path == '/api/admin/resource/delete':
+                res = body.get('res')
+                if res not in RESOURCES:
+                    self.send_json({"code": 0, "msg": "未知资源: " + str(res)})
+                    return
+                db.execute('DELETE FROM res_%s WHERE id = ?' % res, (int(body.get('id') or 0),))
+                db.commit()
+                ok(None, '已删除')
                 return
 
             self.send_json({"code": 0, "msg": "未知的后台接口: " + path})

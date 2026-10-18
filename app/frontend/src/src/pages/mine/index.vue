@@ -77,23 +77,20 @@
 		</view>
 
 		<!-- 会员等级 + 联系客服 双卡片 -->
-		<view class="cards-row">
-			<view class="card-diamond" @click="goLevelPage">
-				<view class="card-diamond-left">
-					<view class="card-diamond-title-row">
+		<view class="mine-dual">
+			<view class="vip-tile" @click="goLevelPage">
+				<view class="vip-top">
+					<view class="vip-title-row">
 						<uv-icon name="level" size="16" color="#FFC53D"></uv-icon>
-						<text class="card-diamond-title">会员等级</text>
+						<text class="vip-title">会员等级</text>
 					</view>
-					<text class="card-diamond-num">V{{ levelNum }}</text>
+					<text class="vip-arrow">›</text>
 				</view>
-				<text class="card-diamond-arrow">›</text>
+				<text class="vip-num">{{ levelNum }}</text>
 			</view>
-			<view class="card-service" @click="openCustomerService">
-				<view class="card-service-left">
-					<text class="card-service-online">7×24 在线</text>
-					<text class="card-service-cta">联系客服</text>
-				</view>
-				<text class="card-diamond-arrow">›</text>
+			<view class="svc-tile" @click="openCustomerService">
+				<text class="svc-online">实时在线</text>
+				<text class="svc-cta">联系客服</text>
 			</view>
 		</view>
 
@@ -817,79 +814,73 @@ const handleMoreClick = (item) => {
 	font-weight: 400;
 }
 
-/* ===== 余额 + 客服 ===== */
-.cards-row {
+/* ===== 会员等级 + 联系客服（双卡片） ===== */
+.mine-dual {
 	display: flex;
 	gap: 20rpx;
 	width: 93%;
 	margin: 0 auto 24rpx;
 }
-.card-diamond {
+.vip-tile {
 	flex: 1;
-	min-height: 120rpx;
-	background: linear-gradient(135deg, #6E5BFF 0%, #A855F7 100%);
-	border-radius: 32rpx;
-	padding: 20rpx 30rpx;
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	box-shadow: 0 6rpx 22rpx rgba(124,77,255,0.32);
-	position: relative;
-	overflow: hidden;
-	box-sizing: border-box;
-}
-.card-diamond-left {
+	min-height: 260rpx;
+	background: #111111;
+	border-radius: 28rpx;
+	padding: 26rpx 30rpx;
 	display: flex;
 	flex-direction: column;
-	gap: 12rpx;
+	justify-content: space-between;
+	box-shadow: 0 6rpx 22rpx rgba(0,0,0,0.28);
+	box-sizing: border-box;
 }
-.card-diamond-title-row {
+.vip-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.vip-title-row {
 	display: flex;
 	align-items: center;
 	gap: 8rpx;
 }
-.card-diamond-title {
-	font-size: 24rpx;
-	color: rgba(255,255,255,0.72);
-	font-weight: 500;
-}
-.card-diamond-arrow {
-	font-size: 40rpx;
+.vip-title {
+	font-size: 26rpx;
 	color: #ffffff;
-	opacity: 0.85;
+	font-weight: 600;
+}
+.vip-arrow {
+	font-size: 40rpx;
+	color: rgba(255,255,255,0.8);
 	line-height: 1;
 	flex-shrink: 0;
 }
-.card-diamond-num {
-	font-size: 44rpx;
-	font-weight: 700;
-	color: #FFE58A;
+.vip-num {
+	font-size: 80rpx;
+	font-weight: 800;
+	color: #ffffff;
+	line-height: 1;
 }
-.card-service {
+.svc-tile {
 	flex: 1;
-	min-height: 120rpx;
-	background: linear-gradient(135deg, #FFC53D, #FF9F1C);
-	border-radius: 32rpx;
-	padding: 20rpx 30rpx;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	box-shadow: 0 4rpx 20rpx rgba(255,159,28,0.30);
-	box-sizing: border-box;
-}
-.card-service-left {
+	min-height: 260rpx;
+	background: linear-gradient(135deg, #FFD24D, #FFA51F);
+	border-radius: 28rpx;
+	padding: 26rpx 30rpx;
 	display: flex;
 	flex-direction: column;
-	gap: 8rpx;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 6rpx 22rpx rgba(255,165,31,0.35);
+	box-sizing: border-box;
 }
-.card-service-online {
-	font-size: 22rpx;
+.svc-online {
+	font-size: 24rpx;
 	color: rgba(0,0,0,0.55);
 	font-weight: 500;
 }
-.card-service-cta {
-	font-size: 34rpx;
-	font-weight: 700;
+.svc-cta {
+	font-size: 46rpx;
+	font-weight: 800;
 	color: #1a1a1a;
 }
 

@@ -22,6 +22,9 @@ a{color:inherit;text-decoration:none}
 .field label{display:block;font-size:13px;color:#374151;margin-bottom:7px}
 .field input{width:100%;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 14px;font-size:14px;outline:none;transition:.2s}
 .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+.field select{width:100%;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 14px;font-size:14px;outline:none;background:#fff}
+.field textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit;resize:vertical}
+.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:42px;padding:0 18px;
  border:none;border-radius:10px;font-size:14px;cursor:pointer;transition:.15s;font-family:inherit}
 .btn-primary{background:var(--accent);color:#fff}
@@ -451,7 +454,7 @@ function go(key) {
   $('#pageTitle').textContent = (flatMenus().find(m => m.key === key) || {}).name || ''
   const box = $('#content')
   box.innerHTML = '<div class="empty">加载中…</div>'
-  ;(PAGES[key] || placeholderPage(key))()
+  ;(PAGES[key] || crudPage(key))()
 }
 
 /* ============ 控制台 ============ */
@@ -829,6 +832,120 @@ async function cfgSave() {
     }
   })
   const r = await biz('config/save', { items }); toast(r.msg)
+}
+
+/* ============ 通用资源页（后台各菜单真实 CRUD） ============ */
+state.resDefs = null
+const resQuery = {}
+const resCache = {}
+function resField(spec, k) { return (spec.fields || []).find(f => f.key === k) || { key: k, label: k, type: 'text' } }
+async function ensureDefs() {
+  if (state.resDefs) return state.resDefs
+  const r = await biz('resource/defs')
+  state.resDefs = (r.data || {}).defs || {}
+  return state.resDefs
+}
+function resCell(spec, k, val) {
+  const f = resField(spec, k)
+  if (f.type === 'select') return `<span class="tag blue">${esc((f.options || {})[String(val)] || val || '-')}</span>`
+  if (f.type === 'switch') return val == '1' ? '<span class="tag green">启用</span>' : '<span class="tag gray">停用</span>'
+  if (f.type === 'textarea') return `<span class="muted">${esc(String(val || '').slice(0, 28))}</span>`
+  if (/logo|image|icon|avatar|图片|封面/i.test(k) && val) return `<img class="row-img" src="${esc(val)}" onerror="this.style.visibility='hidden'">`
+  return esc(val == null || val === '' ? '-' : val)
+}
+function resFormHtml(spec, item) {
+  return (spec.fields || []).map(f => {
+    const v = item && item[f.key] != null ? item[f.key] : ''
+    let input
+    if (f.type === 'select') {
+      input = `<select id="rf_${f.key}">${Object.keys(f.options || {}).map(o => `<option value="${esc(o)}" ${String(v) === o ? 'selected' : ''}>${esc(f.options[o])}</option>`).join('')}</select>`
+    } else if (f.type === 'textarea') {
+      input = `<textarea id="rf_${f.key}">${esc(v)}</textarea>`
+    } else if (f.type === 'switch') {
+      input = `<label class="switch"><input type="checkbox" id="rf_${f.key}" ${v == '1' ? 'checked' : ''}><span class="slider"></span></label>`
+    } else {
+      input = `<input id="rf_${f.key}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}">`
+    }
+    return `<div class="field"><label>${esc(f.label)}</label>${input}</div>`
+  }).join('')
+}
+function resCollect(spec) {
+  const data = {}
+  ;(spec.fields || []).forEach(f => {
+    const el = $('#rf_' + f.key)
+    if (!el) return
+    data[f.key] = f.type === 'switch' ? (el.checked ? '1' : '0') : el.value
+  })
+  return data
+}
+async function renderResourceList(key, spec) {
+  const qy = resQuery[key] || (resQuery[key] = { keyword: '', page: 1, limit: 20 })
+  const r = await biz(`resource?res=${key}&keyword=${encodeURIComponent(qy.keyword)}&page=${qy.page}&limit=${qy.limit}`)
+  const d = r.data || { list: [], total: 0 }
+  resCache[key] = d.list || []
+  const cols = spec.columns || (spec.fields || []).map(f => f.key)
+  const rows = resCache[key].map(it => `<tr>
+    <td>${esc(it.id)}</td>
+    ${cols.map(c => `<td>${resCell(spec, c, it[c])}</td>`).join('')}
+    <td>
+      <button class="btn btn-ghost btn-sm" onclick="resEdit('${key}',${it.id})">编辑</button>
+      <button class="btn btn-danger btn-sm" onclick="resDel('${key}',${it.id})">删除</button>
+    </td></tr>`).join('')
+  const totalPages = Math.max(1, Math.ceil((d.total || 0) / qy.limit))
+  $('#content').innerHTML = `<div class="card">
+    <div class="card-head"><h2>${esc(spec.title || key)} <span class="muted">共 ${d.total} 条</span></h2>
+      <div class="toolbar">
+        ${spec.search ? `<input id="rkw" placeholder="搜索 ${esc((spec.search || []).map(c => resField(spec, c).label).join('/'))}" value="${esc(qy.keyword)}"><button class="btn btn-primary btn-sm" onclick="resSearch('${key}')">搜索</button>` : ''}
+        <button class="btn btn-primary btn-sm" onclick="resEdit('${key}',0)">+ 新增</button>
+      </div></div>
+    <table><thead><tr><th>ID</th>${cols.map(c => `<th>${esc(resField(spec, c).label)}</th>`).join('')}<th>操作</th></tr></thead>
+    <tbody>${rows || `<tr><td colspan="${cols.length + 2}"><div class="empty">暂无数据</div></td></tr>`}</tbody></table>
+    <div class="toolbar" style="justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" ${qy.page <= 1 ? 'disabled' : ''} onclick="resPage('${key}',${qy.page - 1})">上一页</button>
+      <span class="muted" style="font-size:13px">${qy.page} / ${totalPages}</span>
+      <button class="btn btn-ghost btn-sm" ${qy.page >= totalPages ? 'disabled' : ''} onclick="resPage('${key}',${qy.page + 1})">下一页</button>
+    </div></div>`
+  const kw = $('#rkw')
+  if (kw) kw.addEventListener('keydown', e => { if (e.key === 'Enter') resSearch(key) })
+}
+async function renderResourceForm(key, spec) {
+  const r = await biz(`resource?res=${key}`)
+  const item = (r.data || {}).item || {}
+  $('#content').innerHTML = `<div class="card">
+    <div class="card-head"><h2>${esc(spec.title || key)}</h2></div>
+    <div class="form-grid">${resFormHtml(spec, item)}</div>
+    <div style="margin-top:18px"><button class="btn btn-primary" onclick="resSave('${key}',1)">保存配置</button></div></div>`
+}
+function resSearch(key) { const q = resQuery[key] || (resQuery[key] = { keyword: '', page: 1, limit: 20 }); q.keyword = $('#rkw').value.trim(); q.page = 1; PAGES[key]() }
+function resPage(key, p) { const q = resQuery[key] || (resQuery[key] = { keyword: '', page: 1, limit: 20 }); if (p < 1) return; q.page = p; PAGES[key]() }
+async function resEdit(key, id) {
+  const spec = state.resDefs[key]
+  const item = id ? (resCache[key] || []).find(x => Number(x.id) === Number(id)) : null
+  openModal((id ? '编辑' : '新增') + (spec.title || ''), resFormHtml(spec, item || {}),
+    [{ text: '保存', cls: 'btn-primary', fn: () => resSave(key, id) }])
+}
+async function resSave(key, id) {
+  const spec = state.resDefs[key]
+  const data = Object.assign({ res: key, id: id || 0 }, resCollect(spec))
+  const r = await biz('resource/save', data)
+  closeModal(); toast(r.msg); PAGES[key]()
+}
+function resDel(key, id) {
+  const spec = state.resDefs[key]
+  confirmModal('删除' + (spec.title || ''), '确定删除该条数据？删除后不可恢复。', async () => {
+    const r = await biz('resource/delete', { res: key, id })
+    toast(r.msg); PAGES[key]()
+  })
+}
+function crudPage(key) {
+  return async () => {
+    $('#content').innerHTML = '<div class="empty">加载中…</div>'
+    await ensureDefs()
+    const spec = state.resDefs[key]
+    if (!spec) { placeholderPage(key)(); return }
+    if (spec.singleton) await renderResourceForm(key, spec)
+    else await renderResourceList(key, spec)
+  }
 }
 
 /* ============ 通用占位页（未接入功能） ============ */
