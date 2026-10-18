@@ -10,14 +10,50 @@ body{font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;backgroun
 :root{--accent:#22c55e;--accent-d:#16a34a;--sidebar:#1f2937;--sidebar-2:#111827;--line:#e5e7eb;--muted:#6b7280}
 a{color:inherit;text-decoration:none}
 /* 登录 */
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center;
- background:linear-gradient(135deg,#0f172a 0%,#134e4a 60%,#22c55e 140%);padding:24px}
-.login-card{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:40px 34px;
- box-shadow:0 24px 60px rgba(0,0,0,.28)}
+#login{min-height:100vh;display:flex;align-items:stretch;justify-content:center;
+ background:#07090c;padding:0;position:relative;overflow:hidden}
+/* 背景层：深色底 + 绿色霓虹光弧 */
+#login::before{content:"";position:absolute;inset:0;z-index:0;
+ background:
+  radial-gradient(ellipse 80% 50% at 50% 100%, rgba(34,197,94,.18) 0%, rgba(34,197,94,0) 60%),
+  radial-gradient(ellipse 60% 40% at 50% 90%, rgba(34,197,94,.28) 0%, rgba(34,197,94,0) 70%),
+  linear-gradient(180deg,#0a0e14 0%,#07090c 60%,#05070a 100%);
+ pointer-events:none}
+#login::after{content:"";position:absolute;left:50%;bottom:-40%;transform:translateX(-50%);
+ width:120%;height:80%;border-radius:50%;
+ background:radial-gradient(ellipse at center, rgba(34,197,94,.35) 0%, rgba(34,197,94,.1) 30%, rgba(34,197,94,0) 60%);
+ filter:blur(20px);z-index:0;pointer-events:none;animation:glowPulse 4s ease-in-out infinite}
+@keyframes glowPulse{0%,100%{opacity:.7}50%{opacity:1}}
+.login-wrap{position:relative;z-index:1;display:flex;width:100%;max-width:1200px;margin:0 auto}
+.login-brand{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px;color:#fff}
+.login-brand .brand-title{font-size:52px;font-weight:900;letter-spacing:2px;line-height:1.1;margin-bottom:28px;
+ text-shadow:0 0 30px rgba(34,197,94,.6),0 0 60px rgba(34,197,94,.3);color:#fff}
+.login-brand .brand-stat{font-size:30px;font-weight:800;color:#4ade80;margin-bottom:8px}
+.login-brand .brand-stat b{color:#86efac;font-size:48px}
+.login-brand .brand-sub{font-size:26px;font-weight:700;color:#fff;margin-bottom:16px}
+.login-brand .brand-desc{font-size:15px;color:rgba(255,255,255,.6);letter-spacing:1px}
+.login-form-wrap{flex:0 0 440px;display:flex;align-items:center;justify-content:center;padding:40px}
+.login-card{width:100%;max-width:400px;background:rgba(255,255,255,.97);border-radius:18px;padding:40px 34px;
+ box-shadow:0 24px 60px rgba(0,0,0,.5);backdrop-filter:blur(10px)}
 .login-card .logo{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#22c55e,#16a34a);
- margin:0 auto 18px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800}
+ margin:0 auto 18px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800;
+ box-shadow:0 0 24px rgba(34,197,94,.4)}
 .login-card h1{text-align:center;font-size:22px;margin-bottom:6px}
 .login-card p.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:26px}
+/* 手机端：隐藏品牌文案，只显示登录卡片 */
+@media (max-width:768px){
+  .login-brand{display:none}
+  .login-form-wrap{flex:1;padding:24px}
+  #login{padding:0}
+}
+/* 平板端：品牌文案缩小 */
+@media (min-width:769px) and (max-width:1024px){
+  .login-brand .brand-title{font-size:36px}
+  .login-brand .brand-stat{font-size:22px}
+  .login-brand .brand-stat b{font-size:34px}
+  .login-brand .brand-sub{font-size:20px}
+  .login-form-wrap{flex:0 0 380px}
+}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:13px;color:#374151;margin-bottom:7px}
 .field input{width:100%;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 14px;font-size:14px;outline:none;transition:.2s}
@@ -187,15 +223,25 @@ td .muted{color:var(--muted);font-size:12px}
 
 <!-- 登录 -->
 <div id="login">
-  <div class="login-card">
-    <div class="logo">创</div>
-    <h1>创世网络 · 后台管理</h1>
-    <p class="sub">自定义后台 UI · 基于 yylAdmin 框架</p>
-    <div class="err" id="loginErr"></div>
-    <div class="field"><label>管理员账号</label><input id="username" placeholder="请输入账号" value="yyladmin" autocomplete="username"></div>
-    <div class="field"><label>登录密码</label><input id="password" type="password" placeholder="请输入密码" value="123456" autocomplete="current-password"></div>
-    <button class="btn btn-primary btn-block" id="loginBtn">登 录</button>
-    <div class="login-tip">默认账号 yyladmin / 123456 ，登录鉴权由 yylAdmin 后台框架提供</div>
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="brand-title">创世网络工作室</div>
+      <div class="brand-stat">超 <b>1000+</b></div>
+      <div class="brand-sub">行业顶尖俱乐部合作</div>
+      <div class="brand-desc">深耕陪玩领域 · 十余年行业经验 · 成就专业品质</div>
+    </div>
+    <div class="login-form-wrap">
+      <div class="login-card">
+        <div class="logo">创</div>
+        <h1>创世网络 · 后台管理</h1>
+        <p class="sub">自定义后台 UI · 基于 yylAdmin 框架</p>
+        <div class="err" id="loginErr"></div>
+        <div class="field"><label>管理员账号</label><input id="username" placeholder="请输入账号" value="yyladmin" autocomplete="username"></div>
+        <div class="field"><label>登录密码</label><input id="password" type="password" placeholder="请输入密码" value="123456" autocomplete="current-password"></div>
+        <button class="btn btn-primary btn-block" id="loginBtn">登 录</button>
+        <div class="login-tip">默认账号 yyladmin / 123456 ，登录鉴权由 yylAdmin 后台框架提供</div>
+      </div>
+    </div>
   </div>
 </div>
 
