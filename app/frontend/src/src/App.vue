@@ -41,6 +41,27 @@
 			`
 			document.head.appendChild(style)
 
+			// 全局左上角「退出」按钮：关闭/退出当前页面，覆盖所有页面（含登录页）
+			if (!document.getElementById('__exit_btn__')) {
+				const exitBtn = document.createElement('div')
+				exitBtn.id = '__exit_btn__'
+				exitBtn.innerHTML = '<span style="font-size:17px;line-height:1;margin-right:4px;font-weight:400;">‹</span>退出'
+				exitBtn.style.cssText = 'position:fixed;left:12px;top:calc(12px + env(safe-area-inset-top));z-index:999999;display:inline-flex;align-items:center;justify-content:center;padding:7px 16px;border-radius:999px;background:rgba(17,17,17,0.55);color:#fff;font-size:14px;font-weight:600;line-height:1;letter-spacing:1px;border:1px solid rgba(255,255,255,0.35);box-shadow:0 4px 14px rgba(0,0,0,0.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;'
+				exitBtn.onclick = function() {
+					try {
+						const pages = (typeof getCurrentPages === 'function') ? getCurrentPages() : []
+						if (pages && pages.length > 1) {
+							uni.navigateBack({ delta: 1 })
+							return
+						}
+					} catch (e) {}
+					try {
+						if (window.history.length > 1) { window.history.back() } else { window.close() }
+					} catch (e) {}
+				}
+				document.body.appendChild(exitBtn)
+			}
+
 			// #endif
 			// 拉取后端配置，缓存俱乐部名称（后台可改，默认创世网络）
 			configure().then(res => {
