@@ -44,12 +44,22 @@
 		</view>
 
 		<!-- ⑤ 手绘黄色 -->
-		<view v-else class="hd-bar">
+		<view v-else-if="style === 'hand_drawn'" class="hd-bar">
 			<view v-for="(it, i) in items" :key="i" class="hd-item" @click="go(i)">
 				<view class="hd-icbox" :class="{ on: current === i }">
 					<image class="hd-ic" :src="icon(it, i)" mode="aspectFit"></image>
 				</view>
 				<text class="hd-tx" :class="{ on: current === i }">{{ it.text }}</text>
+			</view>
+		</view>
+
+		<!-- ⑥ 堆叠立体胶囊 · 金色高亮 -->
+		<view v-else class="sg-wrap">
+			<view class="sg-pill">
+				<view v-for="(it, i) in items" :key="i" class="sg-item" :class="{ on: current === i }" @click="go(i)">
+					<image class="sg-ic" :src="icon(it, i)" mode="aspectFit"></image>
+					<text class="sg-tx">{{ it.text }}</text>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -64,6 +74,7 @@
 
 	const BRAND = '#F25109'
 	const GOLD = '#E6A700'
+	const GOLD2 = '#C8A044'
 	const DARK = '#222222'
 	const GREY = '#9AA0A6'
 	const GREY2 = '#B3B3B3'
@@ -88,7 +99,8 @@
 		heart: '<path d="M12 20s-7-4.4-9.3-8.3A4.9 4.9 0 0 1 12 6.2a4.9 4.9 0 0 1 9.3 5.5C19 15.6 12 20 12 20z"/>',
 		headset: '<path d="M4.5 13.2v-1.2a7.5 7.5 0 0 1 15 0v1.2"/><rect x="2.8" y="13.2" width="4" height="6" rx="2"/><rect x="17.2" y="13.2" width="4" height="6" rx="2"/>',
 		clipboard: '<rect x="5" y="4.5" width="14" height="16" rx="2.4"/><path d="M9 4.5a3 3 0 0 1 6 0"/><path d="M9 12.5l2 2 4-4.2"/>',
-		spark: '<path d="M12 3.5l1.7 4.8 4.8 1.7-4.8 1.7L12 16.5l-1.7-4.8L5.5 10l4.8-1.7z"/>'
+		spark: '<path d="M12 3.5l1.7 4.8 4.8 1.7-4.8 1.7L12 16.5l-1.7-4.8L5.5 10l4.8-1.7z"/>',
+		gun: '<path d="M3.5 9h14.2c.7 0 1.3.6 1.3 1.3V13c0 .7-.6 1.3-1.3 1.3h-2.6l.5 2.5c.1.5-.2 1-.7 1.1-.4.1-.8 0-1.1-.3l-1.5-1.6H8.7c-.6 0-1.1-.2-1.5-.6L6 14.3H5c-1 0-1.8-.4-2.4-1L2.2 11c-.1-.4-.2-.8-.2-1.2V9z"/><rect x="6.5" y="11.5" width="2" height="2" rx=".4"/>'
 	}
 	const ICON_ALIAS = {
 		classify: 'grid', category: 'grid', message: 'chat', msg: 'chat',
@@ -116,6 +128,7 @@
 		if (style.value === 'float_pill_yellow') return GOLD
 		if (style.value === 'hand_drawn') return DARK
 		if (style.value === 'classic_bar') return DARK
+		if (style.value === 'stacked_gold') return GOLD2
 		return (it && it.color) || BRAND
 	}
 	function inactiveColor() {
@@ -426,5 +439,86 @@
 	.hd-tx.on {
 		color: #222222;
 		font-weight: 600;
+	}
+
+	/* ========== ⑥ 堆叠立体胶囊 · 金色高亮 ========== */
+	.nav-stacked_gold .sg-wrap {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: calc(env(safe-area-inset-bottom, 0px) + 18rpx);
+		z-index: 9999;
+		display: flex;
+		justify-content: center;
+		padding: 0 24rpx;
+	}
+	.sg-pill {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-around;
+		width: 100%;
+		max-width: 700rpx;
+		height: 128rpx;
+		background: #FFFFFF;
+		border-radius: 999rpx;
+		box-shadow:
+			0 20rpx 44rpx rgba(0, 0, 0, 0.16),
+			0 6rpx 18rpx rgba(0, 0, 0, 0.09),
+			inset 0 2rpx 0 rgba(255, 255, 255, 0.9);
+	}
+	.sg-pill::before,
+	.sg-pill::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		margin: 0 auto;
+		border-radius: 999rpx;
+		background: #FFFFFF;
+		z-index: -1;
+	}
+	.sg-pill::before {
+		top: -10rpx;
+		width: 94%;
+		height: 100%;
+		box-shadow: 0 8rpx 26rpx rgba(0, 0, 0, 0.10);
+	}
+	.sg-pill::after {
+		top: -20rpx;
+		width: 86%;
+		height: 100%;
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.07);
+	}
+	.sg-item {
+		flex: 1;
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 6rpx;
+		padding: 12rpx 8rpx;
+		border-radius: 36rpx;
+		transition: background 0.25s ease, box-shadow 0.25s ease;
+	}
+	.sg-item.on {
+		background: #FFFFFF;
+		box-shadow:
+			0 4rpx 18rpx rgba(200, 160, 68, 0.38),
+			0 0 0 2rpx rgba(230, 184, 72, 0.55);
+	}
+	.sg-ic {
+		width: 50rpx;
+		height: 50rpx;
+	}
+	.sg-tx {
+		font-size: 22rpx;
+		line-height: 1;
+		color: #9AA0A6;
+	}
+	.sg-item.on .sg-tx {
+		color: #C8A044;
+		font-weight: 700;
 	}
 </style>
