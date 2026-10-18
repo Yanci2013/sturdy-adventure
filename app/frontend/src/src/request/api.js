@@ -27,6 +27,10 @@ export const orderBroadcast = (params) => http.get('index/order_broadcast', { pa
 export const category = (params) => http.get('goods/categoryList', {
 	params
 })
+//打手专区分类列表
+export const playerCategory = (params) => http.get('thug/categoryList', {
+	params
+})
 //商品列表
 export const goods = (params) => http.get('goods/goodsList', {
 	params

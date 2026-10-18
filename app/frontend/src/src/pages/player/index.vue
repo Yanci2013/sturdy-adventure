@@ -136,7 +136,7 @@
 	// 导入打手列表API
 	import {
 		thug,
-		category
+		playerCategory
 	} from '../../request/api';
 	
 	// z-paging组件的引用
@@ -303,7 +303,7 @@
 
 	// 加载一级分类
 	const loadCategory = () => {
-		category().then(res => {
+		playerCategory().then(res => {
 			if (res.code == 1 && res.data) {
 				categoryList.value = res.data
 			}
@@ -977,12 +977,12 @@
 
 	/* ==================== 打手专区（新样式） ==================== */
 	page {
-		background: #f5f6f8;
+		background: #ffffff;
 	}
 
 	.pk-page {
 		min-height: 100vh;
-		background: #f5f6f8;
+		background: #ffffff;
 	}
 
 	.pk-body {

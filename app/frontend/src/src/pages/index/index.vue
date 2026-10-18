@@ -391,6 +391,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		lunbo,
 		imageNavList,
 		category,
+		playerCategory,
 		goods,
 		noticeList,
 		noticeMsg,
@@ -576,18 +577,21 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 
 		category().then(res => {
 			categoryList.value = (res.data || []).slice(0, 8)
-			playerCategoryList.value = res.data || []
 			if (res.data && res.data.length) {
 				childrenList.value = [{
 					id: '0',
 					name: '全部'
-				}].concat(res.data[current.value].children)
+				}].concat(res.data[current.value].children || [])
 				one_category.value = res.data[current.value].id
 			}
 			reloadPaging()
 		}).catch(() => {
 			reloadPaging()
 		})
+
+		playerCategory().then(res => {
+			playerCategoryList.value = res.data || []
+		}).catch(() => {})
 
 		// 静默初始化IM并注册用户（不阻塞页面）
 		if (uni.getStorageSync('token')) {

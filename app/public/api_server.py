@@ -117,10 +117,15 @@ RESOURCE_SEED = {
     'level': [('V1 青铜', '', '10', '1', '初级会员'), ('V2 白银', '', '100', '0.98', '9.8折'),
               ('V3 黄金', '', '500', '0.95', '9.5折'), ('V4 铂金', '', '2000', '0.92', '9.2折'), ('V5 钻石', '', '5000', '0.88', '8.8折')],
     'goods_category': [('陪玩上分', '', '1', '1'), ('娱乐陪玩', '', '2', '1'), ('电竞教学', '', '3', '1')],
+    'goods': [('王者荣耀陪练', '1', '/static/images/header_background.png', '25', '局', '1', '资深王者陪练，带你连胜上分'),
+              ('和平精英陪玩', '1', '/static/images/header_background.png', '20', '局', '1', '吃鸡大神带你躺赢'),
+              ('英雄联盟陪玩', '1', '/static/images/header_background.png', '30', '局', '1', 'LOL国服王者陪练'),
+              ('原神代肝', '2', '/static/images/header_background.png', '15', '小时', '1', '原神每日委托/深渊代打'),
+              ('电竞教学课程', '3', '/static/images/header_background.png', '99', '课时', '1', '职业选手一对一教学')],
     'prize_pool': [('一等奖 iPhone', '', '1', '10', '1'), ('二等奖 现金红包', '', '9', '100', '1'), ('谢谢惠顾', '', '90', '0', '1')],
-    'banner': [('首页横幅', '', '/pages/classify/index', '1', '1')],
-    'quick_entry': [('打手入驻', 'user', '#2B6EFF', '/pages/hatchet/index', '1', '1'),
-                    ('客服入驻', 'chat', '#FF7A45', '/pages/cs/index', '2', '1')],
+    'banner': [('首页横幅', '/static/images/header_background.png', '/pages/classify/index', '1', '1')],
+    'quick_entry': [('打手入驻', '/static/ym/kf.png', '#2B6EFF', '/pages/hatchet/index', '1', '1'),
+                    ('客服入驻', '/static/ym/ss.png', '#FF7A45', '/pages/cs/index', '2', '1')],
     'upload_storage': [('local', '', '', '', '', '', '', '')],
     'my_setting': [('创世网络', '', '© 创世网络工作室', '', '根据国家法律规定，未成年人禁止下单！')],
     'wechat_robot': [('', '0', '')],
@@ -1481,8 +1486,26 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
-        # ===== 打手专区：一级分类列表 =====
+        # ===== 商品分类列表 =====
         if path == '/api/goods/categoryList':
+            db = get_db()
+            rows = db.execute(
+                'SELECT id, name, icon, sort, status FROM res_goods_category WHERE is_deleted = 0 AND status = "1" ORDER BY CAST(sort AS INTEGER) ASC, id ASC'
+            ).fetchall()
+            db.close()
+            data = [{
+                "id": r['id'],
+                "name": r['name'] or '',
+                "icon": r['icon'] or '',
+                "image": r['icon'] or '/static/ym/1.png',
+                "sort": r['sort'],
+                "children": []
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 打手专区分类列表 =====
+        if path == '/api/thug/categoryList':
             cats = [
                 {'id': 1, 'name': '地铁专区', 'image': '/static/ym/1.png'},
                 {'id': 2, 'name': '地铁/古风', 'image': '/static/ym/2.png'},
@@ -1537,6 +1560,157 @@ class Handler(BaseHTTPRequestHandler):
             start = (page - 1) * limit
             data = rows[start:start + limit]
             self.send_json({"code": 1, "msg": "成功", "data": {"data": data, "total": total}})
+            return
+
+        # ===== 首页：轮播图列表 =====
+        if path == '/api/index/lunboList':
+            db = get_db()
+            rows = db.execute(
+                'SELECT id, title, image, link, sort, status FROM res_banner WHERE is_deleted = 0 AND status = "1" ORDER BY CAST(sort AS INTEGER) ASC, id ASC'
+            ).fetchall()
+            db.close()
+            data = [{
+                "id": r['id'],
+                "title": r['title'] or '',
+                "image": r['image'] or '',
+                "link": r['link'] or '',
+                "sort": r['sort']
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 首页：图片导航（快捷入口） =====
+        if path == '/api/index/imageNavList':
+            db = get_db()
+            rows = db.execute(
+                'SELECT id, name, icon, color, link, sort, status FROM res_quick_entry WHERE is_deleted = 0 AND status = "1" ORDER BY CAST(sort AS INTEGER) ASC, id ASC'
+            ).fetchall()
+            db.close()
+            data = [{
+                "id": r['id'],
+                "name": r['name'] or '',
+                "title": r['name'] or '',
+                "icon": r['icon'] or '',
+                "image": r['icon'] or '',
+                "image_url": r['icon'] or '',
+                "color": r['color'] or '',
+                "link_url": r['link'] or '',
+                "sort": r['sort']
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 首页：等级列表 =====
+        if path == '/api/index/levelList':
+            db = get_db()
+            rows = db.execute(
+                'SELECT id, name, icon, need_score, discount, remark FROM res_level WHERE is_deleted = 0 ORDER BY CAST(need_score AS INTEGER) ASC'
+            ).fetchall()
+            db.close()
+            data = [{
+                "id": r['id'],
+                "name": r['name'] or '',
+                "icon": r['icon'] or '',
+                "need_score": r['need_score'],
+                "discount": r['discount'],
+                "remark": r['remark'] or ''
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 首页：订单播报 =====
+        if path == '/api/index/order_broadcast':
+            limit = int(qs.get('limit', ['50'])[0] or 50)
+            db = get_db()
+            rows = db.execute(
+                'SELECT o.id, o.title, o.logo, u.nickname, u.avatar '
+                'FROM orders o LEFT JOIN users u ON u.id = o.user_id '
+                'WHERE o.is_deleted = 0 AND o.status >= 1 ORDER BY o.id DESC LIMIT ?',
+                (limit,)
+            ).fetchall()
+            db.close()
+            data = [{
+                "id": r['id'],
+                "title": r['title'] or '',
+                "logo": r['logo'] or '/static/eon.png',
+                "name": r['nickname'] or '用户' + str(r['id']),
+                "avatar": r['avatar'] or '/static/eon.png'
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 商品列表 =====
+        if path == '/api/goods/goodsList':
+            kw = qs.get('name', [''])[0].strip()
+            one_category = qs.get('one_category', [''])[0]
+            two_category = qs.get('two_category', ['0'])[0]
+            sort = qs.get('sort', [''])[0]
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            where, args = 'WHERE is_deleted = 0 AND status = "1"', []
+            if kw:
+                where += ' AND name LIKE ?'
+                args.append('%' + kw + '%')
+            if one_category and one_category != '0':
+                where += ' AND category_id = ?'
+                args.append(one_category)
+            order = 'id DESC'
+            if sort == 'price_asc':
+                order = 'CAST(price AS REAL) ASC'
+            elif sort == 'price_desc':
+                order = 'CAST(price AS REAL) DESC'
+            db = get_db()
+            total = db.execute('SELECT COUNT(*) FROM res_goods ' + where, args).fetchone()[0]
+            rows = db.execute(
+                'SELECT id, name, category_id, logo, price, unit, status, remark FROM res_goods ' + where +
+                ' ORDER BY ' + order + ' LIMIT ? OFFSET ?',
+                args + [limit, (page - 1) * limit]
+            ).fetchall()
+            db.close()
+            list_data = [{
+                "id": r['id'],
+                "name": r['name'] or '',
+                "title": r['name'] or '',
+                "category_id": r['category_id'],
+                "logo": r['logo'] or '/static/images/header_background.png',
+                "image": r['logo'] or '/static/images/header_background.png',
+                "price": r['price'] or '0',
+                "line_price": str(round(float(r['price'] or 0) * 1.3, 2)),
+                "unit": r['unit'] or '局',
+                "sales": 0,
+                "synopsis": r['remark'] or '',
+                "remark": r['remark'] or ''
+            } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "total": total}})
+            return
+
+        # ===== 商品详情 =====
+        if path == '/api/goods/goodsMsg':
+            gid = qs.get('id', [''])[0] or qs.get('goods_id', [''])[0]
+            db = get_db()
+            row = db.execute(
+                'SELECT id, name, category_id, logo, price, unit, status, remark FROM res_goods WHERE id = ? AND is_deleted = 0',
+                (gid,)
+            ).fetchone()
+            db.close()
+            if not row:
+                self.send_json({"code": 0, "msg": "商品不存在"})
+                return
+            data = {
+                "id": row['id'],
+                "name": row['name'] or '',
+                "title": row['name'] or '',
+                "category_id": row['category_id'],
+                "logo": row['logo'] or '/static/images/header_background.png',
+                "image": row['logo'] or '/static/images/header_background.png',
+                "price": row['price'] or '0',
+                "line_price": str(round(float(row['price'] or 0) * 1.3, 2)),
+                "unit": row['unit'] or '局',
+                "synopsis": row['remark'] or '',
+                "remark": row['remark'] or '',
+                "images": [row['logo'] or '/static/images/header_background.png']
+            }
+            self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
         # ===== 支付配置 =====
