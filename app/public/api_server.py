@@ -345,6 +345,11 @@ def init_db():
             ('store_status', 'basic', '店铺状态', '1=正常营业，0=关店/打烊', 'radio', '', '1', '{"1":"正常营业","0":"关店/打烊"}', 'required', '', ''),
             ('close_qq', 'basic', '关店联系QQ', '关店提示页显示的联系QQ', 'string', '', '', '', '', '', ''),
             ('close_image', 'basic', '关店提示图片', '关店提示页顶部图片', 'string', '', '', '', '', '', ''),
+            # 首页背景音乐
+            ('home_bgm_url', 'basic', '背景音乐地址', '首页背景音乐文件地址（mp3）', 'string', '', '', '', '', '', ''),
+            ('home_bgm_title', 'basic', '背景音乐标题', '首页背景音乐卡片标题', 'string', '', '背景音乐', '', '', '', ''),
+            ('home_bgm_sub', 'basic', '背景音乐副标题', '首页背景音乐卡片副标题', 'string', '', '首页背景音乐 · 点击播放', '', '', '', ''),
+            ('home_bgm_enabled', 'basic', '背景音乐开关', '1=显示，0=隐藏', 'radio', '', '1', '{"1":"显示","0":"隐藏"}', '', '', ''),
         ]
         for item in config_items:
             cur.execute('INSERT INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
@@ -722,6 +727,15 @@ def get_store_config():
         'store_status': get_config('store_status', '1'),
         'close_qq': get_config('close_qq', ''),
         'close_image': get_config('close_image', ''),
+    }
+
+def get_home_bgm_config():
+    """获取首页背景音乐配置"""
+    return {
+        'url': get_config('home_bgm_url', ''),
+        'title': get_config('home_bgm_title', '背景音乐'),
+        'sub': get_config('home_bgm_sub', '首页背景音乐 · 点击播放'),
+        'enabled': get_config('home_bgm_enabled', '1'),
     }
 
 def get_ulogin_config():
@@ -2055,6 +2069,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "成功", "data": cfg})
             return
 
+        # ===== 首页背景音乐配置（公开接口）=====
+        if path == '/api/frontend/home_bgm':
+            self.send_json({"code": 1, "msg": "成功", "data": get_home_bgm_config()})
+            return
+
         # ===== 后台管理 API（自定义后台 UI 使用，与 H5 共用同一数据源）=====
         if path.startswith('/api/admin/'):
             self.handle_admin_api(path, qs, method, body, files)
@@ -2471,6 +2490,19 @@ class Handler(BaseHTTPRequestHandler):
                 set_config('close_qq', str(body.get('close_qq', '')))
                 set_config('close_image', str(body.get('close_image', '')))
                 ok(None, '店铺状态已保存')
+                return
+
+            # 首页背景音乐配置
+            if path == '/api/admin/home_bgm':
+                ok(get_home_bgm_config())
+                return
+
+            if path == '/api/admin/home_bgm/save':
+                set_config('home_bgm_url', str(body.get('url', '')))
+                set_config('home_bgm_title', str(body.get('title', '背景音乐')))
+                set_config('home_bgm_sub', str(body.get('sub', '首页背景音乐 · 点击播放')))
+                set_config('home_bgm_enabled', str(body.get('enabled', '1')))
+                ok(None, '背景音乐配置已保存')
                 return
 
             # ============================================================
@@ -2963,8 +2995,8 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 fname = f.get('filename', '')
                 ext = os.path.splitext(fname)[1].lower().lstrip('.')
-                if ext not in ('jpg', 'jpeg', 'png', 'webp'):
-                    fail('仅支持 jpg/jpeg/png/webp 格式图片')
+                if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif', 'mp3', 'm4a', 'wav', 'ogg', 'aac'):
+                    fail('仅支持 jpg/jpeg/png/webp/gif 图片 或 mp3/m4a/wav/ogg/aac 音频')
                     return
                 up_dir = os.path.join(WEB_ROOT, 'uploads')
                 os.makedirs(up_dir, exist_ok=True)
@@ -2972,7 +3004,7 @@ class Handler(BaseHTTPRequestHandler):
                 with open(os.path.join(up_dir, save_name), 'wb') as fp:
                     fp.write(f.get('content', b''))
                 url = '/uploads/' + save_name
-                log_admin_action(db, admin, '文件上传', '上传图片 %s（%s）' % (url, fname), ip)
+                log_admin_action(db, admin, '文件上传', '上传文件 %s（%s）' % (url, fname), ip)
                 ok({'url': url, 'name': save_name}, '上传成功')
                 return
 

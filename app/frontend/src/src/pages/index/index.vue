@@ -181,6 +181,24 @@
 			</view>
 		</view>
 
+		<!-- 首页背景音乐（分类上方） -->
+		<view class="bgm-card rlp20" v-if="bgmEnabled && bgmTitle" @click="toggleBgm">
+			<view class="bgm-icon">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M9 18V6l10-2v12" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+					<circle cx="6.5" cy="18" r="2.6" stroke="#fff" stroke-width="1.8"/>
+					<circle cx="16.5" cy="16" r="2.6" stroke="#fff" stroke-width="1.8"/>
+				</svg>
+			</view>
+			<view class="bgm-info">
+				<text class="bgm-title">{{ bgmTitle }}</text>
+				<text class="bgm-sub">{{ bgmPlaying ? '正在播放 · 点击暂停' : bgmSub }}</text>
+			</view>
+			<view :class="['bgm-btn', bgmPlaying ? 'bgm-btn-playing' : '']">
+				<text class="bgm-btn-text">{{ bgmPlaying ? '暂停' : '播放' }}</text>
+			</view>
+		</view>
+
 		<!-- 一级分类 -->
 			<view class="category-section">
 				<view class="category-grid">
@@ -430,6 +448,14 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	const showNotice = ref(false)
 	const imageNavs = ref([])
 
+	// 首页背景音乐
+	const bgmEnabled = ref(false)
+	const bgmTitle = ref('')
+	const bgmSub = ref('')
+	const bgmUrl = ref('')
+	const bgmPlaying = ref(false)
+	let bgmAudio = null
+
 	const scrollLeft = ref(0)
 	const goodsScrollLeft = ref(0)
 	const maxTopClassifyScroll = ref(3)
@@ -521,12 +547,51 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		reloadPaging()
 	}
 
+	// 首页背景音乐：拉取配置
+	const loadBgm = () => {
+		fetch('/api/frontend/home_bgm', { cache: 'no-store' })
+			.then(r => r.json())
+			.then(res => {
+				const d = (res && res.data) || {}
+				if (String(d.enabled) === '0') { bgmEnabled.value = false; return }
+				bgmTitle.value = d.title || '背景音乐'
+				bgmSub.value = d.sub || '首页背景音乐 · 点击播放'
+				bgmUrl.value = d.url || ''
+				bgmEnabled.value = true
+			})
+			.catch(() => {})
+	}
+
+	// 首页背景音乐：播放/暂停
+	const toggleBgm = () => {
+		if (typeof Audio === 'undefined') return
+		if (!bgmUrl.value) {
+			uni.showToast({ title: '请先在后台上传背景音乐', icon: 'none' })
+			return
+		}
+		if (!bgmAudio) {
+			bgmAudio = new Audio(bgmUrl.value)
+			bgmAudio.loop = true
+			bgmAudio.onended = () => { bgmPlaying.value = false }
+			bgmAudio.onpause = () => { bgmPlaying.value = false }
+			bgmAudio.onplay = () => { bgmPlaying.value = true }
+		}
+		if (bgmPlaying.value) {
+			bgmAudio.pause()
+			bgmPlaying.value = false
+		} else {
+			bgmAudio.play().then(() => { bgmPlaying.value = true })
+				.catch(() => { uni.showToast({ title: '播放失败，请检查音乐地址', icon: 'none' }) })
+		}
+	}
+
 	onMounted(() => {
 		// 三个接口并行请求，互不依赖
 		lunbo().then(res => {
 			lunboList.value = res.data
 		}).catch(() => {})
 
+		loadBgm()
 		configure().then(res => {
 			if (res.data) {
 				siteConfig.value = res.data
@@ -1583,6 +1648,65 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		color: #333333;
 		text-align: center;
 		line-height: 1.2;
+	}
+
+	/* 首页背景音乐卡片 */
+	.bgm-card {
+		display: flex;
+		align-items: center;
+		gap: 20rpx;
+		margin-top: 24rpx;
+		padding: 22rpx 26rpx;
+		background: #FFFFFF;
+		border-radius: 20rpx;
+		box-shadow: 0 6rpx 20rpx rgba(16, 24, 40, 0.05);
+	}
+	.bgm-icon {
+		width: 76rpx;
+		height: 76rpx;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #FF9A5A 0%, #FF7A45 100%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 76rpx;
+	}
+	.bgm-icon svg {
+		width: 40rpx;
+		height: 40rpx;
+	}
+	.bgm-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+		min-width: 0;
+	}
+	.bgm-title {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: #1A1A1A;
+	}
+	.bgm-sub {
+		font-size: 24rpx;
+		color: #8A8A8A;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.bgm-btn {
+		flex: 0 0 auto;
+		padding: 12rpx 32rpx;
+		border-radius: 40rpx;
+		background: linear-gradient(135deg, #FF9A5A 0%, #FF7A45 100%);
+	}
+	.bgm-btn-playing {
+		background: #8A8A8A;
+	}
+	.bgm-btn-text {
+		font-size: 26rpx;
+		color: #FFFFFF;
+		font-weight: 600;
 	}
 
 	/* 一级分类 */

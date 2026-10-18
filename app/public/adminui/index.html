@@ -455,6 +455,7 @@ const MENUS = [
   { group: '系统管理', children: [
     { key: 'config', name: '系统设置' },
     { key: 'decoration', name: '前端设置' },
+    { key: 'home_bgm', name: '首页背景音乐' },
     { key: 'quick_entry', name: '快捷入口' },
     { key: 'my_setting', name: '我的设置' },
     { key: 'admin_user', name: '管理员管理' },
@@ -1555,6 +1556,76 @@ async function saveStore() {
   const qq = $('#store_qq').value.trim()
   const img = $('#store_image').value.trim()
   const r = await biz('store/save', { store_status: status, close_qq: qq, close_image: img })
+  toast(r.msg)
+}
+
+/* ============ 首页背景音乐 ============ */
+PAGES.home_bgm = async () => {
+  const r = await biz('home_bgm')
+  const d = r.data || {}
+  const url = d.url || ''
+  const title = d.title || '背景音乐'
+  const sub = d.sub || '首页背景音乐 · 点击播放'
+  const enabled = d.enabled !== '0'
+  $('#content').innerHTML = `
+    <div class="card" style="max-width:720px">
+      <div class="card-head"><h2>首页背景音乐</h2></div>
+      <div style="padding:20px 22px">
+        <div class="field">
+          <label>音乐文件地址</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="bgm_url" placeholder="mp3 文件 URL" value="${esc(url)}" style="flex:1;min-width:200px">
+            <button class="btn btn-ghost btn-sm" onclick="uploadBgm()">上传</button>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:6px">首页「背景音乐」卡片点击播放的音频文件（建议 mp3）。</div>
+        </div>
+        <div class="field">
+          <label>卡片标题</label>
+          <input id="bgm_title" value="${esc(title)}">
+        </div>
+        <div class="field">
+          <label>卡片副标题</label>
+          <input id="bgm_sub" value="${esc(sub)}">
+        </div>
+        <div class="field">
+          <label>是否显示</label>
+          <div style="display:flex;gap:20px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="bgm_enabled" value="1" ${enabled?'checked':''}> 显示
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="bgm_enabled" value="0" ${!enabled?'checked':''}> 隐藏
+            </label>
+          </div>
+        </div>
+        <div style="margin-top:24px">
+          <button class="btn btn-primary" onclick="saveBgm()">保存</button>
+        </div>
+      </div>
+    </div>`
+}
+function uploadBgm() {
+  const inp = document.createElement('input')
+  inp.type = 'file'; inp.accept = 'audio/*'
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return
+    const fd = new FormData(); fd.append('file', f)
+    const opt = { method: 'POST', body: fd, headers: {} }
+    if (state.uid) opt.headers['AdminUserId'] = state.uid
+    if (state.token) opt.headers['AdminToken'] = state.token
+    const r = await fetch('/api/admin/upload', opt)
+    const j = await r.json().catch(() => ({}))
+    if (j.code == 1) { $('#bgm_url').value = j.data.url || j.data.fullurl || ''; toast('上传成功') }
+    else toast(j.msg || '上传失败', false)
+  }
+  inp.click()
+}
+async function saveBgm() {
+  const url = $('#bgm_url').value.trim()
+  const title = $('#bgm_title').value.trim()
+  const sub = $('#bgm_sub').value.trim()
+  const enabled = document.querySelector('input[name="bgm_enabled"]:checked').value
+  const r = await biz('home_bgm/save', { url, title, sub, enabled })
   toast(r.msg)
 }
 
