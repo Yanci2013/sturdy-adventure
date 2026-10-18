@@ -34,6 +34,47 @@
 		</view>
 		
 		<view class="page">
+		<!-- 接单大厅 -->
+		<view class="section servant-orders-section">
+			<view class="section-head">
+				<text class="section-title">接单大厅</text>
+			</view>
+			<view class="order-list">
+				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'2'}})">
+					<text class="stat-num">{{ servantData.pending || 0 }}</text>
+					<text class="stat-txt">待开始</text>
+				</view>
+				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'3'}})">
+					<text class="stat-num">{{ servantData.serving || 0 }}</text>
+					<text class="stat-txt">服务中</text>
+				</view>
+				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'4'}})">
+					<text class="stat-num">{{ servantData.waitFinish || 0 }}</text>
+					<text class="stat-txt">待结单</text>
+				</view>
+				<view class="order-stat-item">
+					<text class="stat-num">{{ servantData.newMsg || 0 }}</text>
+					<text class="stat-txt">新消息</text>
+				</view>
+				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'5'}})">
+					<text class="stat-num">{{ servantData.finished || 0 }}</text>
+					<text class="stat-txt">已结单</text>
+				</view>
+			</view>
+			<view class="order-line"></view>
+			<view class="game-list">
+				<view class="game-item" v-for="(game, index) in gameList" :key="index" @click="gotoPlayerHome(game)">
+					<view class="game-left">
+						<view class="game-icon-box"><image :src="game.cover || game.image" mode="aspectFill"></image></view>
+						<text>{{ game.name }}</text>
+					</view>
+					<view class="game-right">
+						<text class="game-pending">{{ game.pendingCount || 0 }}单</text>
+						<image src="/static/images/right.png" mode="aspectFit"></image>
+					</view>
+				</view>
+			</view>
+		</view>
 		<!-- 常用功能 -->
 		<view class="section quick-section">
 			<text class="section-title">常用功能</text>
@@ -47,16 +88,12 @@
 					<text class="quick-label">受邀订单</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/ti'})">
-					<view class="quick-icon-wrap money-icon"><uv-icon name="red-packet" size="32" color="#FF7A45"></uv-icon></view>
+					<view class="quick-icon-wrap money-icon"><uv-icon name="rmb-circle" size="32" color="#FF7A45"></uv-icon></view>
 					<text class="quick-label">佣金提现</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/qiangdan'})">
-					<view class="quick-icon-wrap grab-icon"><uv-icon name="account" size="32" color="#FF7A45"></uv-icon></view>
-					<text class="quick-label">实名认证</text>
-				</view>
-				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/fine'})">
-					<view class="quick-icon-wrap fine-icon"><uv-icon name="minus-circle" size="32" color="#FF7A45"></uv-icon></view>
-					<text class="quick-label">罚款缴纳</text>
+					<view class="quick-icon-wrap grab-icon"><uv-icon name="lightning" size="32" color="#FF7A45"></uv-icon></view>
+					<text class="quick-label">抢单神器</text>
 				</view>
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/center'})">
 					<view class="quick-icon-wrap center-icon"><uv-icon name="account" size="32" color="#FF7A45"></uv-icon></view>
@@ -78,7 +115,7 @@
 			<view class="brand-banner">
 				<image class="brand-mascot" src="/static/eon.png" mode="aspectFit"></image>
 				<view class="brand-info">
-					<text class="brand-title">砚世易游pro</text>
+					<text class="brand-title">砚世易游v2.0</text>
 					<text class="brand-subtitle">创世网络提供技术支持</text>
 					<view class="build-same-btn" @click="goBuildSame">做俱乐部就找创世网络</view>
 				</view>
@@ -125,7 +162,7 @@
 			</view>
 		</view>
 		<!-- 底部导航栏 -->
-		<player-tabbar :current="3"></player-tabbar>
+		<player-tabbar :current="1"></player-tabbar>
 	</view>
 </template>
 
