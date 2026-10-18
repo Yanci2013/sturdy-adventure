@@ -87,6 +87,11 @@ onMounted(() => {
 	checkStatus();
 });
 
+const switchToCS = () => {
+	uni.setStorageSync('type', '客服')
+	uni.reLaunch({ url: '/pages/playerMain/customer-service' })
+}
+
 const checkStatus = async () => {
 	try {
 		const res = await getUserInfo();
@@ -95,9 +100,13 @@ const checkStatus = async () => {
 			if (isCs && String(res.data.thug.sh_status || '0') === '1') {
 				uni.showModal({
 					title: '提示',
-					content: '您已通过客服入驻审核',
-					showCancel: false,
-					success: () => uni.navigateBack({ delta: 1 })
+					content: '您已通过客服入驻审核，是否立即切换到客服身份？',
+					confirmText: '切换身份',
+					cancelText: '稍后再说',
+					success: (r) => {
+						if (r.confirm) switchToCS()
+						else uni.navigateBack({ delta: 1 })
+					}
 				});
 			}
 		}
@@ -121,8 +130,26 @@ const submit = async () => {
 	try {
 		const res = await csAdd({ secret_key: secretKey.value.trim() });
 		if (res.code === 1) {
-			uni.showToast({ title: res.msg || '入驻成功', icon: 'success' });
-			setTimeout(() => uni.navigateBack({ delta: 1 }), 1500);
+			uni.hideLoading();
+			const info = await getUserInfo().catch(() => ({}));
+			const thug = info.data && info.data.thug;
+			const isCs = thug && !Array.isArray(thug) && String(thug.is_customer_service || '0') === '1';
+			const approved = thug && !Array.isArray(thug) && String(thug.sh_status || '0') === '1';
+			if (isCs && approved) {
+				uni.showModal({
+					title: '入驻成功',
+					content: '恭喜！您已通过客服入驻审核，是否立即切换到客服身份？',
+					confirmText: '切换身份',
+					cancelText: '稍后再说',
+					success: (r) => {
+						if (r.confirm) switchToCS()
+						else uni.navigateBack({ delta: 1 })
+					}
+				});
+			} else {
+				uni.showToast({ title: res.msg || '入驻成功，等待审核', icon: 'success' });
+				setTimeout(() => uni.navigateBack({ delta: 1 }), 1500);
+			}
 		} else {
 			uni.showToast({ title: res.msg || '入驻失败', icon: 'none' });
 		}

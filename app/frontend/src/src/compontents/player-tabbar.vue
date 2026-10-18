@@ -32,6 +32,19 @@
 				url: '/pages/playerHome/index'
 			},
 			{
+				iconPath: '/static/ym/22.png',
+				selectedIconPath: '/static/ym/2.png',
+				text: '订单',
+				url: '/pages/playerOrder/index'
+			},
+			{
+				iconPath: '/static/ym/33.png',
+				selectedIconPath: '/static/ym/3.png',
+				text: '客服',
+				url: '/pages/playerMain/customer-service',
+				needCS: true
+			},
+			{
 				iconPath: '/static/ym/55.png',
 				selectedIconPath: '/static/ym/5.png',
 				text: '我的',
@@ -40,8 +53,16 @@
 		]
 	})
 	const onChange = (index) => {
+		const item = tabList.value[index]
+		// 客服 tab 需校验客服权限
+		if (item.needCS) {
+			const isCS = uni.getStorageSync('type') === '客服'
+			// 允许打手/客服身份进入客服端，由页面内再做权限提示
+			uni.reLaunch({ url: item.url })
+			return
+		}
 		uni.reLaunch({
-			url: tabList.value[index].url
+			url: item.url
 		})
 	};
 </script>

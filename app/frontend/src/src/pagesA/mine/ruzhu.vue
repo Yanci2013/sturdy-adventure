@@ -87,6 +87,11 @@ onMounted(() => {
 	checkStatus();
 });
 
+const switchToThug = () => {
+	uni.setStorageSync('type', '打手')
+	uni.reLaunch({ url: '/pages/playerMain/index' })
+}
+
 const checkStatus = async () => {
 	try {
 		const res = await getUserInfo();
@@ -95,9 +100,13 @@ const checkStatus = async () => {
 			if (thug.sh_status == 1) {
 				uni.showModal({
 					title: '提示',
-					content: '您已通过打手入驻审核',
-					showCancel: false,
-					success: () => uni.navigateBack({ delta: 1 })
+					content: '您已通过打手入驻审核，是否立即切换到打手身份？',
+					confirmText: '切换身份',
+					cancelText: '稍后再说',
+					success: (r) => {
+						if (r.confirm) switchToThug()
+						else uni.navigateBack({ delta: 1 })
+					}
 				});
 			} else if (thug.sh_status == 0) {
 				uni.showModal({
@@ -128,8 +137,25 @@ const submit = async () => {
 	try {
 		const res = await thugAdd({ secret_key: secretKey.value.trim() });
 		if (res.code === 1) {
-			uni.showToast({ title: res.msg || '入驻成功', icon: 'success' });
-			setTimeout(() => uni.navigateBack({ delta: 1 }), 1500);
+			uni.hideLoading();
+			// 入驻成功：若直接通过审核，询问是否切换打手身份
+			const info = await getUserInfo().catch(() => ({}));
+			const thug = info.data && info.data.thug;
+			if (thug && !Array.isArray(thug) && thug.sh_status == 1) {
+				uni.showModal({
+					title: '入驻成功',
+					content: '恭喜！您已通过打手入驻审核，是否立即切换到打手身份开始接单？',
+					confirmText: '切换身份',
+					cancelText: '稍后再说',
+					success: (r) => {
+						if (r.confirm) switchToThug()
+						else uni.navigateBack({ delta: 1 })
+					}
+				});
+			} else {
+				uni.showToast({ title: res.msg || '入驻成功，等待审核', icon: 'success' });
+				setTimeout(() => uni.navigateBack({ delta: 1 }), 1500);
+			}
 		} else {
 			uni.showToast({ title: res.msg || '入驻失败', icon: 'none' });
 		}
