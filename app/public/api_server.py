@@ -673,9 +673,11 @@ DEFAULT_DECORATION = {
     "page_bg_deg": 180,
     "nav_style": "float_ellipse",
     "floating_nav": [
-        {"text": "首页", "icon": "home", "color": "#22c55e", "link": "/pages/index/index"},
-        {"text": "分类", "icon": "grid", "color": "#22c55e", "link": "/pages/classify/index"},
-        {"text": "我的", "icon": "user", "color": "#22c55e", "link": "/pages/mine/index"},
+        {"text": "首页", "icon": "home", "color": "#F25109", "link": "/pages/index/index"},
+        {"text": "分类", "icon": "grid", "color": "#F25109", "link": "/pages/classify/index"},
+        {"text": "挑选打手", "icon": "gamepad", "color": "#F25109", "link": "/pages/player/index"},
+        {"text": "消息", "icon": "chat", "color": "#F25109", "link": "/pages/message/index"},
+        {"text": "我的", "icon": "user", "color": "#F25109", "link": "/pages/mine/index"},
     ],
 }
 
@@ -1516,49 +1518,44 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "成功", "data": cats})
             return
 
-        # ===== 打手专区：打手列表（表格化 mock，字段对齐 H5 打手卡片） =====
+        # ===== 打手专区：打手列表（读取真实打手表，初始为空，打手入驻后展示） =====
         if path == '/api/thug/thugList':
-            all_thugs = [
-                {'id': 1, 'name': 'XT冰帝', 'sex': '1', 'type': 1, 'is_new': 1, 'jd_status': 1, 'price': 25,
-                 'synopsis': '老板好我是TJB的打手，主玩地铁逃生', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 13, 'tags': '战神,带飞如喝水,一字腰', 'category_id': 1},
-                {'id': 2, 'name': 'XT富贵', 'sex': '1', 'type': 2, 'is_new': 0, 'jd_status': 1, 'price': 30,
-                 'synopsis': 'Hello老板好，我是XT电竞的富贵', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 12, 'tags': '战神,一字腰,娱乐陪', 'category_id': 1},
-                {'id': 3, 'name': 'XT动力', 'sex': '1', 'type': 3, 'is_new': 0, 'jd_status': 1, 'price': 28,
-                 'synopsis': '哈喽老板好我是小童，动力十足', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 15, 'tags': '战神,包C,万头斩', 'category_id': 2},
-                {'id': 4, 'name': 'XTBaby', 'sex': '1', 'type': 2, 'is_new': 0, 'jd_status': 1, 'price': 32,
-                 'synopsis': '老板好我是XT电竞Baby，全程带飞', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 18, 'tags': '带飞如喝水,一字腰', 'category_id': 3},
-                {'id': 5, 'name': 'XT嘻宝', 'sex': '0', 'type': 1, 'is_new': 0, 'jd_status': 1, 'price': 26,
-                 'synopsis': '哈啰板板好，这里是你的专属甜心', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 20, 'tags': '指定加保底,老板第一', 'category_id': 1},
-                {'id': 6, 'name': 'XT菠萝', 'sex': '0', 'type': 2, 'is_new': 1, 'jd_status': 1, 'price': 24,
-                 'synopsis': '欢迎来小童电竞下单，萝莉音陪你玩', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 26, 'tags': '萌妹', 'category_id': 3},
-                {'id': 7, 'name': 'XT囡乖儿', 'sex': '0', 'type': 3, 'is_new': 0, 'jd_status': 1, 'price': 30,
-                 'synopsis': '巴山楚水凄凉地 baby陪你打游戏', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 16, 'tags': '包C,温柔甜妹儿,情绪稳定', 'category_id': 2},
-                {'id': 8, 'name': 'XT刘权', 'sex': '1', 'type': 1, 'is_new': 1, 'jd_status': 0, 'price': 27,
-                 'synopsis': 'Hello，老板你们好，我是小权', 'image': '/static/images/header_background.png',
-                 'audio': '/static/eon.png', 'audio_time': 14, 'tags': '包C,一字腰', 'category_id': 4},
-            ]
             kw = qs.get('name', [''])[0].strip()
             t = qs.get('type', ['5'])[0]
             cid = qs.get('category_id', ['0'])[0]
             page = max(1, int(qs.get('page', ['1'])[0] or 1))
             limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
-            rows = all_thugs
+            db = get_db()
+            rows = db.execute(
+                'SELECT t.id, t.user_id, t.name, t.sh_status, t.is_customer_service, '
+                'u.nickname AS uname, u.avatar AS uavatar '
+                'FROM thug t LEFT JOIN users u ON u.id = t.user_id '
+                'WHERE t.is_deleted = 0 ORDER BY t.id DESC'
+            ).fetchall()
+            db.close()
+            all_thugs = []
+            for r in rows:
+                all_thugs.append({
+                    'id': r['id'],
+                    'name': r['name'] or r['uname'] or '打手',
+                    'sex': '1',
+                    'type': 3,
+                    'is_new': 1 if not r['is_customer_service'] else 0,
+                    'jd_status': 1 if r['sh_status'] == 1 else 0,
+                    'price': 0,
+                    'synopsis': '',
+                    'image': r['uavatar'] or '/static/images/header_background.png',
+                    'audio': '', 'audio_time': 0, 'tags': '', 'category_id': 0,
+                })
             if kw:
-                rows = [r for r in rows if kw in r['name']]
+                all_thugs = [x for x in all_thugs if kw in x['name']]
             if str(t) in ('1', '0'):
-                rows = [r for r in rows if r['sex'] == str(t)]
+                all_thugs = [x for x in all_thugs if x['sex'] == str(t)]
             if str(cid) not in ('', '0', 'None'):
-                rows = [r for r in rows if str(r['category_id']) == str(cid)]
-            total = len(rows)
+                all_thugs = [x for x in all_thugs if str(x['category_id']) == str(cid)]
+            total = len(all_thugs)
             start = (page - 1) * limit
-            data = rows[start:start + limit]
+            data = all_thugs[start:start + limit]
             self.send_json({"code": 1, "msg": "成功", "data": {"data": data, "total": total}})
             return
 

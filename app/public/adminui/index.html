@@ -1553,10 +1553,12 @@ function renderDecoration() {
             <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">底部悬浮导航</div>
             <div class="color-row" style="align-items:center">
               <label>导航形态</label>
-              <select id="nav_style" onchange="decoCfg.nav_style=this.value;decoDirty=true">
-                <option value="float_ellipse" ${decoCfg.nav_style==='float_ellipse'?'selected':''}>① 悬浮椭圆胶囊</option>
-                <option value="float_circle" ${decoCfg.nav_style==='float_circle'?'selected':''}>② 圆形主按钮 + 圆环弹出菜单</option>
-                <option value="float_row" ${decoCfg.nav_style==='float_row'?'selected':''}>③ 容器内横向平行排布</option>
+              <select id="nav_style" onchange="decoCfg.nav_style=this.value;decoDirty=true;livePreview()">
+                <option value="classic_bar" ${decoCfg.nav_style==='classic_bar'?'selected':''}>① 经典贴底栏</option>
+                <option value="float_ellipse" ${decoCfg.nav_style==='float_ellipse'?'selected':''}>② 悬浮胶囊 · 橙色高亮</option>
+                <option value="float_pill_yellow" ${decoCfg.nav_style==='float_pill_yellow'?'selected':''}>③ 悬浮胶囊 · 黄色描边</option>
+                <option value="center_raise" ${decoCfg.nav_style==='center_raise'?'selected':''}>④ 中间凸起按钮</option>
+                <option value="hand_drawn" ${decoCfg.nav_style==='hand_drawn'?'selected':''}>⑤ 手绘黄色</option>
               </select>
             </div>
             ${(decoCfg.floating_nav || []).map((it, i) => `
