@@ -181,33 +181,31 @@
 			</view>
 		</view>
 
-		<!-- 传世武器活动横幅（背景音乐上方） -->
-		<block v-if="craftEntryEnabled">
-			<view class="weapon-banner rlp20" @click="openCraft">
-				<image v-if="craftBanner" :src="craftBanner" mode="aspectFill" class="weapon-banner__img"></image>
-				<view v-else class="weapon-banner__content weapon-banner--purple">
-					<view class="weapon-banner__text">
-						<view class="weapon-banner__title">传世武器体验单</view>
-						<view class="weapon-banner__sub">更多优惠活动等你来</view>
-					</view>
-					<view class="weapon-banner__go">
-						<text class="weapon-banner__go-text">GO</text>
-					</view>
+		<!-- 传世武器活动横幅（背景音乐上方），打造与抽奖互斥 -->
+		<view v-if="craftMode === 'craft'" class="weapon-banner rlp20" @click="openCraft">
+			<image v-if="craftBanner" :src="craftBanner" mode="aspectFill" class="weapon-banner__img"></image>
+			<view v-else class="weapon-banner__content weapon-banner--purple">
+				<view class="weapon-banner__text">
+					<view class="weapon-banner__title">传世武器体验单</view>
+					<view class="weapon-banner__sub">更多优惠活动等你来</view>
+				</view>
+				<view class="weapon-banner__go">
+					<text class="weapon-banner__go-text">GO</text>
 				</view>
 			</view>
-			<view class="weapon-banner rlp20" @click="openLottery">
-				<image v-if="lotteryBanner" :src="lotteryBanner" mode="aspectFill" class="weapon-banner__img"></image>
-				<view v-else class="weapon-banner__content weapon-banner--gold">
-					<view class="weapon-banner__text">
-						<view class="weapon-banner__title">抽传世武器</view>
-						<view class="weapon-banner__sub">极品传世武器等你来抽</view>
-					</view>
-					<view class="weapon-banner__go weapon-banner__go--gold">
-						<text class="weapon-banner__go-text">GO</text>
-					</view>
+		</view>
+		<view v-else class="weapon-banner rlp20" @click="openLottery">
+			<image v-if="lotteryBanner" :src="lotteryBanner" mode="aspectFill" class="weapon-banner__img"></image>
+			<view v-else class="weapon-banner__content weapon-banner--gold">
+				<view class="weapon-banner__text">
+					<view class="weapon-banner__title">抽传世武器</view>
+					<view class="weapon-banner__sub">极品传世武器等你来抽</view>
+				</view>
+				<view class="weapon-banner__go weapon-banner__go--gold">
+					<text class="weapon-banner__go-text">GO</text>
 				</view>
 			</view>
-		</block>
+		</view>
 
 		<!-- 首页背景音乐（分类上方） -->
 		<view class="bgm-card rlp20" v-if="bgmEnabled && bgmTitle" @click="toggleBgm">
@@ -484,8 +482,8 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	const bgmPlaying = ref(false)
 	let bgmAudio = null
 
-	// 传世武器入口配置
-	const craftEntryEnabled = ref(true)
+	// 传世武器入口配置（打造与抽奖互斥，只显示一种）
+	const craftMode = ref('lottery')
 	const craftBanner = ref('')
 	const craftJump = ref('')
 	const lotteryBanner = ref('')
@@ -598,7 +596,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 			.then(r => r.json())
 			.then(res => {
 				const d = (res && res.data) || {}
-				craftEntryEnabled.value = String(d.craft_entry_enabled) !== '0'
+				craftMode.value = d.craft_mode || 'lottery'
 				craftBanner.value = d.craft_banner || ''
 				craftJump.value = d.craft_jump || ''
 				lotteryBanner.value = d.lottery_banner || ''

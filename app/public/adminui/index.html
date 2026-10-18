@@ -1848,33 +1848,41 @@ function renderDecoration() {
           <div class="card-head"><h2>传世武器入口</h2>
             <button class="btn btn-primary btn-sm" onclick="saveCraft()">保存</button></div>
           <div style="padding:16px 18px">
+            <div style="background:#fef3c7;border:1px solid #fde68a;color:#92400e;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px">
+              打造传世武器 与 抽传世武器 互斥，只能选择其中一种模式对外展示。
+            </div>
             <div class="color-row" style="align-items:center">
-              <label>打造入口</label>
-              <label class="switch"><input type="checkbox" id="craft_entry_enabled" ${craftCfg.craft_entry_enabled !== '0' ? 'checked' : ''}><span class="slider"></span></label>
-              <span class="muted" style="font-size:12px">隐藏 / 显示</span>
-            </div>
-            <div class="color-row">
-              <label>打造横幅</label>
-              <div style="display:flex;gap:8px;align-items:center;flex:1">
-                <input type="text" id="craft_banner" value="${esc(craftCfg.craft_banner || '')}" placeholder="不传则使用系统内置横幅">
-                <button class="btn btn-ghost btn-sm" onclick="uploadCraft('craft_banner')">选择图片</button>
+              <label>入口模式</label>
+              <div style="display:flex;gap:18px">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="craft_mode" value="craft" ${craftCfg.craft_mode==='craft'?'checked':''} onchange="renderCraftFields()"><span>打造传世武器</span></label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="craft_mode" value="lottery" ${craftCfg.craft_mode!=='craft'?'checked':''} onchange="renderCraftFields()"><span>抽传世武器</span></label>
               </div>
             </div>
-            <div class="color-row">
-              <label>打造跳转</label>
-              <input type="text" id="craft_jump" value="${esc(craftCfg.craft_jump || '')}" placeholder="/pages/equip-craft/index">
-            </div>
-            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">传世武器抽奖入口</div>
-            <div class="color-row">
-              <label>抽奖横幅</label>
-              <div style="display:flex;gap:8px;align-items:center;flex:1">
-                <input type="text" id="lottery_banner" value="${esc(craftCfg.lottery_banner || '')}" placeholder="不传则使用系统内置横幅">
-                <button class="btn btn-ghost btn-sm" onclick="uploadCraft('lottery_banner')">选择图片</button>
+            <div id="craft_fields" style="display:${craftCfg.craft_mode==='craft'?'block':'none'}">
+              <div class="color-row">
+                <label>打造横幅</label>
+                <div style="display:flex;gap:8px;align-items:center;flex:1">
+                  <input type="text" id="craft_banner" value="${esc(craftCfg.craft_banner || '')}" placeholder="不传则使用系统内置横幅">
+                  <button class="btn btn-ghost btn-sm" onclick="uploadCraft('craft_banner')">选择图片</button>
+                </div>
+              </div>
+              <div class="color-row">
+                <label>打造跳转</label>
+                <input type="text" id="craft_jump" value="${esc(craftCfg.craft_jump || '')}" placeholder="/pages/equip-craft/index">
               </div>
             </div>
-            <div class="color-row">
-              <label>点击跳转</label>
-              <input type="text" id="lottery_jump" value="${esc(craftCfg.lottery_jump || '')}" placeholder="/pages/lottery/detail">
+            <div id="lottery_fields" style="display:${craftCfg.craft_mode==='craft'?'none':'block'}">
+              <div class="color-row">
+                <label>抽奖横幅</label>
+                <div style="display:flex;gap:8px;align-items:center;flex:1">
+                  <input type="text" id="lottery_banner" value="${esc(craftCfg.lottery_banner || '')}" placeholder="不传则使用系统内置横幅">
+                  <button class="btn btn-ghost btn-sm" onclick="uploadCraft('lottery_banner')">选择图片</button>
+                </div>
+              </div>
+              <div class="color-row">
+                <label>点击跳转</label>
+                <input type="text" id="lottery_jump" value="${esc(craftCfg.lottery_jump || '')}" placeholder="/pages/lottery/detail">
+              </div>
             </div>
           </div>
         </div>
@@ -1980,15 +1988,20 @@ async function saveDecoration() {
 }
 
 async function saveCraft() {
-  const enabled = $('#craft_entry_enabled').checked ? '1' : '0'
+  const mode = document.querySelector('input[name="craft_mode"]:checked').value
   const r = await biz('craft/save', {
-    craft_entry_enabled: enabled,
-    craft_banner: $('#craft_banner').value.trim(),
-    craft_jump: $('#craft_jump').value.trim(),
-    lottery_banner: $('#lottery_banner').value.trim(),
-    lottery_jump: $('#lottery_jump').value.trim(),
+    craft_mode: mode,
+    craft_banner: ($('#craft_banner')||{}).value ? $('#craft_banner').value.trim() : '',
+    craft_jump: ($('#craft_jump')||{}).value ? $('#craft_jump').value.trim() : '',
+    lottery_banner: ($('#lottery_banner')||{}).value ? $('#lottery_banner').value.trim() : '',
+    lottery_jump: ($('#lottery_jump')||{}).value ? $('#lottery_jump').value.trim() : '',
   })
   toast(r.msg)
+}
+function renderCraftFields() {
+  const mode = document.querySelector('input[name="craft_mode"]:checked').value
+  $('#craft_fields').style.display = mode === 'craft' ? 'block' : 'none'
+  $('#lottery_fields').style.display = mode === 'lottery' ? 'block' : 'none'
 }
 function uploadCraft(fieldId) {
   const inp = document.createElement('input')

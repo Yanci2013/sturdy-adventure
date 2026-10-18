@@ -716,11 +716,11 @@ def get_decoration_config():
             merged['store_status'] = get_config('store_status', '1')  # 1=营业, 0=关店
             merged['close_qq'] = get_config('close_qq', '')
             merged['close_image'] = get_config('close_image', '')
-            # 传世武器入口配置
-            merged['craft_entry_enabled'] = get_config('craft_entry_enabled', '1')
+            # 传世武器入口配置（打造与抽奖互斥）
+            merged['craft_mode'] = get_config('craft_mode', 'lottery')
             merged['craft_banner'] = get_config('craft_banner', '')
             merged['craft_jump'] = get_config('craft_jump', '')
-            merged['lottery_banner'] = get_config('lottery_banner', '')
+            merged['lottery_banner'] = get_config('lottery_banner', '/uploads/craft_lottery_banner.png')
             merged['lottery_jump'] = get_config('lottery_jump', '')
             return merged
         except Exception:
@@ -745,12 +745,12 @@ def get_home_bgm_config():
     }
 
 def get_craft_config():
-    """获取传世武器入口配置"""
+    """获取传世武器入口配置（打造与抽奖互斥，craft_mode 决定显示哪一个）"""
     return {
-        'craft_entry_enabled': get_config('craft_entry_enabled', '1'),
+        'craft_mode': get_config('craft_mode', 'lottery'),  # craft=打造传世武器, lottery=抽传世武器
         'craft_banner': get_config('craft_banner', ''),
         'craft_jump': get_config('craft_jump', ''),
-        'lottery_banner': get_config('lottery_banner', ''),
+        'lottery_banner': get_config('lottery_banner', '/uploads/craft_lottery_banner.png'),
         'lottery_jump': get_config('lottery_jump', ''),
     }
 
@@ -2546,7 +2546,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if path == '/api/admin/craft/save':
-                set_config('craft_entry_enabled', str(body.get('craft_entry_enabled', '1')))
+                set_config('craft_mode', str(body.get('craft_mode', 'lottery')))
                 set_config('craft_banner', str(body.get('craft_banner', '')))
                 set_config('craft_jump', str(body.get('craft_jump', '')))
                 set_config('lottery_banner', str(body.get('lottery_banner', '')))
