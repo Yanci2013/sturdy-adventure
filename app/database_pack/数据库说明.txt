@@ -1,0 +1,32 @@
+============================================================
+  创世网络 - 前后端数据库包
+============================================================
+
+【一、PHP 后端数据库 (MySQL)】
+  文件: database_full.sql
+  库名: fastadmin
+  表前缀: fa_ / res_
+  表数量: 49 张（含初始数据）
+
+  导入命令:
+    mysql -u root -p -e "CREATE DATABASE fastadmin DEFAULT CHARSET utf8mb4;"
+    mysql -u root -p fastadmin < database_full.sql
+
+  配置: 复制 .env.example 为项目根目录 .env，修改密码
+
+【二、Python 后端数据库 (SQLite)】
+  文件: data.db
+  用途: api_server.py 专用（首页装修、BGM配置、传世武器、音乐搜索等）
+  部署: 直接放到 public/ 目录即可
+
+【三、表结构概览】
+  核心业务: users, thug, orders, notices, customer_services, invite_codes
+  系统配置: fa_config(38条), fa_pay_channel(支付渠道)
+  商品活动: res_goods, res_goods_category, res_banner, res_prize_pool, res_level
+  传世武器: res_craft_prize, res_craft_package, fa_craft_*
+  财务: res_recharge_order, res_balance, res_withdraw, res_order_commission
+  日志: fa_admin_log, fa_sms_log, fa_pay_callback_log
+
+【四、技术栈】
+  PHP: ThinkPHP 5.x + MySQL 5.7+ (utf8mb4)
+  Python: api_server.py + SQLite3
