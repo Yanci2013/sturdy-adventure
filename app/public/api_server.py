@@ -95,6 +95,14 @@ RESOURCES = {
         _rf('status', '状态', 'select', {'0': '已缴纳', '1': '已退还', '2': '已扣除'}), _rf('remark', '备注')]},
     'wechat_notice': {'title': '公众号通知', 'search': ['title'], 'columns': ['title', 'template_id', 'status'], 'fields': [
         _rf('title', '通知标题'), _rf('template_id', '模板ID'), _rf('content', '通知内容', 'textarea'), _rf('status', '是否启用', 'switch')]},
+    'craft_prize': {'title': '装备打造奖池', 'search': ['name'], 'columns': ['image', 'name', 'type', 'phase', 'status'], 'fields': [
+        _rf('name', '奖品名称'), _rf('image', '奖品图片', 'image'),
+        _rf('type', '奖品类型', 'select', {'normal': '普通奖品', 'stage': '阶段完成奖励'}),
+        _rf('phase', '所属阶段', 'select', {'1': '第一阶段', '2': '第二阶段'}),
+        _rf('range', '公示进度区间'), _rf('sort', '排序', 'number'), _rf('status', '是否启用', 'switch')]},
+    'craft_package': {'title': '打造次数套餐', 'search': ['name'], 'columns': ['name', 'count', 'price', 'sort', 'status'], 'fields': [
+        _rf('name', '套餐名称'), _rf('count', '打造次数', 'number'), _rf('price', '价格', 'number'),
+        _rf('sort', '排序', 'number'), _rf('status', '是否上架', 'switch')]},
     # ===== 单例配置型（表单页） =====
     'upload_storage': {'title': '存储配置', 'singleton': True, 'fields': [
         _rf('driver', '存储驱动', 'select', {'local': '本地存储', 'qiniu': '七牛云', 'oss': '阿里云OSS', 'cos': '腾讯云COS'}),
@@ -130,6 +138,10 @@ RESOURCE_SEED = {
               ('电竞教学课程', '3', '/static/images/header_background.png', '99', '课时', '1', '职业选手一对一教学')],
     'prize_pool': [('一等奖 iPhone', '', '1', '10', '1'), ('二等奖 现金红包', '', '9', '100', '1'), ('谢谢惠顾', '', '90', '0', '1')],
     'banner': [('首页横幅', '/static/images/header_background.png', '/pages/classify/index', '1', '1')],
+    'craft_prize': [('双截棍', '', 'normal', '1', '', '1', '1'), ('火焰刀', '', 'normal', '1', '', '2', '1'),
+                    ('熔岩双刃', '', 'stage', '1', '集齐10个碎片', '3', '1'),
+                    ('折叠直刀', '', 'normal', '2', '', '1', '1'), ('机械拳套', '', 'stage', '2', '集齐10个碎片', '2', '1')],
+    'craft_package': [('体验1次', '1', '1', '1', '1'), ('打造10次', '10', '9', '2', '1'), ('打造50次', '50', '40', '3', '1')],
     'quick_entry': [('打手入驻', '/static/ym/kf.png', '#2B6EFF', '/pages/hatchet/index', '1', '1'),
                     ('客服入驻', '/static/ym/ss.png', '#FF7A45', '/pages/cs/index', '2', '1')],
     'upload_storage': [('local', '', '', '', '', '', '', '')],
@@ -391,6 +403,20 @@ def init_db():
         is_deleted INTEGER DEFAULT 0)''')
     cur.execute('CREATE INDEX IF NOT EXISTS idx_tw_paytime ON fa_thug_withdraw(pay_time)')
     cur.execute('CREATE INDEX IF NOT EXISTS idx_tw_status ON fa_thug_withdraw(status)')
+    # 装备打造相关表
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_craft_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, times INTEGER DEFAULT 0,
+        phase INTEGER DEFAULT 1, progress TEXT DEFAULT '0', is_crit INTEGER DEFAULT 0,
+        create_time INTEGER DEFAULT 0)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_craft_order (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, order_no TEXT DEFAULT '', user_id INTEGER DEFAULT 0,
+        package_id INTEGER DEFAULT 0, count INTEGER DEFAULT 0, amount TEXT DEFAULT '0',
+        status TEXT DEFAULT 'pending', pay_time INTEGER DEFAULT 0, create_time INTEGER DEFAULT 0)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_craft_prize_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, prize_id INTEGER DEFAULT 0,
+        prize_name TEXT DEFAULT '', prize_image TEXT DEFAULT '', status TEXT DEFAULT 'bag',
+        create_time INTEGER DEFAULT 0)''')
+
     cur.execute('''CREATE TABLE IF NOT EXISTS fa_aggregate_login_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, channel TEXT DEFAULT '',
         openid TEXT DEFAULT '', nickname TEXT DEFAULT '', login_ip TEXT DEFAULT '',
@@ -744,7 +770,7 @@ def get_home_bgm_config():
         'enabled': get_config('home_bgm_enabled', '1'),
     }
 
-def get_craft_config():
+def get_craft_entry_config():
     """获取传世武器入口配置（打造与抽奖互斥，craft_mode 决定显示哪一个）"""
     return {
         'craft_mode': get_config('craft_mode', 'lottery'),  # craft=打造传世武器, lottery=抽传世武器
@@ -772,6 +798,50 @@ def get_withdraw_config():
         'withdraw_daily_limit': get_config('withdraw_daily_limit', '0'),
         'withdraw_desc': get_config('withdraw_desc', '提现申请提交后将冻结对应余额，审核通过后人工打款到您填写的账户。'),
     }
+
+def get_craft_config():
+    """获取装备打造活动配置"""
+    return {
+        'craft_enabled': get_config('craft_enabled', '1'),
+        'craft_title': get_config('craft_title', '传世武器打造'),
+        'craft_subtitle': get_config('craft_subtitle', '两阶段打造，进度满额解锁'),
+        'craft_price': get_config('craft_price', '1'),
+        'craft_progress_min': get_config('craft_progress_min', '2'),
+        'craft_progress_max': get_config('craft_progress_max', '5'),
+        'craft_crit_rate': get_config('craft_crit_rate', '15'),
+        'craft_crit_multi': get_config('craft_crit_multi', '2'),
+        'craft_bg': get_config('craft_bg', ''),
+        'craft_rules': get_config('craft_rules', '1. 购买打造次数后可选择打造1次或连续打造10次。\n2. 每次打造都会增加进度，并有概率触发暴击获得额外进度。\n3. 普通奖品进入背包，可领取或分解返还打造次数。'),
+    }
+
+def get_craft_stats():
+    """获取装备打造运营概览数据"""
+    try:
+        users = db.execute('SELECT COUNT(DISTINCT user_id) FROM fa_craft_log').fetchone()[0]
+    except Exception:
+        users = 0
+    try:
+        total = db.execute('SELECT IFNULL(SUM(CAST(times AS REAL)),0) FROM fa_craft_log').fetchone()[0]
+    except Exception:
+        total = 0
+    try:
+        sales = db.execute("SELECT IFNULL(SUM(CAST(amount AS REAL)),0) FROM fa_craft_order WHERE status = 'paid'").fetchone()[0]
+    except Exception:
+        sales = 0
+    try:
+        pending = db.execute("SELECT COUNT(*) FROM fa_craft_prize_log WHERE status = 'pending'").fetchone()[0]
+    except Exception:
+        pending = 0
+    try:
+        bag = db.execute("SELECT COUNT(*) FROM fa_craft_prize_log WHERE status = 'bag'").fetchone()[0]
+    except Exception:
+        bag = 0
+    return {
+        'users': users, 'total_craft': total, 'sales': sales,
+        'pending': pending, 'bag': bag,
+        'enabled': get_config('craft_enabled', '1'),
+    }
+
 
 def get_ulogin_config():
     """获取聚合登录配置（从数据库读取）"""
@@ -2542,7 +2612,7 @@ class Handler(BaseHTTPRequestHandler):
 
             # 传世武器入口配置
             if path == '/api/admin/craft':
-                ok(get_craft_config())
+                ok(get_craft_entry_config())
                 return
 
             if path == '/api/admin/craft/save':
@@ -2579,6 +2649,29 @@ class Handler(BaseHTTPRequestHandler):
                 set_config('withdraw_daily_limit', str(body.get('withdraw_daily_limit', '0')))
                 set_config('withdraw_desc', str(body.get('withdraw_desc', '')))
                 ok(None, '提现设置已保存')
+                return
+
+            # 装备打造活动配置
+            if path == '/api/admin/craft_config':
+                ok(get_craft_config())
+                return
+
+            if path == '/api/admin/craft_config/save':
+                set_config('craft_enabled', str(body.get('craft_enabled', '1')))
+                set_config('craft_title', str(body.get('craft_title', '传世武器打造')))
+                set_config('craft_subtitle', str(body.get('craft_subtitle', '两阶段打造，进度满额解锁')))
+                set_config('craft_price', str(body.get('craft_price', '1')))
+                set_config('craft_progress_min', str(body.get('craft_progress_min', '2')))
+                set_config('craft_progress_max', str(body.get('craft_progress_max', '5')))
+                set_config('craft_crit_rate', str(body.get('craft_crit_rate', '15')))
+                set_config('craft_crit_multi', str(body.get('craft_crit_multi', '2')))
+                set_config('craft_bg', str(body.get('craft_bg', '')))
+                set_config('craft_rules', str(body.get('craft_rules', '')))
+                ok(None, '装备打造配置已保存')
+                return
+
+            if path == '/api/admin/craft/stats':
+                ok(get_craft_stats())
                 return
 
             # ============================================================

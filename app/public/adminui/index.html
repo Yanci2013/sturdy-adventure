@@ -155,6 +155,13 @@ td .muted{color:var(--muted);font-size:12px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
 .tabs .tab{padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:#64748b;background:#f1f5f9}
 .tabs .tab.active{background:var(--accent);color:#fff}
+.craft-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+.stat-card{background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid #e0e7ff;border-radius:14px;padding:18px}
+.stat-label{font-size:13px;color:#64748b;margin-bottom:6px}
+.stat-num{font-size:28px;font-weight:700;color:var(--accent)}
+.data-table{border-collapse:collapse;font-size:13px}
+.data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;text-align:left}
+.data-table th{background:#f8fafc;color:#64748b;font-weight:600}
 .row-img{width:30px;height:30px;border-radius:8px;object-fit:cover;background:#f1f5f9;vertical-align:middle}
 /* 图片上传组件 */
 .uploader{display:flex;flex-direction:column;gap:10px}
@@ -441,6 +448,7 @@ const MENUS = [
   ]},
   { key: 'invites', name: '邀请码管理' },
   { key: 'fine', name: '罚款管理' },
+  { key: 'craft', name: '装备打造' },
   { key: 'store', name: '关店/打烊' },
   { group: '短信管理', children: [
     { key: 'sms_config', name: '短信配置' },
@@ -1712,6 +1720,219 @@ async function saveWithdrawConfig() {
     withdraw_desc: $('#wd_desc').value.trim(),
   })
   toast(r.msg)
+}
+
+/* ============ 装备打造 ============ */
+let craftTab = 'overview'
+let craftActCfg = {}
+let craftPrizes = []
+let craftPackages = []
+
+PAGES.craft = async () => {
+  const [sc, cc] = await Promise.all([biz('craft/stats'), biz('craft_config')])
+  craftActCfg = cc.data || {}
+  const stats = sc.data || {}
+  const enabled = craftActCfg.craft_enabled !== '0'
+  $('#content').innerHTML = `
+    <div class="card">
+      <div class="card-head"><h2>装备打造</h2>
+        <button class="btn btn-primary" onclick="saveCraftAll()">保存全部配置</button></div>
+      <div style="padding:14px 18px 0">
+        <div class="tabs">
+          <div class="tab ${craftTab==='overview'?'active':''}" onclick="craftSwitch('overview')">运营概览</div>
+          <div class="tab ${craftTab==='setting'?'active':''}" onclick="craftSwitch('setting')">活动设置</div>
+          <div class="tab ${craftTab==='pool'?'active':''}" onclick="craftSwitch('pool')">两阶段奖池</div>
+        </div>
+      </div>
+      <div id="craft_body" style="padding:18px 22px"></div>
+    </div>`
+  await craftRenderBody(stats)
+}
+async function craftSwitch(tab) { craftTab = tab; await PAGES.craft() }
+async function craftRenderBody(stats) {
+  const body = $('#craft_body')
+  if (craftTab === 'overview') {
+    body.innerHTML = `
+      <div class="craft-stats">
+        <div class="stat-card"><div class="stat-label">参与用户</div><div class="stat-num">${stats.users||0}</div></div>
+        <div class="stat-card"><div class="stat-label">累计打造</div><div class="stat-num">${stats.total_craft||0}</div></div>
+        <div class="stat-card"><div class="stat-label">次数销售额</div><div class="stat-num">¥ ${(stats.sales||0).toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">待发放</div><div class="stat-num" style="color:#f59e0b">${stats.pending||0}</div></div>
+        <div class="stat-card"><div class="stat-label">背包可用奖品</div><div class="stat-num">${stats.bag||0}</div></div>
+      </div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;color:#6b7280;font-size:13px;padding:12px 16px;border-radius:10px;margin-top:18px">
+        普通奖品按真实权重随机；公示概率仅展示给用户。进度达到100%时，系统从阶段完成奖励中再随机解锁一件。
+      </div>
+      <div class="stat-card" style="margin-top:18px">
+        <div class="stat-label">当前活动状态</div>
+        <div style="margin-top:8px;font-size:15px;color:${craftActCfg.craft_enabled!=='0'?'#16a34a':'#ef4444'};font-weight:600">${craftActCfg.craft_enabled!=='0'?'活动进行中':'活动已关闭'}</div>
+      </div>`
+  } else if (craftTab === 'setting') {
+    body.innerHTML = `
+      <div class="field">
+        <label>活动开关</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <label class="switch"><input type="checkbox" id="craft_enabled" ${craftActCfg.craft_enabled!=='0'?'checked':''}><span class="slider"></span></label>
+          <span class="muted" style="font-size:12px">关闭并保存后，首页入口自动隐藏，打造页和购买接口同时停止；重新开启即可恢复。</span>
+        </div>
+      </div>
+      <div class="field"><label>页面标题</label><input id="craft_title" value="${esc(craftActCfg.craft_title||'')}"></div>
+      <div class="field"><label>页面副标题</label><input id="craft_subtitle" value="${esc(craftActCfg.craft_subtitle||'')}"></div>
+      <div class="field"><label>单次参考价格</label><input id="craft_price" type="number" step="0.01" value="${esc(craftActCfg.craft_price||'1')}"></div>
+      <div class="field">
+        <label>普通进度范围</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input id="craft_progress_min" type="number" step="0.01" value="${esc(craftActCfg.craft_progress_min||'2')}" style="width:100px">
+          <span class="muted">至</span>
+          <input id="craft_progress_max" type="number" step="0.01" value="${esc(craftActCfg.craft_progress_max||'5')}" style="width:100px">
+        </div>
+      </div>
+      <div class="field">
+        <label>暴击概率</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input id="craft_crit_rate" type="number" step="0.01" value="${esc(craftActCfg.craft_crit_rate||'15')}" style="width:120px"><span>%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>暴击倍数</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input id="craft_crit_multi" type="number" step="0.01" value="${esc(craftActCfg.craft_crit_multi||'2')}" style="width:120px"><span>倍</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>页面背景</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          ${craftActCfg.craft_bg ? `<img src="${esc(craftActCfg.craft_bg)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb">` : ''}
+          <button class="btn btn-ghost" onclick="uploadCraftBg()">选择图片</button>
+          <input id="craft_bg" value="${esc(craftActCfg.craft_bg||'')}" style="flex:1">
+        </div>
+      </div>
+      <div class="field"><label>活动规则</label><textarea id="craft_rules" rows="6" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;resize:vertical">${esc(craftActCfg.craft_rules||'')}</textarea></div>
+      <div style="margin-top:24px">
+        <div style="font-size:14px;font-weight:600;color:#111;margin-bottom:12px">打造次数套餐</div>
+        <div id="craft_pkg_list"></div>
+        <button class="btn btn-ghost" style="margin-top:10px" onclick="addCraftPkg()">+ 添加套餐</button>
+      </div>`
+    await renderCraftPkgs()
+  } else if (craftTab === 'pool') {
+    const pr = await biz('resource?res=craft_prize&limit=200')
+    craftPrizes = (pr.data && pr.data.list) || []
+    const phaseHtml = [1, 2].map(ph => {
+      const normal = craftPrizes.filter(p => String(p.phase) === String(ph) && p.type === 'normal')
+      const stage = craftPrizes.filter(p => String(p.phase) === String(ph) && p.type === 'stage')
+      return `
+      <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="font-size:18px;font-weight:700;color:#111;min-width:70px">第 ${ph} 阶段</div>
+          <input id="phase_name_${ph}" value="${ph===1?'打造第一阶段':'打造第二阶段'}" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:8px">
+          <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+        </div>
+        <div class="field" style="margin-bottom:12px"><label>公示中奖进度区间</label>
+          <div style="display:flex;gap:10px;align-items:center"><input type="number" value="0" style="width:80px;padding:6px;border:1px solid #ddd;border-radius:6px"><span class="muted">至</span><input type="number" value="100" style="width:80px;padding:6px;border:1px solid #ddd;border-radius:6px"></div>
+        </div>
+        <table class="data-table" style="width:100%">
+          <thead><tr><th style="width:90px">奖品图片</th><th>奖品名称</th><th style="width:80px">操作</th></tr></thead>
+          <tbody>
+            ${normal.map(p => craftPrizeRow(p)).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top:14px;font-weight:600;color:#374151">阶段完成奖励</div>
+        <table class="data-table" style="width:100%;margin-top:8px">
+          <thead><tr><th style="width:90px">奖品图片</th><th>奖品名称</th><th style="width:80px">操作</th></tr></thead>
+          <tbody>
+            ${stage.map(p => craftPrizeRow(p)).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:10px">
+          <button class="btn btn-ghost" onclick="addCraftPrize(${ph},'normal')">+ 普通奖品</button>
+          <button class="btn btn-ghost" onclick="addCraftPrize(${ph},'stage')">+ 阶段完成奖励</button>
+        </div>
+      </div>`
+    }).join('')
+    body.innerHTML = phaseHtml
+  }
+}
+function craftPrizeRow(p) {
+  return `<tr>
+    <td>${p.image ? `<img src="${esc(p.image)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #eee">` : '<div style="width:60px;height:60px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px">无图</div>'}</td>
+    <td>${esc(p.name||'')}</td>
+    <td><a style="color:#ef4444;cursor:pointer" onclick="delCraftPrize(${p.id})">删除</a></td>
+  </tr>`
+}
+async function addCraftPrize(phase, type) {
+  const name = prompt('请输入奖品名称')
+  if (!name) return
+  await biz('resource/save', { res: 'craft_prize', name, image: '', type, phase: String(phase), range: '', sort: '0', status: '1' })
+  toast('已添加')
+  craftRenderBody({})
+}
+async function delCraftPrize(id) {
+  if (!confirm('确认删除该奖品？')) return
+  await biz('resource/delete', { res: 'craft_prize', id })
+  toast('已删除')
+  craftRenderBody({})
+}
+async function renderCraftPkgs() {
+  const r = await biz('resource?res=craft_package&limit=100')
+  craftPackages = (r.data && r.data.list) || []
+  $('#craft_pkg_list').innerHTML = craftPackages.map(p => `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+      <input value="${esc(p.name||'')}" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:8px" onchange="saveCraftPkg(${p.id},'name',this.value)">
+      <span style="color:#6b7280">次数</span>
+      <input value="${esc(p.count||'')}" type="number" style="width:80px;padding:8px 12px;border:1px solid #ddd;border-radius:8px" onchange="saveCraftPkg(${p.id},'count',this.value)">
+      <span style="color:#6b7280">价格</span>
+      <input value="${esc(p.price||'')}" type="number" step="0.01" style="width:100px;padding:8px 12px;border:1px solid #ddd;border-radius:8px" onchange="saveCraftPkg(${p.id},'price',this.value)">
+      <a style="color:#ef4444;cursor:pointer" onclick="delCraftPkg(${p.id})">删除</a>
+    </div>`).join('')
+}
+async function saveCraftPkg(id, field, val) {
+  const p = craftPackages.find(x => x.id === id)
+  if (!p) return
+  p[field] = val
+  await biz('resource/save', Object.assign({ res: 'craft_package', id }, p))
+}
+async function addCraftPkg() {
+  const r = await biz('resource/save', { res: 'craft_package', name: '新套餐', count: '1', price: '1', sort: '0', status: '1' })
+  toast('已添加')
+  renderCraftPkgs()
+}
+async function delCraftPkg(id) {
+  if (!confirm('确认删除该套餐？')) return
+  await biz('resource/delete', { res: 'craft_package', id })
+  toast('已删除')
+  renderCraftPkgs()
+}
+async function saveCraftAll() {
+  const enabled = $('#craft_enabled') ? ($('#craft_enabled').checked ? '1' : '0') : craftActCfg.craft_enabled
+  const r = await biz('craft_config/save', {
+    craft_enabled: enabled,
+    craft_title: $('#craft_title') ? $('#craft_title').value : craftActCfg.craft_title,
+    craft_subtitle: $('#craft_subtitle') ? $('#craft_subtitle').value : craftActCfg.craft_subtitle,
+    craft_price: $('#craft_price') ? $('#craft_price').value : craftActCfg.craft_price,
+    craft_progress_min: $('#craft_progress_min') ? $('#craft_progress_min').value : craftActCfg.craft_progress_min,
+    craft_progress_max: $('#craft_progress_max') ? $('#craft_progress_max').value : craftActCfg.craft_progress_max,
+    craft_crit_rate: $('#craft_crit_rate') ? $('#craft_crit_rate').value : craftActCfg.craft_crit_rate,
+    craft_crit_multi: $('#craft_crit_multi') ? $('#craft_crit_multi').value : craftActCfg.craft_crit_multi,
+    craft_bg: $('#craft_bg') ? $('#craft_bg').value : craftActCfg.craft_bg,
+    craft_rules: $('#craft_rules') ? $('#craft_rules').value : craftActCfg.craft_rules,
+  })
+  toast(r.msg)
+}
+function uploadCraftBg() {
+  const inp = document.createElement('input')
+  inp.type = 'file'; inp.accept = 'image/*'
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return
+    const fd = new FormData(); fd.append('file', f)
+    const opt = { method: 'POST', body: fd, headers: {} }
+    if (state.uid) opt.headers['AdminUserId'] = state.uid
+    if (state.token) opt.headers['AdminToken'] = state.token
+    const r = await fetch('/api/admin/upload', opt)
+    const j = await r.json().catch(() => ({}))
+    if (j.code == 1) { $('#craft_bg').value = j.data.url || j.data.fullurl || ''; toast('上传成功') }
+    else toast(j.msg || '上传失败', false)
+  }
+  inp.click()
 }
 
 PAGES.decoration = async () => {
