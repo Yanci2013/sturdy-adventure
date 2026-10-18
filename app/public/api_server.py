@@ -9,8 +9,13 @@ import json
 import time
 import os
 import re
+import ast
+import html
+import ssl
 import sqlite3
 import secrets
+import urllib.request as _urlreq
+import urllib.parse as _urlparse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
 from datetime import datetime, timedelta
@@ -769,6 +774,233 @@ def get_home_bgm_config():
         'sub': get_config('home_bgm_sub', '首页背景音乐 · 点击播放'),
         'enabled': get_config('home_bgm_enabled', '1'),
     }
+
+# ===== 多平台音乐搜索 =====
+
+_MUSIC_SSL_CTX = ssl.create_default_context()
+_MUSIC_SSL_CTX.check_hostname = False
+_MUSIC_SSL_CTX.verify_mode = ssl.CERT_NONE
+
+def _music_http(url, headers=None, timeout=8):
+    """发起 HTTP 请求并返回 JSON"""
+    h = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+    if headers:
+        h.update(headers)
+    req = _urlreq.Request(url, headers=h)
+    try:
+        r = _urlreq.urlopen(req, timeout=timeout, context=_MUSIC_SSL_CTX)
+        raw = r.read().decode('utf-8', errors='ignore')
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            # 部分接口（如酷我）返回 Python dict 格式
+            try:
+                return ast.literal_eval(raw)
+            except Exception:
+                return {'_error': 'parse failed', '_raw': raw[:200]}
+    except Exception as e:
+        return {'_error': str(e)}
+
+def search_music_netease(keyword, limit=10):
+    """网易云音乐搜索"""
+    kw = _urlparse.quote(keyword)
+    d = _music_http(f'https://music.163.com/api/cloudsearch/pc?s={kw}&type=1&limit={limit}&offset=0')
+    songs = (d.get('result') or {}).get('songs', []) or []
+    res = []
+    for s in songs:
+        artists = '/'.join(a.get('name', '') for a in s.get('ar', s.get('artists', [])))
+        res.append({
+            'platform': 'netease',
+            'name': s.get('name', ''),
+            'artist': artists,
+            'album': (s.get('al') or s.get('album') or {}).get('name', ''),
+            'cover': (s.get('al') or s.get('album') or {}).get('picUrl', ''),
+            'duration': s.get('dt', s.get('duration', 0)),
+            'id': s.get('id', ''),
+        })
+    return res
+
+def search_music_qq(keyword, limit=10):
+    """QQ音乐搜索"""
+    kw = _urlparse.quote(keyword)
+    d = _music_http(f'https://c.y.qq.com/soso/fcgi-bin/client_search_cp?w={kw}&format=json&n={limit}')
+    songs = (((d.get('data') or {}).get('song') or {}).get('list')) or []
+    res = []
+    for s in songs:
+        singers = '/'.join(sg.get('name', '') for sg in s.get('singer', []))
+        res.append({
+            'platform': 'qq',
+            'name': s.get('songname', ''),
+            'artist': singers,
+            'album': s.get('albumname', ''),
+            'cover': '',
+            'duration': s.get('interval', 0) * 1000,
+            'id': s.get('songmid', ''),
+        })
+    return res
+
+def search_music_kugou(keyword, limit=10):
+    """酷狗音乐搜索"""
+    kw = _urlparse.quote(keyword)
+    d = _music_http(f'https://mobilecdn.kugou.com/api/v3/search/song?keyword={kw}&page=1&pagesize={limit}')
+    songs = ((d.get('data') or {}).get('info')) or []
+    res = []
+    for s in songs:
+        res.append({
+            'platform': 'kugou',
+            'name': s.get('songname', ''),
+            'artist': s.get('singername', ''),
+            'album': s.get('album_name', ''),
+            'cover': '',
+            'duration': s.get('duration', 0) * 1000,
+            'id': s.get('hash', ''),
+            'album_id': s.get('album_audio_id', s.get('album_id', '')),
+        })
+    return res
+
+def search_music_kuwo(keyword, limit=10):
+    """酷我音乐搜索"""
+    kw = _urlparse.quote(keyword)
+    d = _music_http(f'https://search.kuwo.cn/r.s?all={kw}&ft=music&itemset=web_2013&client=kt&pn=0&rn={limit}&rformat=json&encoding=utf8')
+    songs = d.get('abslist', []) if isinstance(d, dict) else []
+    res = []
+    for s in songs:
+        rid = str(s.get('MUSICRID', '')).replace('MUSIC_', '')
+        res.append({
+            'platform': 'kuwo',
+            'name': html.unescape(s.get('SONGNAME', s.get('NAME', ''))),
+            'artist': html.unescape(s.get('ARTIST', '')),
+            'album': html.unescape(s.get('ALBUM', '')),
+            'cover': '',
+            'duration': int(s.get('DURATION', 0)) * 1000,
+            'id': rid,
+        })
+    return res
+
+def search_music_soda(keyword, limit=10):
+    """汽水音乐搜索（抖音）"""
+    kw = _urlparse.quote(keyword)
+    d = _music_http(f'https://soda.douyin.com/aweme/v1/web/search/?keyword={kw}&count={limit}&search_channel=single&offset=0')
+    songs = []
+    if isinstance(d, dict):
+        songs = d.get('data', []) or []
+    res = []
+    for s in songs:
+        music = s.get('music_info', s)
+        res.append({
+            'platform': 'soda',
+            'name': music.get('title', ''),
+            'artist': music.get('author', ''),
+            'album': '',
+            'cover': music.get('cover_url', music.get('cover_hd', {}).get('url_list', [''])[0] if isinstance(music.get('cover_hd'), dict) else ''),
+            'duration': music.get('duration', 0),
+            'id': music.get('id', ''),
+        })
+    return res
+
+def search_music_kg(keyword, limit=10):
+    """全民K歌搜索"""
+    kw = _urlparse.quote(keyword)
+    d = _music_http(f'https://kg.qq.com/cgi-bin/kg_search?keyword={kw}&num={limit}&p=1')
+    songs = []
+    if isinstance(d, dict):
+        songs = (d.get('data') or {}).get('list', []) or []
+    res = []
+    for s in songs:
+        res.append({
+            'platform': 'kg',
+            'name': s.get('song_name', s.get('name', '')),
+            'artist': s.get('nick_name', s.get('singer', '')),
+            'album': '',
+            'cover': s.get('cover', s.get('cover_url', '')),
+            'duration': 0,
+            'id': s.get('shareid', s.get('id', '')),
+        })
+    return res
+
+def search_music_feichangduo(keyword, limit=10):
+    """非常多音乐（meting 聚合）"""
+    kw = _urlparse.quote(keyword)
+    res = []
+    for server in ['netease', 'tencent', 'kugou', 'kuwo']:
+        d = _music_http(f'https://api.injahow.cn/meting/?type=search&server={server}&name={kw}')
+        if isinstance(d, list):
+            for s in d[:limit]:
+                res.append({
+                    'platform': 'feichangduo',
+                    'name': s.get('name', ''),
+                    'artist': s.get('artist', ''),
+                    'album': s.get('album', ''),
+                    'cover': s.get('pic', ''),
+                    'duration': 0,
+                    'id': s.get('url_id', s.get('id', '')),
+                    'source': server,
+                })
+            if res:
+                break
+    return res
+
+MUSIC_SEARCHERS = {
+    'netease': ('网易云音乐', search_music_netease),
+    'qq': ('QQ音乐', search_music_qq),
+    'kugou': ('酷狗音乐', search_music_kugou),
+    'kugou_concept': ('酷狗概念版', search_music_kugou),
+    'kuwo': ('酷我音乐', search_music_kuwo),
+    'soda': ('汽水音乐', search_music_soda),
+    'kg': ('K歌', search_music_kg),
+    'feichangduo': ('非常多音乐', search_music_feichangduo),
+}
+
+def search_music(platform, keyword, limit=10):
+    """统一音乐搜索入口"""
+    if platform not in MUSIC_SEARCHERS:
+        return []
+    try:
+        return MUSIC_SEARCHERS[platform][1](keyword, limit)
+    except Exception as e:
+        return [{'_error': str(e)}]
+
+def get_music_url(platform, song_id, **kwargs):
+    """获取歌曲播放直链"""
+    try:
+        if platform == 'netease':
+            d = _music_http(f'https://music.163.com/api/song/url?id={song_id}')
+            urls = d.get('data', []) or []
+            return urls[0].get('url', '') if urls else ''
+        elif platform == 'qq':
+            guid = '1234567890'
+            data = json.dumps({'req': {'module': 'CDN.SrfCdnDispatchServer', 'method': 'GetCdnDispatch', 'param': {'guid': guid, 'calltype': 0, 'userip': ''}}, 'req_0': {'module': 'vkey.GetVkeyServer', 'method': 'CgiGetVkey', 'param': {'guid': guid, 'songmid': [song_id], 'songtype': [0], 'uin': '0', 'loginflag': 1, 'platform': '20'}}})
+            d = _music_http(f'https://u.y.qq.com/cgi-bin/musicu.fcg?data={_urlparse.quote(data)}')
+            midurlinfo = ((d.get('req_0') or {}).get('data') or {}).get('midurlinfo', []) or []
+            sip = ((d.get('req') or {}).get('data') or {}).get('sip', []) or []
+            purl = midurlinfo[0].get('purl', '') if midurlinfo else ''
+            return (sip[0] + purl) if (sip and purl) else ''
+        elif platform in ('kugou', 'kugou_concept'):
+            album_id = kwargs.get('album_id', '')
+            d = _music_http(f'https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash={song_id}&album_id={album_id}&appid=1014&platid=1')
+            data = d.get('data')
+            if isinstance(data, dict):
+                return data.get('play_url', '')
+            elif isinstance(data, list) and data and isinstance(data[0], dict):
+                return data[0].get('play_url', '')
+            return ''
+        elif platform == 'kuwo':
+            d = _music_http(f'https://antiserver.kuwo.cn/anti.s?type=convert_url3&rid=MUSIC_{song_id}&format=mp3&response=url&br=128kmp3&from=web')
+            return d.get('url', '') if isinstance(d, dict) else ''
+        elif platform == 'soda':
+            d = _music_http(f'https://soda.douyin.com/aweme/v1/web/music/play/?music_id={song_id}')
+            if isinstance(d, dict):
+                return ((d.get('data') or {}).get('play_url') or {}).get('url_list', [''])[0]
+            return ''
+        elif platform == 'feichangduo':
+            src = kwargs.get('source', 'netease')
+            d = _music_http(f'https://api.injahow.cn/meting/?type=url&server={src}&id={song_id}')
+            if isinstance(d, dict):
+                return d.get('url', '')
+            return ''
+    except Exception:
+        return ''
+    return ''
 
 def get_craft_entry_config():
     """获取传世武器入口配置（打造与抽奖互斥，craft_mode 决定显示哪一个）"""
@@ -2608,6 +2840,27 @@ class Handler(BaseHTTPRequestHandler):
                 set_config('home_bgm_sub', str(body.get('sub', '首页背景音乐 · 点击播放')))
                 set_config('home_bgm_enabled', str(body.get('enabled', '1')))
                 ok(None, '背景音乐配置已保存')
+                return
+
+            # 多平台音乐搜索
+            if path == '/api/admin/music/search':
+                platform = str(body.get('platform', 'netease'))
+                keyword = str(body.get('keyword', '')).strip()
+                limit = int(body.get('limit', 10))
+                if not keyword:
+                    ok({'list': [], 'platforms': {k: v[0] for k, v in MUSIC_SEARCHERS.items()}})
+                    return
+                songs = search_music(platform, keyword, limit)
+                ok({'list': songs, 'platforms': {k: v[0] for k, v in MUSIC_SEARCHERS.items()}})
+                return
+
+            if path == '/api/admin/music/url':
+                platform = str(body.get('platform', ''))
+                song_id = str(body.get('id', ''))
+                album_id = str(body.get('album_id', ''))
+                source = str(body.get('source', ''))
+                url = get_music_url(platform, song_id, album_id=album_id, source=source) if song_id else ''
+                ok({'url': url})
                 return
 
             # 传世武器入口配置

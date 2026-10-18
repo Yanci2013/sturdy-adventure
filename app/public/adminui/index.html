@@ -1570,6 +1570,18 @@ async function saveStore() {
 }
 
 /* ============ 首页背景音乐 ============ */
+let musicPlatform = 'netease'
+let musicResults = []
+const MUSIC_PLATFORMS = [
+  { key: 'netease', name: '网易云音乐' },
+  { key: 'qq', name: 'QQ音乐' },
+  { key: 'kugou', name: '酷狗音乐' },
+  { key: 'kugou_concept', name: '酷狗概念版' },
+  { key: 'kuwo', name: '酷我音乐' },
+  { key: 'soda', name: '汽水音乐' },
+  { key: 'kg', name: 'K歌' },
+  { key: 'feichangduo', name: '非常多音乐' },
+]
 PAGES.home_bgm = async () => {
   const r = await biz('home_bgm')
   const d = r.data || {}
@@ -1577,8 +1589,9 @@ PAGES.home_bgm = async () => {
   const title = d.title || '背景音乐'
   const sub = d.sub || '首页背景音乐 · 点击播放'
   const enabled = d.enabled !== '0'
+  const platOpts = MUSIC_PLATFORMS.map(p => `<option value="${p.key}" ${musicPlatform===p.key?'selected':''}>${p.name}</option>`).join('')
   $('#content').innerHTML = `
-    <div class="card" style="max-width:720px">
+    <div class="card" style="max-width:860px">
       <div class="card-head"><h2>首页背景音乐</h2></div>
       <div style="padding:20px 22px">
         <div class="field">
@@ -1587,7 +1600,7 @@ PAGES.home_bgm = async () => {
             <input id="bgm_url" placeholder="mp3 文件 URL" value="${esc(url)}" style="flex:1;min-width:200px">
             <button class="btn btn-ghost btn-sm" onclick="uploadBgm()">上传</button>
           </div>
-          <div class="muted" style="font-size:12px;margin-top:6px">首页「背景音乐」卡片点击播放的音频文件（建议 mp3）。</div>
+          <div class="muted" style="font-size:12px;margin-top:6px">首页「背景音乐」卡片点击播放的音频文件（建议 mp3）。可从下方多平台搜索直接选用。</div>
         </div>
         <div class="field">
           <label>卡片标题</label>
@@ -1612,7 +1625,66 @@ PAGES.home_bgm = async () => {
           <button class="btn btn-primary" onclick="saveBgm()">保存</button>
         </div>
       </div>
+    </div>
+    <div class="card" style="max-width:860px;margin-top:18px">
+      <div class="card-head"><h2>多平台音乐搜索</h2></div>
+      <div style="padding:20px 22px">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+          <select id="music_platform" style="height:42px;padding:0 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff">${platOpts}</select>
+          <input id="music_keyword" placeholder="输入歌曲名或歌手搜索" style="flex:1;min-width:200px;height:42px;padding:0 14px;border:1px solid var(--line);border-radius:10px;font-size:14px" onkeydown="if(event.key==='Enter')searchMusic()">
+          <button class="btn btn-primary" onclick="searchMusic()">搜索</button>
+        </div>
+        <div id="music_results" style="border:1px solid #f1f5f9;border-radius:10px;min-height:120px;max-height:420px;overflow-y:auto">
+          <div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">选择平台并输入关键词搜索音乐</div>
+        </div>
+      </div>
     </div>`
+}
+async function searchMusic() {
+  const platform = $('#music_platform').value
+  const keyword = $('#music_keyword').value.trim()
+  if (!keyword) { toast('请输入搜索关键词', false); return }
+  musicPlatform = platform
+  $('#music_results').innerHTML = '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">搜索中…</div>'
+  const r = await biz('music/search', { platform, keyword, limit: 20 })
+  musicResults = (r.data && r.data.list) || []
+  if (!musicResults.length) {
+    $('#music_results').innerHTML = '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">未找到相关歌曲，换个关键词或平台试试</div>'
+    return
+  }
+  renderMusicResults()
+}
+function renderMusicResults() {
+  $('#music_results').innerHTML = musicResults.map((s, i) => {
+    const dur = s.duration ? `${Math.floor(s.duration/60000)}:${String(Math.floor(s.duration%60000/1000)).padStart(2,'0')}` : ''
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #f1f5f9">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:14px;color:#111;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name||'')} ${dur?`<span class="muted" style="font-size:11px;margin-left:8px">${dur}</span>`:''}</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.artist||'')}${s.album?' · '+esc(s.album):''}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="use_music_${i}" onclick="useMusic(${i})">使用</button>
+    </div>`
+  }).join('')
+}
+async function useMusic(idx) {
+  const s = musicResults[idx]
+  if (!s) return
+  const btn = $(`#use_music_${idx}`)
+  btn.textContent = '获取中…'
+  btn.disabled = true
+  const r = await biz('music/url', { platform: s.platform, id: s.id, album_id: s.album_id || '', source: s.source || '' })
+  const url = (r.data && r.data.url) || ''
+  if (url) {
+    $('#bgm_url').value = url
+    toast('已选用该歌曲')
+    btn.textContent = '已选用'
+    btn.style.background = '#16a34a'
+    btn.style.color = '#fff'
+  } else {
+    toast('该歌曲暂无可播放链接（可能为VIP/版权限制），请换一首试试', false)
+    btn.textContent = '使用'
+    btn.disabled = false
+  }
 }
 function uploadBgm() {
   const inp = document.createElement('input')
