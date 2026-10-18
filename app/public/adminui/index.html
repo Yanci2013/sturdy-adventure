@@ -395,6 +395,7 @@ const MENUS = [
   ]},
   { key: 'invites', name: '邀请码管理' },
   { key: 'fine', name: '罚款管理' },
+  { key: 'store', name: '关店/打烊' },
   { group: '短信管理', children: [
     { key: 'sms_config', name: '短信配置' },
     { key: 'sms_logs', name: '短信记录' },
@@ -1460,6 +1461,58 @@ function fillDecoDefaults(c) {
   c.tabbar_text_active = c.tabbar_text_active || c.tabbar_active || c.brand || '#F25109'
   return c
 }
+
+/* ============ 关店/打烊 ============ */
+PAGES.store = async () => {
+  const r = await biz('store')
+  const s = r.data || {}
+  const status = s.store_status || '1'
+  const qq = s.close_qq || ''
+  const img = s.close_image || ''
+  $('#content').innerHTML = `
+    <div class="card" style="max-width:720px">
+      <div class="card-head"><h2>关店/打烊</h2></div>
+      <div style="padding:20px 22px">
+        <div class="field">
+          <label>店铺状态</label>
+          <div style="display:flex;gap:20px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="store_status" value="1" ${status==='1'?'checked':''}> 正常营业
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#dc2626">
+              <input type="radio" name="store_status" value="0" ${status==='0'?'checked':''}> 关店 / 打烊
+            </label>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:6px">开启「关店/打烊」后，客户端打开会直接显示「该店已关闭/打烊」提示页，无法使用其它功能。</div>
+        </div>
+        <div class="field">
+          <label>联系QQ</label>
+          <input id="store_qq" placeholder="例如：123456789" value="${esc(qq)}">
+          <div class="muted" style="font-size:12px;margin-top:6px">显示在关店提示页上的 QQ 号（可留空）。</div>
+        </div>
+        <div class="field">
+          <label>提示图片</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="store_image" placeholder="图片 URL" value="${esc(img)}" style="flex:1;min-width:200px">
+            <button class="btn btn-ghost btn-sm" onclick="uploadOne('store_image')">上传</button>
+          </div>
+          ${img ? `<div style="margin-top:10px"><img src="${esc(img)}" style="max-width:120px;border-radius:8px;border:1px solid var(--line)"></div>` : ''}
+          <div class="muted" style="font-size:12px;margin-top:6px">关店提示页顶部显示的图片（建议正方形 200×200）。不传则显示默认图标。</div>
+        </div>
+        <div style="margin-top:24px">
+          <button class="btn btn-primary" onclick="saveStore()">保存</button>
+        </div>
+      </div>
+    </div>`
+}
+async function saveStore() {
+  const status = document.querySelector('input[name="store_status"]:checked').value
+  const qq = $('#store_qq').value.trim()
+  const img = $('#store_image').value.trim()
+  const r = await biz('store/save', { store_status: status, close_qq: qq, close_image: img })
+  toast(r.msg)
+}
+
 PAGES.decoration = async () => {
   const r = await biz('decoration')
   decoCfg = r.data || { name: '纯白简约', colors: THEME_PRESETS[0].colors, bg_image: '' }

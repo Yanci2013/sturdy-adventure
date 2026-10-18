@@ -84,6 +84,29 @@
 			}
 
 			// #endif
+
+			// ===== 店铺关店检测：拉取装修配置，若关店则全屏覆盖关店提示页 =====
+			fetch('/api/frontend/decoration', { cache: 'no-store' })
+				.then(r => r.json())
+				.then(res => {
+					const cfg = (res && res.data) || {}
+					if (String(cfg.store_status) === '0') {
+						const closeQq = cfg.close_qq || ''
+						const closeImg = cfg.close_image || ''
+						const closeEl = document.createElement('div')
+						closeEl.id = '__store_closed__'
+						closeEl.style.cssText = 'position:fixed;inset:0;z-index:9999999;background:#f5f5f5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;'
+						closeEl.innerHTML = `
+							${closeImg ? `<img src="${closeImg}" style="width:120px;height:120px;border-radius:16px;margin-bottom:24px;object-fit:cover">` : `<div style="width:120px;height:120px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06)"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="22" x2="15" y2="12"/></svg></div>`}
+							<h2 style="font-size:22px;font-weight:700;color:#1a1a1a;margin:0 0 10px">店铺已关闭 / 打烊</h2>
+							<p style="font-size:14px;color:#666;margin:0 0 8px;line-height:1.6">该店目前暂未营业，请稍后再来</p>
+							${closeQq ? `<p style="font-size:13px;color:#999;margin:0">联系客服 QQ：<span style="color:#2B6EFF">${closeQq}</span></p>` : ''}
+						`
+						document.body.appendChild(closeEl)
+					}
+				})
+				.catch(() => {})
+
 			// 拉取后端配置，缓存俱乐部名称（后台可改，默认创世网络）
 			configure().then(res => {
 				if (res && res.code == 1 && res.data) {

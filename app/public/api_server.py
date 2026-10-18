@@ -335,6 +335,10 @@ def init_db():
             ('small_lunbo', 'basic', '小轮播图', '首页图片导航上方小轮播图', 'images', '', '', '', '', '', ''),
             # 商品卡片每行数量
             ('goods_card_col', 'basic', '商品卡片每行数量', '控制前端商品卡片每行显示的数量', 'radio', '', '2', '{"2":"2列","3":"3列"}', 'required', '', ''),
+            # 店铺开关
+            ('store_status', 'basic', '店铺状态', '1=正常营业，0=关店/打烊', 'radio', '', '1', '{"1":"正常营业","0":"关店/打烊"}', 'required', '', ''),
+            ('close_qq', 'basic', '关店联系QQ', '关店提示页显示的联系QQ', 'string', '', '', '', '', '', ''),
+            ('close_image', 'basic', '关店提示图片', '关店提示页顶部图片', 'string', '', '', '', '', '', ''),
         ]
         for item in config_items:
             cur.execute('INSERT INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
@@ -697,10 +701,22 @@ def get_decoration_config():
             merged['page_bg_deg'] = cfg.get('page_bg_deg', DEFAULT_DECORATION['page_bg_deg'])
             merged['nav_style'] = cfg.get('nav_style', DEFAULT_DECORATION['nav_style'])
             merged['floating_nav'] = cfg.get('floating_nav', DEFAULT_DECORATION['floating_nav'])
+            # 店铺开关状态（开店/关店）
+            merged['store_status'] = get_config('store_status', '1')  # 1=营业, 0=关店
+            merged['close_qq'] = get_config('close_qq', '')
+            merged['close_image'] = get_config('close_image', '')
             return merged
         except Exception:
             pass
     return json.loads(json.dumps(DEFAULT_DECORATION))
+
+def get_store_config():
+    """获取店铺开关配置"""
+    return {
+        'store_status': get_config('store_status', '1'),
+        'close_qq': get_config('close_qq', ''),
+        'close_image': get_config('close_image', ''),
+    }
 
 def get_ulogin_config():
     """获取聚合登录配置（从数据库读取）"""
@@ -2426,6 +2442,18 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 set_config('frontend_decoration', json.dumps(cfg, ensure_ascii=False))
                 ok(None, '装修配置已保存，前端将实时生效')
+                return
+
+            # 店铺开关配置（开店/关店）
+            if path == '/api/admin/store':
+                ok(get_store_config())
+                return
+
+            if path == '/api/admin/store/save':
+                set_config('store_status', str(body.get('store_status', '1')))
+                set_config('close_qq', str(body.get('close_qq', '')))
+                set_config('close_image', str(body.get('close_image', '')))
+                ok(None, '店铺状态已保存')
                 return
 
             # ============================================================
