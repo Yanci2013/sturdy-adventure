@@ -182,28 +182,32 @@
 		</view>
 
 		<!-- 传世武器活动横幅（背景音乐上方） -->
-		<view class="weapon-banner rlp20" @click="openLottery">
-			<view class="weapon-banner__content weapon-banner--purple">
-				<view class="weapon-banner__text">
-					<view class="weapon-banner__title">传世武器体验单</view>
-					<view class="weapon-banner__sub">更多优惠活动等你来</view>
-				</view>
-				<view class="weapon-banner__go">
-					<text class="weapon-banner__go-text">GO</text>
-				</view>
-			</view>
-		</view>
-		<view class="weapon-banner rlp20" @click="openLottery">
-			<view class="weapon-banner__content weapon-banner--gold">
-				<view class="weapon-banner__text">
-					<view class="weapon-banner__title">抽传世武器</view>
-					<view class="weapon-banner__sub">极品传世武器等你来抽</view>
-				</view>
-				<view class="weapon-banner__go weapon-banner__go--gold">
-					<text class="weapon-banner__go-text">GO</text>
+		<block v-if="craftEntryEnabled">
+			<view class="weapon-banner rlp20" @click="openCraft">
+				<image v-if="craftBanner" :src="craftBanner" mode="aspectFill" class="weapon-banner__img"></image>
+				<view v-else class="weapon-banner__content weapon-banner--purple">
+					<view class="weapon-banner__text">
+						<view class="weapon-banner__title">传世武器体验单</view>
+						<view class="weapon-banner__sub">更多优惠活动等你来</view>
+					</view>
+					<view class="weapon-banner__go">
+						<text class="weapon-banner__go-text">GO</text>
+					</view>
 				</view>
 			</view>
-		</view>
+			<view class="weapon-banner rlp20" @click="openLottery">
+				<image v-if="lotteryBanner" :src="lotteryBanner" mode="aspectFill" class="weapon-banner__img"></image>
+				<view v-else class="weapon-banner__content weapon-banner--gold">
+					<view class="weapon-banner__text">
+						<view class="weapon-banner__title">抽传世武器</view>
+						<view class="weapon-banner__sub">极品传世武器等你来抽</view>
+					</view>
+					<view class="weapon-banner__go weapon-banner__go--gold">
+						<text class="weapon-banner__go-text">GO</text>
+					</view>
+				</view>
+			</view>
+		</block>
 
 		<!-- 首页背景音乐（分类上方） -->
 		<view class="bgm-card rlp20" v-if="bgmEnabled && bgmTitle" @click="toggleBgm">
@@ -480,6 +484,13 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	const bgmPlaying = ref(false)
 	let bgmAudio = null
 
+	// 传世武器入口配置
+	const craftEntryEnabled = ref(true)
+	const craftBanner = ref('')
+	const craftJump = ref('')
+	const lotteryBanner = ref('')
+	const lotteryJump = ref('')
+
 	const scrollLeft = ref(0)
 	const goodsScrollLeft = ref(0)
 	const maxTopClassifyScroll = ref(3)
@@ -572,8 +583,28 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	}
 
 	// 传世武器活动横幅点击
-	const openLottery = () => {
+	const openCraft = () => {
+		if (craftJump.value) { uni.navigateTo({ url: craftJump.value, fail: () => uni.showToast({ title: '活动即将开放', icon: 'none' }) }); return }
 		uni.showToast({ title: '活动即将开放', icon: 'none' })
+	}
+	const openLottery = () => {
+		if (lotteryJump.value) { uni.navigateTo({ url: lotteryJump.value, fail: () => uni.showToast({ title: '活动即将开放', icon: 'none' }) }); return }
+		uni.showToast({ title: '活动即将开放', icon: 'none' })
+	}
+
+	// 传世武器入口配置：拉取
+	const loadCraft = () => {
+		fetch('/api/frontend/decoration', { cache: 'no-store' })
+			.then(r => r.json())
+			.then(res => {
+				const d = (res && res.data) || {}
+				craftEntryEnabled.value = String(d.craft_entry_enabled) !== '0'
+				craftBanner.value = d.craft_banner || ''
+				craftJump.value = d.craft_jump || ''
+				lotteryBanner.value = d.lottery_banner || ''
+				lotteryJump.value = d.lottery_jump || ''
+			})
+			.catch(() => {})
 	}
 
 	// 首页背景音乐：拉取配置
@@ -621,6 +652,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		}).catch(() => {})
 
 		loadBgm()
+		loadCraft()
 		configure().then(res => {
 			if (res.data) {
 				siteConfig.value = res.data
@@ -1682,6 +1714,12 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	/* 传世武器活动横幅 */
 	.weapon-banner {
 		margin-top: 24rpx;
+	}
+	.weapon-banner__img {
+		width: 100%;
+		height: 140rpx;
+		border-radius: 40rpx;
+		display: block;
 	}
 	.weapon-banner__content {
 		display: flex;

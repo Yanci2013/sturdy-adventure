@@ -716,6 +716,12 @@ def get_decoration_config():
             merged['store_status'] = get_config('store_status', '1')  # 1=营业, 0=关店
             merged['close_qq'] = get_config('close_qq', '')
             merged['close_image'] = get_config('close_image', '')
+            # 传世武器入口配置
+            merged['craft_entry_enabled'] = get_config('craft_entry_enabled', '1')
+            merged['craft_banner'] = get_config('craft_banner', '')
+            merged['craft_jump'] = get_config('craft_jump', '')
+            merged['lottery_banner'] = get_config('lottery_banner', '')
+            merged['lottery_jump'] = get_config('lottery_jump', '')
             return merged
         except Exception:
             pass
@@ -736,6 +742,35 @@ def get_home_bgm_config():
         'title': get_config('home_bgm_title', '背景音乐'),
         'sub': get_config('home_bgm_sub', '首页背景音乐 · 点击播放'),
         'enabled': get_config('home_bgm_enabled', '1'),
+    }
+
+def get_craft_config():
+    """获取传世武器入口配置"""
+    return {
+        'craft_entry_enabled': get_config('craft_entry_enabled', '1'),
+        'craft_banner': get_config('craft_banner', ''),
+        'craft_jump': get_config('craft_jump', ''),
+        'lottery_banner': get_config('lottery_banner', ''),
+        'lottery_jump': get_config('lottery_jump', ''),
+    }
+
+def get_auto_settle_config():
+    """获取订单自动结算与退款配置"""
+    return {
+        'auto_settle_enabled': get_config('auto_settle_enabled', '1'),
+        'allow_unaccepted_refund': get_config('allow_unaccepted_refund', '1'),
+    }
+
+def get_withdraw_config():
+    """获取提现设置配置"""
+    return {
+        'withdraw_enabled': get_config('withdraw_enabled', '1'),
+        'withdraw_min': get_config('withdraw_min', '10'),
+        'withdraw_max': get_config('withdraw_max', '10000'),
+        'withdraw_fee_rate': get_config('withdraw_fee_rate', '0'),
+        'withdraw_fee_fixed': get_config('withdraw_fee_fixed', '0'),
+        'withdraw_daily_limit': get_config('withdraw_daily_limit', '0'),
+        'withdraw_desc': get_config('withdraw_desc', '提现申请提交后将冻结对应余额，审核通过后人工打款到您填写的账户。'),
     }
 
 def get_ulogin_config():
@@ -2503,6 +2538,47 @@ class Handler(BaseHTTPRequestHandler):
                 set_config('home_bgm_sub', str(body.get('sub', '首页背景音乐 · 点击播放')))
                 set_config('home_bgm_enabled', str(body.get('enabled', '1')))
                 ok(None, '背景音乐配置已保存')
+                return
+
+            # 传世武器入口配置
+            if path == '/api/admin/craft':
+                ok(get_craft_config())
+                return
+
+            if path == '/api/admin/craft/save':
+                set_config('craft_entry_enabled', str(body.get('craft_entry_enabled', '1')))
+                set_config('craft_banner', str(body.get('craft_banner', '')))
+                set_config('craft_jump', str(body.get('craft_jump', '')))
+                set_config('lottery_banner', str(body.get('lottery_banner', '')))
+                set_config('lottery_jump', str(body.get('lottery_jump', '')))
+                ok(None, '传世武器入口配置已保存')
+                return
+
+            # 订单自动结算与退款配置
+            if path == '/api/admin/auto_settle':
+                ok(get_auto_settle_config())
+                return
+
+            if path == '/api/admin/auto_settle/save':
+                set_config('auto_settle_enabled', str(body.get('auto_settle_enabled', '1')))
+                set_config('allow_unaccepted_refund', str(body.get('allow_unaccepted_refund', '1')))
+                ok(None, '自动结算配置已保存')
+                return
+
+            # 提现设置配置
+            if path == '/api/admin/withdraw_config':
+                ok(get_withdraw_config())
+                return
+
+            if path == '/api/admin/withdraw_config/save':
+                set_config('withdraw_enabled', str(body.get('withdraw_enabled', '1')))
+                set_config('withdraw_min', str(body.get('withdraw_min', '10')))
+                set_config('withdraw_max', str(body.get('withdraw_max', '10000')))
+                set_config('withdraw_fee_rate', str(body.get('withdraw_fee_rate', '0')))
+                set_config('withdraw_fee_fixed', str(body.get('withdraw_fee_fixed', '0')))
+                set_config('withdraw_daily_limit', str(body.get('withdraw_daily_limit', '0')))
+                set_config('withdraw_desc', str(body.get('withdraw_desc', '')))
+                ok(None, '提现设置已保存')
                 return
 
             # ============================================================

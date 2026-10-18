@@ -428,6 +428,7 @@ const MENUS = [
   { group: '订单管理', children: [
     { key: 'orders', name: '订单管理' },
     { key: 'order_complaint', name: '订单投诉' },
+    { key: 'auto_settle', name: '自动结算' },
   ]},
   { key: 'withdraw', name: '提现记录' },
   { key: 'thug_withdraw', name: '打手提现记录' },
@@ -474,6 +475,7 @@ const MENUS = [
     { key: 'recharge_order', name: '充值订单' },
     { key: 'order_commission', name: '订单佣金' },
     { key: 'commission_detail', name: '佣金明细' },
+    { key: 'withdraw_config', name: '提现设置' },
     { key: 'refund', name: '退款记录' },
     { key: 'deposit', name: '保证金记录' },
   ]},
@@ -1629,6 +1631,89 @@ async function saveBgm() {
   toast(r.msg)
 }
 
+/* ============ 订单自动结算与退款 ============ */
+PAGES.auto_settle = async () => {
+  const r = await biz('auto_settle')
+  const d = r.data || {}
+  const autoSettle = d.auto_settle_enabled !== '0'
+  const allowRefund = d.allow_unaccepted_refund !== '0'
+  $('#content').innerHTML = `
+    <div class="card" style="max-width:720px">
+      <div class="card-head"><h2>订单结算与退款</h2></div>
+      <div style="padding:20px 22px">
+        <div class="field">
+          <label>开启自动结算</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label class="switch"><input type="checkbox" id="as_auto" ${autoSettle?'checked':''}><span class="slider"></span></label>
+            <span class="muted">开启后普通服务订单完成时自动结算佣金到打手</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>允许未接单自助退款</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label class="switch"><input type="checkbox" id="as_refund" ${allowRefund?'checked':''}><span class="slider"></span></label>
+            <span class="muted">开启后订单尚未被打手接单时，老板可自行退款；关闭后需联系客服处理</span>
+          </div>
+        </div>
+        <div style="margin-top:24px">
+          <button class="btn btn-primary" onclick="saveAutoSettle()">保存配置</button>
+          <button class="btn btn-ghost" onclick="PAGES.auto_settle()">重新加载</button>
+        </div>
+      </div>
+    </div>`
+}
+async function saveAutoSettle() {
+  const autoSettle = $('#as_auto').checked ? '1' : '0'
+  const allowRefund = $('#as_refund').checked ? '1' : '0'
+  const r = await biz('auto_settle/save', { auto_settle_enabled: autoSettle, allow_unaccepted_refund: allowRefund })
+  toast(r.msg)
+}
+
+/* ============ 提现设置 ============ */
+PAGES.withdraw_config = async () => {
+  const r = await biz('withdraw_config')
+  const d = r.data || {}
+  const enabled = d.withdraw_enabled !== '0'
+  $('#content').innerHTML = `
+    <div class="card" style="max-width:720px">
+      <div class="card-head"><h2>提现设置</h2></div>
+      <div style="padding:20px 22px">
+        <div class="field">
+          <label>开启提现</label>
+          <label class="switch"><input type="checkbox" id="wd_enabled" ${enabled?'checked':''}><span class="slider"></span></label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="field"><label>最低金额</label><input id="wd_min" type="number" value="${esc(d.withdraw_min||'10')}"></div>
+          <div class="field"><label>最高金额</label><input id="wd_max" type="number" value="${esc(d.withdraw_max||'10000')}"></div>
+          <div class="field"><label>手续费比例(%)</label><input id="wd_fee_rate" type="number" step="0.01" value="${esc(d.withdraw_fee_rate||'0')}"></div>
+          <div class="field"><label>固定手续费</label><input id="wd_fee_fixed" type="number" step="0.01" value="${esc(d.withdraw_fee_fixed||'0')}"></div>
+          <div class="field"><label>每日上限次数</label><input id="wd_daily" type="number" value="${esc(d.withdraw_daily_limit||'0')}"><span class="muted" style="font-size:12px">0 表示不限</span></div>
+        </div>
+        <div class="field">
+          <label>客户端说明</label>
+          <textarea id="wd_desc" rows="4" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;resize:vertical">${esc(d.withdraw_desc||'')}</textarea>
+        </div>
+        <div style="margin-top:24px">
+          <button class="btn btn-primary" onclick="saveWithdrawConfig()">保存配置</button>
+          <button class="btn btn-ghost" onclick="PAGES.withdraw_config()">重新加载</button>
+        </div>
+      </div>
+    </div>`
+}
+async function saveWithdrawConfig() {
+  const enabled = $('#wd_enabled').checked ? '1' : '0'
+  const r = await biz('withdraw_config/save', {
+    withdraw_enabled: enabled,
+    withdraw_min: $('#wd_min').value.trim(),
+    withdraw_max: $('#wd_max').value.trim(),
+    withdraw_fee_rate: $('#wd_fee_rate').value.trim(),
+    withdraw_fee_fixed: $('#wd_fee_fixed').value.trim(),
+    withdraw_daily_limit: $('#wd_daily').value.trim(),
+    withdraw_desc: $('#wd_desc').value.trim(),
+  })
+  toast(r.msg)
+}
+
 PAGES.decoration = async () => {
   const r = await biz('decoration')
   decoCfg = r.data || { name: '纯白简约', colors: THEME_PRESETS[0].colors, bg_image: '' }
@@ -1640,8 +1725,11 @@ PAGES.decoration = async () => {
   decoDirty = false
   const rr = await biz('realname/config')
   rnEnabled = !!(rr.data && rr.data.enabled)
+  const cr = await biz('craft')
+  craftCfg = cr.data || {}
   renderDecoration()
 }
+let craftCfg = {}
 function renderDecoration() {
   const c = decoCfg.colors
   const presetBtns = THEME_PRESETS.map(p =>
@@ -1756,6 +1844,40 @@ function renderDecoration() {
               </div>`).join('')}
           </div>
         </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-head"><h2>传世武器入口</h2>
+            <button class="btn btn-primary btn-sm" onclick="saveCraft()">保存</button></div>
+          <div style="padding:16px 18px">
+            <div class="color-row" style="align-items:center">
+              <label>打造入口</label>
+              <label class="switch"><input type="checkbox" id="craft_entry_enabled" ${craftCfg.craft_entry_enabled !== '0' ? 'checked' : ''}><span class="slider"></span></label>
+              <span class="muted" style="font-size:12px">隐藏 / 显示</span>
+            </div>
+            <div class="color-row">
+              <label>打造横幅</label>
+              <div style="display:flex;gap:8px;align-items:center;flex:1">
+                <input type="text" id="craft_banner" value="${esc(craftCfg.craft_banner || '')}" placeholder="不传则使用系统内置横幅">
+                <button class="btn btn-ghost btn-sm" onclick="uploadCraft('craft_banner')">选择图片</button>
+              </div>
+            </div>
+            <div class="color-row">
+              <label>打造跳转</label>
+              <input type="text" id="craft_jump" value="${esc(craftCfg.craft_jump || '')}" placeholder="/pages/equip-craft/index">
+            </div>
+            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">传世武器抽奖入口</div>
+            <div class="color-row">
+              <label>抽奖横幅</label>
+              <div style="display:flex;gap:8px;align-items:center;flex:1">
+                <input type="text" id="lottery_banner" value="${esc(craftCfg.lottery_banner || '')}" placeholder="不传则使用系统内置横幅">
+                <button class="btn btn-ghost btn-sm" onclick="uploadCraft('lottery_banner')">选择图片</button>
+              </div>
+            </div>
+            <div class="color-row">
+              <label>点击跳转</label>
+              <input type="text" id="lottery_jump" value="${esc(craftCfg.lottery_jump || '')}" placeholder="/pages/lottery/detail">
+            </div>
+          </div>
+        </div>
       </div>
       <div class="deco-right">
         <div class="card">
@@ -1855,6 +1977,34 @@ async function saveDecoration() {
   })
   toast(r.msg)
   if (r.code === 1) { decoDirty = false; renderDecoration() }
+}
+
+async function saveCraft() {
+  const enabled = $('#craft_entry_enabled').checked ? '1' : '0'
+  const r = await biz('craft/save', {
+    craft_entry_enabled: enabled,
+    craft_banner: $('#craft_banner').value.trim(),
+    craft_jump: $('#craft_jump').value.trim(),
+    lottery_banner: $('#lottery_banner').value.trim(),
+    lottery_jump: $('#lottery_jump').value.trim(),
+  })
+  toast(r.msg)
+}
+function uploadCraft(fieldId) {
+  const inp = document.createElement('input')
+  inp.type = 'file'; inp.accept = 'image/*'
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return
+    const fd = new FormData(); fd.append('file', f)
+    const opt = { method: 'POST', body: fd, headers: {} }
+    if (state.uid) opt.headers['AdminUserId'] = state.uid
+    if (state.token) opt.headers['AdminToken'] = state.token
+    const r = await fetch('/api/admin/upload', opt)
+    const j = await r.json().catch(() => ({}))
+    if (j.code == 1) { $('#' + fieldId).value = j.data.url || j.data.fullurl || ''; toast('上传成功') }
+    else toast(j.msg || '上传失败', false)
+  }
+  inp.click()
 }
 
 /* ============ 操作日志（yylAdmin 框架） ============ */
