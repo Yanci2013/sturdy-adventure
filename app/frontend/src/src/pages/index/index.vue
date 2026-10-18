@@ -181,6 +181,30 @@
 			</view>
 		</view>
 
+		<!-- 传世武器活动横幅（背景音乐上方） -->
+		<view class="weapon-banner rlp20" @click="openLottery">
+			<view class="weapon-banner__content weapon-banner--purple">
+				<view class="weapon-banner__text">
+					<view class="weapon-banner__title">传世武器体验单</view>
+					<view class="weapon-banner__sub">更多优惠活动等你来</view>
+				</view>
+				<view class="weapon-banner__go">
+					<text class="weapon-banner__go-text">GO</text>
+				</view>
+			</view>
+		</view>
+		<view class="weapon-banner rlp20" @click="openLottery">
+			<view class="weapon-banner__content weapon-banner--gold">
+				<view class="weapon-banner__text">
+					<view class="weapon-banner__title">抽传世武器</view>
+					<view class="weapon-banner__sub">极品传世武器等你来抽</view>
+				</view>
+				<view class="weapon-banner__go weapon-banner__go--gold">
+					<text class="weapon-banner__go-text">GO</text>
+				</view>
+			</view>
+		</view>
+
 		<!-- 首页背景音乐（分类上方） -->
 		<view class="bgm-card rlp20" v-if="bgmEnabled && bgmTitle" @click="toggleBgm">
 			<view class="bgm-icon">
@@ -545,6 +569,11 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	const switchMode = (mode) => {
 		pageMode.value = mode
 		reloadPaging()
+	}
+
+	// 传世武器活动横幅点击
+	const openLottery = () => {
+		uni.showToast({ title: '活动即将开放', icon: 'none' })
 	}
 
 	// 首页背景音乐：拉取配置
@@ -1648,6 +1677,66 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		color: #333333;
 		text-align: center;
 		line-height: 1.2;
+	}
+
+	/* 传世武器活动横幅 */
+	.weapon-banner {
+		margin-top: 24rpx;
+	}
+	.weapon-banner__content {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 26rpx 34rpx;
+		border-radius: 40rpx;
+		overflow: hidden;
+		position: relative;
+	}
+	.weapon-banner--purple {
+		background: linear-gradient(135deg, #4A148C 0%, #7B1FA2 50%, #9C27B0 100%);
+		box-shadow: 0 8rpx 24rpx rgba(123, 31, 162, 0.35);
+	}
+	.weapon-banner--gold {
+		background: linear-gradient(135deg, #3E2723 0%, #5D4037 40%, #8D6E63 100%);
+		box-shadow: 0 8rpx 24rpx rgba(93, 64, 55, 0.35);
+	}
+	.weapon-banner__text {
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+		z-index: 2;
+	}
+	.weapon-banner__title {
+		font-size: 38rpx;
+		font-weight: 900;
+		color: #FFFFFF;
+		letter-spacing: 2rpx;
+		text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+	}
+	.weapon-banner__sub {
+		font-size: 22rpx;
+		color: rgba(255, 255, 255, 0.85);
+		letter-spacing: 1rpx;
+	}
+	.weapon-banner__go {
+		width: 90rpx;
+		height: 90rpx;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.2);
+		border: 3rpx solid rgba(255, 255, 255, 0.6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2;
+	}
+	.weapon-banner__go--gold {
+		background: rgba(255, 215, 0, 0.25);
+		border-color: rgba(255, 215, 0, 0.8);
+	}
+	.weapon-banner__go-text {
+		font-size: 30rpx;
+		font-weight: 800;
+		color: #FFFFFF;
 	}
 
 	/* 首页背景音乐卡片 */
