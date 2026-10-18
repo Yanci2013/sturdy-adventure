@@ -35,15 +35,15 @@ def _rf(key, label, t='text', options=None):
 
 RESOURCES = {
     'goods_category': {'title': '商品分类管理', 'search': ['name'], 'columns': ['name', 'icon', 'sort', 'status'], 'fields': [
-        _rf('name', '分类名称'), _rf('icon', '分类图标URL'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
+        _rf('name', '分类名称'), _rf('icon', '分类图标', 'image'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
     'goods': {'title': '商品管理', 'search': ['name'], 'columns': ['name', 'category_id', 'price', 'status'], 'fields': [
-        _rf('name', '商品名称'), _rf('category_id', '所属分类ID', 'number'), _rf('logo', '封面图URL'),
+        _rf('name', '商品名称'), _rf('category_id', '所属分类ID', 'number'), _rf('logo', '封面图', 'image'),
         _rf('price', '价格', 'number'), _rf('unit', '计价单位'), _rf('status', '上架状态', 'switch'), _rf('remark', '商品简介', 'textarea')]},
     'prize_pool': {'title': '奖池管理', 'search': ['name'], 'columns': ['name', 'rate', 'stock', 'status'], 'fields': [
-        _rf('name', '奖品名称'), _rf('icon', '奖品图URL'), _rf('rate', '中奖概率(%)', 'number'),
+        _rf('name', '奖品名称'), _rf('icon', '奖品图', 'image'), _rf('rate', '中奖概率(%)', 'number'),
         _rf('stock', '库存数量', 'number'), _rf('status', '是否启用', 'switch')]},
     'banner': {'title': '轮播图管理', 'search': ['title'], 'columns': ['image', 'title', 'link', 'sort', 'status'], 'fields': [
-        _rf('title', '标题'), _rf('image', '图片URL'), _rf('link', '跳转链接'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
+        _rf('title', '标题'), _rf('image', '轮播图片', 'image'), _rf('link', '跳转链接'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
     'order_complaint': {'title': '订单投诉', 'search': ['order_no', 'content'], 'columns': ['order_no', 'user_id', 'content', 'status'], 'fields': [
         _rf('order_no', '订单号'), _rf('user_id', '投诉用户ID', 'number'), _rf('content', '投诉内容', 'textarea'),
         _rf('status', '处理状态', 'select', {'0': '待处理', '1': '处理中', '2': '已解决', '3': '已驳回'})]},
@@ -51,7 +51,7 @@ RESOURCES = {
         _rf('user_id', '用户ID', 'number'), _rf('amount', '提现金额', 'number'), _rf('account', '收款账号'),
         _rf('status', '状态', 'select', {'0': '待审核', '1': '已打款', '2': '已驳回'}), _rf('remark', '备注')]},
     'level': {'title': '等级列表', 'search': ['name'], 'columns': ['name', 'need_score', 'discount', 'remark'], 'fields': [
-        _rf('name', '等级名称'), _rf('icon', '等级图标'), _rf('need_score', '所需积分', 'number'),
+        _rf('name', '等级名称'), _rf('icon', '等级图标', 'image'), _rf('need_score', '所需积分', 'number'),
         _rf('discount', '折扣(0-1)', 'number'), _rf('remark', '权益说明', 'textarea')]},
     'cs_account': {'title': '客服账号', 'search': ['name', 'username'], 'columns': ['name', 'username', 'thug_id', 'status'], 'fields': [
         _rf('name', '客服名称'), _rf('username', '登录账号'), _rf('password', '登录密码'),
@@ -275,6 +275,13 @@ def init_db():
         ('cs_mode', "ALTER TABLE customer_services ADD COLUMN cs_mode TEXT DEFAULT 'built_in'"),
         ('wecom_url', "ALTER TABLE customer_services ADD COLUMN wecom_url TEXT DEFAULT ''"),
         ('auto_assign', "ALTER TABLE customer_services ADD COLUMN auto_assign INTEGER DEFAULT 0"),
+        # 统一软删除字段（用户/打手/订单/公告/客服/邀请码）
+        ('users.is_deleted', "ALTER TABLE users ADD COLUMN is_deleted INTEGER DEFAULT 0"),
+        ('thug.is_deleted', "ALTER TABLE thug ADD COLUMN is_deleted INTEGER DEFAULT 0"),
+        ('orders.is_deleted', "ALTER TABLE orders ADD COLUMN is_deleted INTEGER DEFAULT 0"),
+        ('notices.is_deleted', "ALTER TABLE notices ADD COLUMN is_deleted INTEGER DEFAULT 0"),
+        ('customer_services.is_deleted', "ALTER TABLE customer_services ADD COLUMN is_deleted INTEGER DEFAULT 0"),
+        ('invite_codes.is_deleted', "ALTER TABLE invite_codes ADD COLUMN is_deleted INTEGER DEFAULT 0"),
     ]:
         try:
             cur.execute(ddl)
@@ -330,7 +337,14 @@ def init_db():
     # ===== 通用资源表（后台各菜单 CRUD） =====
     for _res, _spec in RESOURCES.items():
         _cols = ', '.join([f['key'] + " TEXT DEFAULT ''" for f in _spec['fields']])
-        cur.execute('CREATE TABLE IF NOT EXISTS res_%s (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, createtime INTEGER)' % (_res, _cols))
+        cur.execute('CREATE TABLE IF NOT EXISTS res_%s (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, createtime INTEGER, update_time INTEGER DEFAULT 0, is_deleted INTEGER DEFAULT 0)' % (_res, _cols))
+        # 旧库补软删除/更新时间字段
+        for _ddl in ("ALTER TABLE res_%s ADD COLUMN is_deleted INTEGER DEFAULT 0" % _res,
+                     "ALTER TABLE res_%s ADD COLUMN update_time INTEGER DEFAULT 0" % _res):
+            try:
+                cur.execute(_ddl)
+            except Exception:
+                pass
         # 单例资源确保存在 id=1 的一行
         if _spec.get('singleton'):
             cur.execute('SELECT COUNT(*) FROM res_%s WHERE id = 1' % _res)
@@ -345,8 +359,98 @@ def init_db():
                 _ph = ','.join(['?'] * (len(_keys) + 1))
                 for row in seed:
                     cur.execute('INSERT INTO res_%s (%s, createtime) VALUES (%s)' % (_res, ','.join(_keys), _ph), tuple(str(x) for x in row) + (int(time.time()),))
+    # ===== 新增业务模块表 =====
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_thug_withdraw (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        thug_id INTEGER DEFAULT 0, thug_name TEXT DEFAULT '', withdraw_no TEXT DEFAULT '',
+        amount TEXT DEFAULT '0', fee TEXT DEFAULT '0', real_amount TEXT DEFAULT '0',
+        account_type TEXT DEFAULT 'wechat', account TEXT DEFAULT '',
+        apply_time INTEGER DEFAULT 0, audit_time INTEGER DEFAULT 0, pay_time INTEGER DEFAULT 0,
+        status INTEGER DEFAULT 0, audit_admin TEXT DEFAULT '', reject_reason TEXT DEFAULT '',
+        remark TEXT DEFAULT '', create_time INTEGER DEFAULT 0, update_time INTEGER DEFAULT 0,
+        is_deleted INTEGER DEFAULT 0)''')
+    cur.execute('CREATE INDEX IF NOT EXISTS idx_tw_paytime ON fa_thug_withdraw(pay_time)')
+    cur.execute('CREATE INDEX IF NOT EXISTS idx_tw_status ON fa_thug_withdraw(status)')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_aggregate_login_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, channel TEXT DEFAULT '',
+        openid TEXT DEFAULT '', nickname TEXT DEFAULT '', login_ip TEXT DEFAULT '',
+        device TEXT DEFAULT '', login_time INTEGER DEFAULT 0, create_time INTEGER DEFAULT 0)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_sms_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, mobile TEXT DEFAULT '', template_id TEXT DEFAULT '',
+        content TEXT DEFAULT '', status INTEGER DEFAULT 1, provider_resp TEXT DEFAULT '',
+        scene TEXT DEFAULT '', ip TEXT DEFAULT '', create_time INTEGER DEFAULT 0)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_pay_callback_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, channel TEXT DEFAULT '', order_no TEXT DEFAULT '',
+        raw TEXT DEFAULT '', sign_ok INTEGER DEFAULT 0, handled INTEGER DEFAULT 0,
+        result TEXT DEFAULT '', ip TEXT DEFAULT '', create_time INTEGER DEFAULT 0)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_admin_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, admin_id INTEGER DEFAULT 0, admin_name TEXT DEFAULT '',
+        module TEXT DEFAULT '', content TEXT DEFAULT '', ip TEXT DEFAULT '', create_time INTEGER DEFAULT 0)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_cron_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, task_id INTEGER DEFAULT 0, task_name TEXT DEFAULT '',
+        status INTEGER DEFAULT 1, message TEXT DEFAULT '', cost_ms INTEGER DEFAULT 0, create_time INTEGER DEFAULT 0)''')
+    # 支付渠道表
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_pay_channel (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT DEFAULT '', name TEXT DEFAULT '',
+        channel_type TEXT DEFAULT '', pid TEXT DEFAULT '', secret TEXT DEFAULT '',
+        notify_url TEXT DEFAULT '', return_url TEXT DEFAULT '', timeout INTEGER DEFAULT 300,
+        mch_id TEXT DEFAULT '', api_v3_key TEXT DEFAULT '', cert_serial TEXT DEFAULT '',
+        private_key TEXT DEFAULT '', sort INTEGER DEFAULT 0, status INTEGER DEFAULT 1,
+        remark TEXT DEFAULT '', create_time INTEGER DEFAULT 0, update_time INTEGER DEFAULT 0)''')
+    cur.execute('SELECT COUNT(*) FROM fa_pay_channel')
+    if cur.fetchone()[0] == 0:
+        _now = today_ts()
+        cur.execute('''INSERT INTO fa_pay_channel
+            (code, name, channel_type, notify_url, return_url, timeout, sort, status, remark, create_time, update_time)
+            VALUES ('epay', '彩虹支付', 'epay', '/api/pay/notify/epay', '/h5/#/pages/index/paysuccess',
+                    300, 1, 1, '支持微信/支付宝/QQ钱包，免签聚合', ?, ?)''', (_now, _now))
+        cur.execute('''INSERT INTO fa_pay_channel
+            (code, name, channel_type, mch_id, notify_url, timeout, sort, status, remark, create_time, update_time)
+            VALUES ('wechat_v3', '微信商户V3', 'wechat_v3', '', '/api/pay/notify/wechat', 300, 2, 0,
+                    '微信支付V3，支持 JSAPI/H5', ?, ?)''', (_now, _now))
+    # 业务模块演示数据（仅空表写入）
+    cur.execute('SELECT COUNT(*) FROM fa_thug_withdraw')
+    if cur.fetchone()[0] == 0:
+        today = int(datetime.now().replace(hour=10, minute=0, second=0, microsecond=0).timestamp())
+        rows = [
+            (1, 'XT冰帝', 'TX' + str(today)[-6:] + '01', '100.00', '2.00', '98.00', 'wechat', 'wx_iceking01', today - 7200, today - 3600, today - 1800, 3, '超级管理员', '', '首位打手提现'),
+            (2, 'XT富贵', 'TX' + str(today)[-6:] + '02', '500.00', '10.00', '490.00', 'alipay', 'ali_fugui@qq.com', today - 5400, 0, 0, 0, '', '', '大额提现待审核'),
+            (3, 'XT动力', 'TX' + str(today)[-6:] + '03', '200.00', '4.00', '196.00', 'wechat', 'wx_dongli02', today - 9000, today - 5000, 0, 2, '超级管理员', '', '已审核待打款'),
+            (4, 'XTBaby', 'TX' + str(today)[-6:] + '04', '60.00', '1.20', '58.80', 'wechat', 'wx_baby03', today - 12000, today - 8000, 0, 1, '超级管理员', '收款信息有误', '驳回示例'),
+            (5, 'XT嘻宝', 'TX' + str(today)[-6:] + '05', '150.00', '3.00', '147.00', 'alipay', 'ali_xibao@qq.com', today - 100000, today - 95000, today - 90000, 3, '超级管理员', '', '昨日已打款'),
+        ]
+        for r in rows:
+            cur.execute('''INSERT INTO fa_thug_withdraw
+                (thug_id, thug_name, withdraw_no, amount, fee, real_amount, account_type, account,
+                 apply_time, audit_time, pay_time, status, audit_admin, reject_reason, remark, create_time, update_time)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', r + (r[8], r[8]))
+    for tbl, seed_rows, sql in [
+        ('fa_admin_log', [
+            (1, '超级管理员', '系统设置', '修改了彩虹易支付配置', today_ts() - 3600),
+            (1, '超级管理员', '打手提现', '审核通过提现单 TXD001，金额 ¥100.00', today_ts() - 1800),
+        ], 'INSERT INTO fa_admin_log (admin_id, admin_name, module, content, ip, create_time) VALUES (?,?,?,?,\'127.0.0.1\',?)'),
+        ('fa_sms_log', [
+            ('13800000001', 'SMS_10001', '您的验证码为 8888，5 分钟内有效。', 1, 'provider=aliyun', 'login', today_ts() - 600),
+        ], 'INSERT INTO fa_sms_log (mobile, template_id, content, status, provider_resp, scene, create_time) VALUES (?,?,?,?,?,?,?)'),
+        ('fa_aggregate_login_log', [
+            (1, 'wechat', 'juhe_wechat_mock001', '创世用户0001', '127.0.0.1', 'iPhone / Safari', today_ts() - 1200),
+        ], 'INSERT INTO fa_aggregate_login_log (user_id, channel, openid, nickname, login_ip, device, create_time) VALUES (?,?,?,?,?,?,?)'),
+        ('fa_pay_callback_log', [
+            ('epay', 'RC' + str(today_ts())[-8:], '{"trade_status":"TRADE_SUCCESS"}', 1, 1, '余额已增加', '127.0.0.1', today_ts() - 900),
+        ], 'INSERT INTO fa_pay_callback_log (channel, order_no, raw, sign_ok, handled, result, ip, create_time) VALUES (?,?,?,?,?,?,?,?)'),
+        ('fa_cron_log', [
+            (1, '订单超时自动取消', 1, '本次处理 0 条', 32, today_ts() - 300),
+        ], 'INSERT INTO fa_cron_log (task_id, task_name, status, message, cost_ms, create_time) VALUES (?,?,?,?,?,?)'),
+    ]:
+        cur.execute('SELECT COUNT(*) FROM ' + tbl)
+        if cur.fetchone()[0] == 0:
+            for _r in seed_rows:
+                cur.execute(sql, _r)
     db.commit()
     db.close()
+
+def today_ts():
+    return int(time.time())
 
 init_db()
 
@@ -404,6 +508,134 @@ def set_config(name, value):
     )
     db.commit()
     db.close()
+
+# ===== 后台权限 / 操作日志 / 通用辅助 =====
+# 财务与流水类数据：永久保留，禁止删除（不提供删除接口）
+FINANCE_NO_DELETE = {
+    'withdraw', 'bill', 'balance', 'commission_detail', 'order_commission',
+    'deposit', 'recharge_order', 'refund', 'thug_withdraw',
+    'admin_log', 'sms_log', 'pay_callback_log', 'cron_log', 'aggregate_login_log',
+}
+ALL_PERMS = {'view', 'add', 'edit', 'delete', 'export', 'config'}
+
+def resField_label(spec, col):
+    """取资源字段的中文标签（导出表头用）"""
+    for f in (spec.get('fields') or []):
+        if f.get('key') == col:
+            return f.get('label') or col
+    return col
+
+def current_admin(headers):
+    """解析当前管理员身份与权限（本地回退模式，默认超级管理员拥有全部权限）"""
+    uid, uname, role = 1, '超级管理员', '超级管理员'
+    try:
+        v = headers.get('AdminUserId') if headers else None
+        if v:
+            uid = int(v)
+    except Exception:
+        uid = 1
+    try:
+        db = get_db()
+        row = db.execute('SELECT * FROM res_admin_user WHERE id = ?', (uid,)).fetchone()
+        if row:
+            d = dict(row)
+            uname = d.get('nickname') or d.get('username') or uname
+            role = d.get('role') or role
+        perm_row = db.execute('SELECT auth FROM res_role WHERE name = ?', (role,)).fetchone()
+        db.close()
+    except Exception:
+        perm_row = None
+    perms = set(ALL_PERMS)
+    if perm_row:
+        auth = (perm_row['auth'] or '').strip()
+        if auth and auth != '*':
+            perms = set(x.strip() for x in auth.replace('，', ',').split(',') if x.strip())
+    return {'id': uid, 'name': uname, 'role': role, 'perms': perms}
+
+def has_perm(admin, perm):
+    perms = (admin or {}).get('perms') or set()
+    return '*' in perms or perm in perms
+
+def log_admin_action(db, admin, module, content, ip=''):
+    """写入管理员操作日志（不可删除）"""
+    try:
+        sql = 'INSERT INTO fa_admin_log (admin_id, admin_name, module, content, ip, create_time) VALUES (?,?,?,?,?,?)'
+        args = ((admin or {}).get('id', 0), (admin or {}).get('name', ''), module, content, ip, now_ts())
+        if db is not None:
+            db.execute(sql, args); db.commit()
+        else:
+            _db = get_db(); _db.execute(sql, args); _db.commit(); _db.close()
+    except Exception:
+        pass
+
+def client_ip(handler):
+    try:
+        xff = handler.headers.get('X-Forwarded-For')
+        if xff:
+            return xff.split(',')[0].strip()
+        return handler.client_address[0]
+    except Exception:
+        return ''
+
+# ===== 短信发送工具（统一封装） =====
+SMS_RATE = {}  # {mobile: [ts,...]}
+DEMO_MOBILE = '13800138000'  # 演示用打手手机号（真实场景取打手绑定手机号）
+DASHU_ALERT_AMOUNT = 500.0   # 大额提现企微告警阈值（元）
+SMS_SCENES = {
+    'register': '注册验证码', 'login': '登录验证码', 'withdraw': '提现审核通知',
+    'order': '订单状态变更通知', 'complaint': '投诉通知', 'deposit': '保证金提醒',
+}
+
+def send_sms(mobile, template_id, content, scene='', db=None):
+    """统一短信发送：总开关/场景开关/频率限制/日志落库"""
+    mobile = (mobile or '').strip()
+    if not mobile:
+        return {'ok': False, 'msg': '手机号为空'}
+    if get_config('sms_enabled', '') != '1':
+        return {'ok': False, 'msg': '短信总开关未开启'}
+    if scene and get_config('sms_scene_' + scene, '1') != '1':
+        return {'ok': False, 'msg': '该场景短信未开启'}
+    # 频率限制：同一手机号 60 秒内仅 1 条
+    now = now_ts()
+    hist = [t for t in SMS_RATE.get(mobile, []) if now - t < 60]
+    if hist:
+        return {'ok': False, 'msg': '发送过于频繁，请稍后再试'}
+    hist.append(now)
+    SMS_RATE[mobile] = hist
+    provider = get_config('sms_provider', 'aliyun')
+    status, resp = 1, '发送成功（模拟）'
+    if provider:
+        # 真实接入时在此调用对应服务商 SDK；无凭证时记录模拟结果
+        resp = 'provider=%s template=%s' % (provider, template_id)
+    try:
+        _db = db or get_db()
+        _db.execute('INSERT INTO fa_sms_log (mobile, template_id, content, status, provider_resp, scene, ip, create_time) VALUES (?,?,?,?,?,?,?,?)',
+                    (mobile, template_id, content, status, resp, scene, '', now))
+        _db.commit()
+        if db is None:
+            _db.close()
+    except Exception as e:
+        return {'ok': False, 'msg': '短信日志写入失败: %s' % e}
+    return {'ok': True, 'msg': '发送成功'}
+
+def wecom_alert(title, content):
+    """企微机器人告警推送（配置未启用时仅记录）"""
+    try:
+        cfg_webhook = get_config('wechat_robot_webhook', '')
+        enabled = get_config('wechat_robot_enabled', '0')
+        if not cfg_webhook:
+            db = get_db()
+            row = db.execute('SELECT webhook, enabled FROM res_wechat_robot WHERE id = 1').fetchone()
+            db.close()
+            if row:
+                cfg_webhook = row['webhook'] or ''
+                enabled = str(row['enabled'] or '0')
+        if cfg_webhook and str(enabled) in ('1', 'True', 'true'):
+            import urllib.request as ur
+            payload = json.dumps({'msgtype': 'markdown', 'markdown': {'content': '**【%s】**\n%s' % (title, content)}}).encode('utf-8')
+            ur.urlopen(ur.Request(cfg_webhook, data=payload, headers={'Content-Type': 'application/json'}), timeout=5)
+    except Exception:
+        pass
 
 # ===== 前端装修主题配置 =====
 DEFAULT_DECORATION = {
@@ -504,6 +736,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_csv(self, text, filename):
+        data = text.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/csv; charset=utf-8')
+        self.send_header('Content-Disposition', 'attachment; filename="%s"' % filename)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def send_file(self, filepath):
         try:
@@ -1239,6 +1481,64 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        # ===== 打手专区：一级分类列表 =====
+        if path == '/api/goods/categoryList':
+            cats = [
+                {'id': 1, 'name': '地铁专区', 'image': '/static/ym/1.png'},
+                {'id': 2, 'name': '地铁/古风', 'image': '/static/ym/2.png'},
+                {'id': 3, 'name': '修仙专区', 'image': '/static/ym/3.png'},
+                {'id': 4, 'name': '经典专区', 'image': '/static/ym/4.png'},
+                {'id': 5, 'name': '牧童专区', 'image': '/static/ym/5.png'},
+            ]
+            self.send_json({"code": 1, "msg": "成功", "data": cats})
+            return
+
+        # ===== 打手专区：打手列表（表格化 mock，字段对齐 H5 打手卡片） =====
+        if path == '/api/thug/thugList':
+            all_thugs = [
+                {'id': 1, 'name': 'XT冰帝', 'sex': '1', 'type': 1, 'is_new': 1, 'jd_status': 1, 'price': 25,
+                 'synopsis': '老板好我是TJB的打手，主玩地铁逃生', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 13, 'tags': '战神,带飞如喝水,一字腰', 'category_id': 1},
+                {'id': 2, 'name': 'XT富贵', 'sex': '1', 'type': 2, 'is_new': 0, 'jd_status': 1, 'price': 30,
+                 'synopsis': 'Hello老板好，我是XT电竞的富贵', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 12, 'tags': '战神,一字腰,娱乐陪', 'category_id': 1},
+                {'id': 3, 'name': 'XT动力', 'sex': '1', 'type': 3, 'is_new': 0, 'jd_status': 1, 'price': 28,
+                 'synopsis': '哈喽老板好我是小童，动力十足', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 15, 'tags': '战神,包C,万头斩', 'category_id': 2},
+                {'id': 4, 'name': 'XTBaby', 'sex': '1', 'type': 2, 'is_new': 0, 'jd_status': 1, 'price': 32,
+                 'synopsis': '老板好我是XT电竞Baby，全程带飞', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 18, 'tags': '带飞如喝水,一字腰', 'category_id': 3},
+                {'id': 5, 'name': 'XT嘻宝', 'sex': '0', 'type': 1, 'is_new': 0, 'jd_status': 1, 'price': 26,
+                 'synopsis': '哈啰板板好，这里是你的专属甜心', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 20, 'tags': '指定加保底,老板第一', 'category_id': 1},
+                {'id': 6, 'name': 'XT菠萝', 'sex': '0', 'type': 2, 'is_new': 1, 'jd_status': 1, 'price': 24,
+                 'synopsis': '欢迎来小童电竞下单，萝莉音陪你玩', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 26, 'tags': '萌妹', 'category_id': 3},
+                {'id': 7, 'name': 'XT囡乖儿', 'sex': '0', 'type': 3, 'is_new': 0, 'jd_status': 1, 'price': 30,
+                 'synopsis': '巴山楚水凄凉地 baby陪你打游戏', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 16, 'tags': '包C,温柔甜妹儿,情绪稳定', 'category_id': 2},
+                {'id': 8, 'name': 'XT刘权', 'sex': '1', 'type': 1, 'is_new': 1, 'jd_status': 0, 'price': 27,
+                 'synopsis': 'Hello，老板你们好，我是小权', 'image': '/static/images/header_background.png',
+                 'audio': '/static/eon.png', 'audio_time': 14, 'tags': '包C,一字腰', 'category_id': 4},
+            ]
+            kw = qs.get('name', [''])[0].strip()
+            t = qs.get('type', ['5'])[0]
+            cid = qs.get('category_id', ['0'])[0]
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            rows = all_thugs
+            if kw:
+                rows = [r for r in rows if kw in r['name']]
+            if str(t) in ('1', '0'):
+                rows = [r for r in rows if r['sex'] == str(t)]
+            if str(cid) not in ('', '0', 'None'):
+                rows = [r for r in rows if str(r['category_id']) == str(cid)]
+            total = len(rows)
+            start = (page - 1) * limit
+            data = rows[start:start + limit]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": data, "total": total}})
+            return
+
         # ===== 支付配置 =====
         if path == '/api/pay/config':
             epay = get_epay_config()
@@ -1553,7 +1853,7 @@ class Handler(BaseHTTPRequestHandler):
 
         # ===== 后台管理 API（自定义后台 UI 使用，与 H5 共用同一数据源）=====
         if path.startswith('/api/admin/'):
-            self.handle_admin_api(path, qs, method, body)
+            self.handle_admin_api(path, qs, method, body, files)
             return
 
         # ===== 兜底：其他接口返回空数据，避免前端报错 =====
@@ -1561,7 +1861,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
     # ===== 后台管理 API =====
-    def handle_admin_api(self, path, qs, method, body):
+    def handle_admin_api(self, path, qs, method, body, files=None):
         """自定义后台 UI 的业务接口，读写与 H5 相同的数据源"""
 
         def q(name, default=''):
@@ -1571,6 +1871,12 @@ class Handler(BaseHTTPRequestHandler):
         def ok(data=None, msg='操作成功'):
             self.send_json({"code": 1, "msg": msg, "data": data})
 
+        def fail(msg, code=0):
+            self.send_json({"code": code, "msg": msg}, status=(403 if code == 403 else 200))
+
+        admin = current_admin(self.headers)
+        ip = client_ip(self)
+
         db = get_db()
         try:
             # 控制台统计
@@ -1578,29 +1884,53 @@ class Handler(BaseHTTPRequestHandler):
                 def count(sql, args=()):
                     return db.execute(sql, args).fetchone()[0]
                 today = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+                # 今日打手收款：状态=已打款(3)，以打款时间为准当日 00:00~23:59:59
+                tw_today_sum = db.execute(
+                    'SELECT IFNULL(SUM(CAST(real_amount AS REAL)),0) FROM fa_thug_withdraw '
+                    'WHERE status = 3 AND pay_time >= ? AND pay_time < ?', (today, today + 86400)).fetchone()[0]
+                recharge_sum = db.execute(
+                    "SELECT IFNULL(SUM(CAST(amount AS REAL)),0) FROM res_recharge_order WHERE is_deleted = 0").fetchone()[0]
                 data = {
-                    'user_count': count('SELECT COUNT(*) FROM users'),
-                    'thug_count': count('SELECT COUNT(*) FROM thug'),
-                    'thug_approved': count('SELECT COUNT(*) FROM thug WHERE sh_status = 1'),
-                    'thug_pending': count('SELECT COUNT(*) FROM thug WHERE sh_status = 0'),
-                    'cs_count': count('SELECT COUNT(*) FROM thug WHERE is_customer_service = 1'),
-                    'order_count': count('SELECT COUNT(*) FROM orders'),
-                    'order_today': count('SELECT COUNT(*) FROM orders WHERE createtime >= ?', (today,)),
-                    'notice_count': count('SELECT COUNT(*) FROM notices'),
-                    'invite_count': count('SELECT COUNT(*) FROM invite_codes'),
-                    'money_sum': round(db.execute('SELECT IFNULL(SUM(money),0) FROM users').fetchone()[0] or 0, 2),
+                    'user_count': count('SELECT COUNT(*) FROM users WHERE is_deleted = 0'),
+                    'user_today': count('SELECT COUNT(*) FROM users WHERE is_deleted = 0 AND createtime >= ?', (today,)),
+                    'thug_count': count('SELECT COUNT(*) FROM thug WHERE is_deleted = 0'),
+                    'thug_today': count('SELECT COUNT(*) FROM thug WHERE is_deleted = 0 AND createtime >= ?', (today,)),
+                    'thug_approved': count('SELECT COUNT(*) FROM thug WHERE is_deleted = 0 AND sh_status = 1'),
+                    'thug_pending': count('SELECT COUNT(*) FROM thug WHERE is_deleted = 0 AND sh_status = 0'),
+                    'cs_count': count('SELECT COUNT(*) FROM thug WHERE is_deleted = 0 AND is_customer_service = 1'),
+                    'order_count': count('SELECT COUNT(*) FROM orders WHERE is_deleted = 0'),
+                    'order_today': count('SELECT COUNT(*) FROM orders WHERE is_deleted = 0 AND createtime >= ?', (today,)),
+                    'notice_count': count('SELECT COUNT(*) FROM notices WHERE is_deleted = 0'),
+                    'invite_count': count('SELECT COUNT(*) FROM invite_codes WHERE is_deleted = 0'),
+                    'money_sum': round(db.execute('SELECT IFNULL(SUM(money),0) FROM users WHERE is_deleted = 0').fetchone()[0] or 0, 2),
+                    # 今日打手收款 + 待审核提现 + 充值总额
+                    'thug_income_today': round(tw_today_sum or 0, 2),
+                    'withdraw_pending': count('SELECT COUNT(*) FROM fa_thug_withdraw WHERE status = 0'),
+                    'recharge_total': round(recharge_sum or 0, 2),
                 }
+                # 近 7 日订单 / 充值趋势
+                trend_labels, order_trend, recharge_trend = [], [], []
+                for i in range(6, -1, -1):
+                    d0 = today - i * 86400
+                    trend_labels.append(datetime.fromtimestamp(d0).strftime('%m-%d'))
+                    order_trend.append(count('SELECT COUNT(*) FROM orders WHERE is_deleted = 0 AND createtime >= ? AND createtime < ?', (d0, d0 + 86400)))
+                    recharge_trend.append(round(db.execute(
+                        "SELECT IFNULL(SUM(CAST(amount AS REAL)),0) FROM res_recharge_order WHERE is_deleted = 0 AND createtime >= ? AND createtime < ?",
+                        (d0, d0 + 86400)).fetchone()[0] or 0, 2))
+                data['trend'] = {'labels': trend_labels, 'orders': order_trend, 'recharge': recharge_trend}
                 ok(data)
                 return
 
             # 会员（用户）管理
             if path == '/api/admin/users':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
                 kw = q('keyword')
                 page = max(1, int(q('page', 1) or 1))
                 limit = max(1, int(q('limit', 20) or 20))
-                where, args = '', []
+                where, args = 'WHERE is_deleted = 0', []
                 if kw:
-                    where = 'WHERE nickname LIKE ? OR openid LIKE ? OR id = ?'
+                    where += ' AND (nickname LIKE ? OR openid LIKE ? OR id = ?)'
                     args = ['%' + kw + '%', '%' + kw + '%', kw if str(kw).isdigit() else -1]
                 total = db.execute('SELECT COUNT(*) FROM users ' + where, args).fetchone()[0]
                 rows = db.execute(
@@ -1614,20 +1944,29 @@ class Handler(BaseHTTPRequestHandler):
                 uid = int(body.get('id') or 0)
                 action = body.get('action') or 'edit'
                 if action == 'delete':
-                    db.execute('DELETE FROM users WHERE id = ?', (uid,))
+                    if not has_perm(admin, 'delete'):
+                        fail('无权限删除该数据', 403); return
+                    db.execute('UPDATE users SET is_deleted = 1 WHERE id = ?', (uid,))
                     db.commit()
+                    log_admin_action(db, admin, '会员管理', '删除会员（#%s）' % uid, ip)
                     ok(None, '已删除该会员')
                     return
                 if action == 'recharge':
+                    if not has_perm(admin, 'edit'):
+                        fail('无权限进行该操作', 403); return
                     db.execute('UPDATE users SET money = money + ? WHERE id = ?',
                                (float(body.get('money') or 0), uid))
                     db.commit()
+                    log_admin_action(db, admin, '会员管理', '为会员（#%s）充值 ¥%s' % (uid, body.get('money')), ip)
                     ok(None, '充值成功')
                     return
+                if not has_perm(admin, 'edit'):
+                    fail('无权限进行该操作', 403); return
                 db.execute('UPDATE users SET nickname = ?, money = ?, level = ? WHERE id = ?',
                            (body.get('nickname'), float(body.get('money') or 0),
                             int(body.get('level') or 1), uid))
                 db.commit()
+                log_admin_action(db, admin, '会员管理', '编辑会员（#%s）' % uid, ip)
                 ok(None, '保存成功')
                 return
 
@@ -1635,7 +1974,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/admin/thugs':
                 kw = q('keyword')
                 sh = q('sh_status')
-                where, args = 'WHERE 1=1', []
+                where, args = 'WHERE t.is_deleted = 0', []
                 if kw:
                     where += ' AND (t.name LIKE ? OR u.nickname LIKE ?)'
                     args += ['%' + kw + '%', '%' + kw + '%']
@@ -1652,6 +1991,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/admin/thug/audit':
                 tid = int(body.get('id') or 0)
                 action = body.get('action')
+                if action in ('approve', 'reject', 'toggle_cs'):
+                    if not has_perm(admin, 'edit'):
+                        fail('无权限进行该操作', 403); return
                 if action == 'approve':
                     db.execute('UPDATE thug SET sh_status = 1, status = 1 WHERE id = ?', (tid,))
                     msg = '已通过打手入驻审核'
@@ -1663,12 +2005,15 @@ class Handler(BaseHTTPRequestHandler):
                                (1 if body.get('is_customer_service') else 0, tid))
                     msg = '客服权限已更新'
                 elif action == 'delete':
-                    db.execute('DELETE FROM thug WHERE id = ?', (tid,))
+                    if not has_perm(admin, 'delete'):
+                        fail('无权限删除该数据', 403); return
+                    db.execute('UPDATE thug SET is_deleted = 1 WHERE id = ?', (tid,))
                     msg = '已删除该打手'
                 else:
                     db.execute('UPDATE thug SET name = ? WHERE id = ?', (body.get('name'), tid))
                     msg = '保存成功'
                 db.commit()
+                log_admin_action(db, admin, '打手管理', '%s（#%s）' % (msg, tid), ip)
                 ok(None, msg)
                 return
 
@@ -1703,7 +2048,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/admin/cs':
                 rows = db.execute(
                     'SELECT c.*, u.nickname AS user_nickname FROM customer_services c '
-                    'LEFT JOIN users u ON u.id = c.user_id ORDER BY c.id DESC').fetchall()
+                    'LEFT JOIN users u ON u.id = c.user_id WHERE c.is_deleted = 0 ORDER BY c.id DESC').fetchall()
                 ok({'list': [dict(r) for r in rows], 'total': len(rows)})
                 return
 
@@ -1730,8 +2075,11 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if path == '/api/admin/cs/delete':
-                db.execute('DELETE FROM customer_services WHERE id = ?', (int(body.get('id') or 0),))
+                if not has_perm(admin, 'delete'):
+                    fail('无权限删除该数据', 403); return
+                db.execute('UPDATE customer_services SET is_deleted = 1 WHERE id = ?', (int(body.get('id') or 0),))
                 db.commit()
+                log_admin_action(db, admin, '客服管理', '删除客服（#%s）' % body.get('id'), ip)
                 ok(None, '已删除')
                 return
 
@@ -1741,7 +2089,7 @@ class Handler(BaseHTTPRequestHandler):
                 status = q('status')
                 page = max(1, int(q('page', 1) or 1))
                 limit = max(1, int(q('limit', 20) or 20))
-                where, args = 'WHERE 1=1', []
+                where, args = 'WHERE is_deleted = 0', []
                 if kw:
                     where += ' AND (order_no LIKE ? OR title LIKE ? OR game_id LIKE ?)'
                     args += ['%' + kw + '%', '%' + kw + '%', '%' + kw + '%']
@@ -1764,7 +2112,7 @@ class Handler(BaseHTTPRequestHandler):
 
             # 公告管理
             if path == '/api/admin/notices':
-                rows = db.execute('SELECT * FROM notices ORDER BY id DESC').fetchall()
+                rows = db.execute('SELECT * FROM notices WHERE is_deleted = 0 ORDER BY id DESC').fetchall()
                 ok({'list': [dict(r) for r in rows], 'total': len(rows)})
                 return
 
@@ -1779,18 +2127,22 @@ class Handler(BaseHTTPRequestHandler):
                                (body.get('title'), body.get('synopsis', ''), body.get('content', ''),
                                 int(body.get('type') or 1), now_ts()))
                 db.commit()
+                log_admin_action(db, admin, '公告管理', ('编辑' if nid else '发布') + '公告（#%s）' % (nid or '新增'), ip)
                 ok(None, '保存成功')
                 return
 
             if path == '/api/admin/notice/delete':
-                db.execute('DELETE FROM notices WHERE id = ?', (int(body.get('id') or 0),))
+                if not has_perm(admin, 'delete'):
+                    fail('无权限删除该数据', 403); return
+                db.execute('UPDATE notices SET is_deleted = 1 WHERE id = ?', (int(body.get('id') or 0),))
                 db.commit()
+                log_admin_action(db, admin, '公告管理', '删除公告（#%s）' % body.get('id'), ip)
                 ok(None, '已删除')
                 return
 
             # 邀请码管理
             if path == '/api/admin/invites':
-                rows = db.execute('SELECT * FROM invite_codes ORDER BY id DESC').fetchall()
+                rows = db.execute('SELECT * FROM invite_codes WHERE is_deleted = 0 ORDER BY id DESC').fetchall()
                 ok({'list': [dict(r) for r in rows], 'total': len(rows)})
                 return
 
@@ -1824,8 +2176,11 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             if path == '/api/admin/invite/delete':
-                db.execute('DELETE FROM invite_codes WHERE id = ?', (int(body.get('id') or 0),))
+                if not has_perm(admin, 'delete'):
+                    fail('无权限删除该数据', 403); return
+                db.execute('UPDATE invite_codes SET is_deleted = 1 WHERE id = ?', (int(body.get('id') or 0),))
                 db.commit()
+                log_admin_action(db, admin, '邀请码管理', '删除邀请码（#%s）' % body.get('id'), ip)
                 ok(None, '已删除')
                 return
 
@@ -1902,16 +2257,349 @@ class Handler(BaseHTTPRequestHandler):
                 ok(None, '装修配置已保存，前端将实时生效')
                 return
 
+            # ============================================================
+            # 打手提现记录（财务流水，禁止删除）
+            # ============================================================
+            def _day(s, plus=0):
+                """日期字符串转当日 00:00 时间戳"""
+                try:
+                    return int(datetime.strptime(s[:10], '%Y-%m-%d').timestamp()) + plus
+                except Exception:
+                    return None
+
+            def _tw_query():
+                where = ['is_deleted = 0']
+                args = []
+                kw = q('keyword')
+                if kw:
+                    where.append('(thug_name LIKE ? OR withdraw_no LIKE ? OR thug_id = ?)')
+                    args += ['%' + kw + '%', '%' + kw + '%', kw if str(kw).isdigit() else -1]
+                at = q('account_type')
+                if at != '':
+                    where.append('account_type = ?'); args.append(at)
+                st = q('status')
+                if st != '':
+                    where.append('status = ?'); args.append(int(st))
+                a0, a1 = _day(q('apply_start')), _day(q('apply_end'), 86399)
+                p0, p1 = _day(q('pay_start')), _day(q('pay_end'), 86399)
+                if a0: where.append('apply_time >= ?'); args.append(a0)
+                if a1: where.append('apply_time <= ?'); args.append(a1)
+                if p0: where.append('pay_time >= ?'); args.append(p0)
+                if p1: where.append('pay_time <= ?'); args.append(p1)
+                return 'WHERE ' + ' AND '.join(where), args
+
+            if path == '/api/admin/thug_withdraws':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                page = max(1, int(q('page', 1) or 1))
+                limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = _tw_query()
+                total = db.execute('SELECT COUNT(*) FROM fa_thug_withdraw ' + where, args).fetchone()[0]
+                rows = db.execute('SELECT * FROM fa_thug_withdraw ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            if path == '/api/admin/thug_withdraw/stats':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                today = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+                d = {
+                    # 今日打手收款：状态=已打款，按打款时间当日统计
+                    'today_income': round(db.execute(
+                        'SELECT IFNULL(SUM(CAST(real_amount AS REAL)),0) FROM fa_thug_withdraw '
+                        'WHERE status = 3 AND pay_time >= ? AND pay_time < ?', (today, today + 86400)).fetchone()[0] or 0, 2),
+                    'today_apply': db.execute('SELECT COUNT(*) FROM fa_thug_withdraw WHERE apply_time >= ? AND apply_time < ?', (today, today + 86400)).fetchone()[0],
+                    'today_pending': db.execute('SELECT COUNT(*) FROM fa_thug_withdraw WHERE status = 0').fetchone()[0],
+                    'today_rejected': db.execute('SELECT COUNT(*) FROM fa_thug_withdraw WHERE status = 1 AND audit_time >= ? AND audit_time < ?', (today, today + 86400)).fetchone()[0],
+                }
+                ok(d)
+                return
+
+            if path == '/api/admin/thug_withdraw/detail':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                row = db.execute('SELECT * FROM fa_thug_withdraw WHERE id = ?', (int(q('id') or 0),)).fetchone()
+                if not row:
+                    fail('提现单不存在'); return
+                item = dict(row)
+                logs = db.execute(
+                    "SELECT * FROM fa_admin_log WHERE module = '打手提现' AND content LIKE ? ORDER BY id DESC LIMIT 20",
+                    ('%' + (item.get('withdraw_no') or ('#%s' % item['id'])) + '%',)).fetchall()
+                item['audit_logs'] = [dict(x) for x in logs]
+                ok(item)
+                return
+
+            if path == '/api/admin/thug_withdraw/audit':
+                if not has_perm(admin, 'edit'):
+                    fail('无权限进行该操作', 403); return
+                tid = int(body.get('id') or 0)
+                action = body.get('action')
+                row = db.execute('SELECT * FROM fa_thug_withdraw WHERE id = ?', (tid,)).fetchone()
+                if not row:
+                    fail('提现单不存在'); return
+                item = dict(row)
+                now = now_ts()
+                thug = db.execute('SELECT t.id, t.name, t.user_id, u.money AS user_money '
+                                  'FROM thug t LEFT JOIN users u ON u.id = t.user_id WHERE t.id = ?',
+                                  (item['thug_id'],)).fetchone()
+                try:
+                    if action == 'approve':
+                        if int(item['status']) != 0:
+                            fail('该提现单当前状态不可审核'); return
+                        db.execute('UPDATE fa_thug_withdraw SET status = 2, audit_time = ?, audit_admin = ?, '
+                                   'update_time = ? WHERE id = ?', (now, admin['name'], now, tid))
+                        msg = '审核通过，状态变更为待打款'
+                    elif action == 'reject':
+                        if int(item['status']) != 0:
+                            fail('该提现单当前状态不可驳回'); return
+                        reason = (body.get('reason') or '').strip()
+                        if not reason:
+                            fail('请填写驳回原因'); return
+                        db.execute('UPDATE fa_thug_withdraw SET status = 1, audit_time = ?, audit_admin = ?, '
+                                   'reject_reason = ?, update_time = ? WHERE id = ?',
+                                   (now, admin['name'], reason, now, tid))
+                        msg = '已驳回，已短信通知打手'
+                        send_sms(DEMO_MOBILE, 'WITHDRAW_REJECT',
+                                 '您的提现申请（%s）被驳回，原因：%s' % (item.get('withdraw_no'), reason),
+                                 scene='withdraw', db=db)
+                    elif action == 'mark_paid':
+                        if int(item['status']) != 2:
+                            fail('仅待打款状态可标记已打款'); return
+                        real = float(item['real_amount'] or 0)
+                        # 事务：扣减平台/打手资金 + 余额明细 + 佣金流水
+                        if thug:
+                            uid = thug['user_id']
+                            before = float(thug['user_money'] or 0)
+                            if before < real:
+                                fail('打手余额不足，无法打款'); return
+                            after = before - real
+                            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, uid))
+                            db.execute('INSERT INTO res_balance (user_id, amount, before, after, type, remark, createtime, is_deleted) '
+                                       'VALUES (?,?,?,?,?,?,?,0)',
+                                       (uid, str(real), str(before), str(after), '2',
+                                        '打手提现打款（%s）' % item.get('withdraw_no'), now))
+                            db.execute('INSERT INTO res_commission_detail (user_id, amount, type, remark, createtime, is_deleted) '
+                                       'VALUES (?,?,?,?,?,0)',
+                                       (uid, str(real), '2', '提现打款（%s）' % item.get('withdraw_no'), now))
+                        db.execute('UPDATE fa_thug_withdraw SET status = 3, pay_time = ?, update_time = ? WHERE id = ?',
+                                   (now, now, tid))
+                        msg = '已标记打款，资金流水已生成'
+                        send_sms(DEMO_MOBILE, 'WITHDRAW_PAID',
+                                 '您的提现（%s）已打款，到账金额 ¥%s' % (item.get('withdraw_no'), item.get('real_amount')),
+                                 scene='withdraw', db=db)
+                        if real >= DASHU_ALERT_AMOUNT:
+                            wecom_alert('大额提现打款', '打手 %s 提现 ¥%s 已打款（单号 %s）'
+                                        % (item.get('thug_name'), item.get('real_amount'), item.get('withdraw_no')))
+                    else:
+                        fail('未知操作'); return
+                    db.commit()
+                except Exception as e:
+                    db.rollback()
+                    fail('操作失败：%s' % e)
+                    return
+                log_admin_action(db, admin, '打手提现', '%s（单号 %s，金额 ¥%s）'
+                                 % (msg, item.get('withdraw_no'), item.get('amount')), ip)
+                ok(None, msg)
+                return
+
+            if path == '/api/admin/thug_withdraw/export':
+                if not has_perm(admin, 'export'):
+                    fail('无权限导出数据', 403); return
+                where, args = _tw_query()
+                rows = db.execute('SELECT * FROM fa_thug_withdraw ' + where + ' ORDER BY id DESC', args).fetchall()
+                head = ['ID', '打手ID', '打手昵称', '提现单号', '提现金额', '平台手续费', '实际到账',
+                        '账户类型', '收款账号', '申请时间', '审核时间', '打款时间', '状态', '审核管理员', '备注']
+                st_map = {0: '待审核', 1: '审核驳回', 2: '待打款', 3: '已打款'}
+                import csv as _csv, io as _io
+                buf = _io.StringIO(); w = _csv.writer(buf); w.writerow(head)
+                for r in rows:
+                    w.writerow([r['id'], r['thug_id'], r['thug_name'], r['withdraw_no'], r['amount'], r['fee'],
+                                r['real_amount'], '微信' if r['account_type'] == 'wechat' else '支付宝', r['account'],
+                                fmt_time(r['apply_time']), fmt_time(r['audit_time']), fmt_time(r['pay_time']),
+                                st_map.get(int(r['status']), ''), r['audit_admin'], r['remark']])
+                log_admin_action(db, admin, '数据导出', '导出打手提现记录，共 %d 条' % len(rows), ip)
+                self._send_csv('\ufeff' + buf.getvalue(), 'thug_withdraw_%s.csv' % datetime.now().strftime('%Y%m%d%H%M%S'))
+                return
+
+            # ============================================================
+            # 聚合登录记录（永久保留，禁止删除）
+            # ============================================================
+            if path == '/api/admin/aggregate_logs':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                kw = q('keyword'); page = max(1, int(q('page', 1) or 1)); limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (nickname LIKE ? OR openid LIKE ? OR user_id = ?)'
+                    args += ['%' + kw + '%', '%' + kw + '%', kw if str(kw).isdigit() else -1]
+                total = db.execute('SELECT COUNT(*) FROM fa_aggregate_login_log ' + where, args).fetchone()[0]
+                rows = db.execute('SELECT * FROM fa_aggregate_login_log ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            # ============================================================
+            # 短信记录（永久保留，禁止删除）+ 测试发送 + 场景开关
+            # ============================================================
+            if path == '/api/admin/sms_logs':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                kw = q('keyword'); page = max(1, int(q('page', 1) or 1)); limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (mobile LIKE ? OR content LIKE ? OR template_id LIKE ?)'
+                    args += ['%' + kw + '%'] * 3
+                total = db.execute('SELECT COUNT(*) FROM fa_sms_log ' + where, args).fetchone()[0]
+                rows = db.execute('SELECT * FROM fa_sms_log ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            if path == '/api/admin/sms/config':
+                scenes = {k: get_config('sms_scene_' + k, '1') == '1' for k in SMS_SCENES}
+                tpls = {k: get_config('sms_tpl_' + k, '') for k in SMS_SCENES}
+                ok({'enabled': get_config('sms_enabled', '0') == '1', 'provider': get_config('sms_provider', 'aliyun'),
+                    'access_key': get_config('sms_access_key', ''), 'access_secret': get_config('sms_access_secret', ''),
+                    'sign': get_config('sms_sign', '创世网络'), 'templates': tpls,
+                    'scenes': scenes, 'scene_names': SMS_SCENES})
+                return
+
+            if path == '/api/admin/sms/config/save':
+                if not has_perm(admin, 'config'):
+                    fail('无权限修改该配置', 403); return
+                set_config('sms_enabled', '1' if body.get('enabled') else '0')
+                if body.get('provider'):
+                    set_config('sms_provider', body.get('provider'))
+                for k in ('access_key', 'access_secret', 'sign'):
+                    if k in body:
+                        set_config('sms_' + k, body.get(k) or '')
+                tpls = body.get('templates') or {}
+                for k in SMS_SCENES:
+                    if k in tpls:
+                        set_config('sms_tpl_' + k, tpls.get(k) or '')
+                for k in SMS_SCENES:
+                    if body.get('scenes') and k in body['scenes']:
+                        set_config('sms_scene_' + k, '1' if body['scenes'][k] else '0')
+                log_admin_action(db, admin, '短信配置', '修改短信配置与场景开关', ip)
+                ok(None, '短信配置已保存')
+                return
+
+            if path == '/api/admin/sms/test':
+                if not has_perm(admin, 'config'):
+                    fail('无权限进行该操作', 403); return
+                mobile = (body.get('mobile') or '').strip()
+                if not re.match(r'^1\d{10}$', mobile):
+                    fail('请输入正确的手机号'); return
+                r = send_sms(mobile, body.get('template_id') or 'TEST', body.get('content') or '【创世网络】测试短信', scene='login', db=db)
+                log_admin_action(db, admin, '短信配置', '发送测试短信至 %s：%s' % (mobile, r['msg']), ip)
+                if r['ok']:
+                    ok(None, '测试短信发送成功')
+                else:
+                    fail(r['msg'])
+                return
+
+            # ============================================================
+            # 支付渠道管理
+            # ============================================================
+            if path == '/api/admin/pay_channels':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                rows = db.execute('SELECT * FROM fa_pay_channel ORDER BY sort ASC, id ASC').fetchall()
+                ok({'list': [dict(r) for r in rows]})
+                return
+
+            if path == '/api/admin/pay_channel/save':
+                if not has_perm(admin, 'config'):
+                    fail('无权限修改该配置', 403); return
+                cid = int(body.get('id') or 0)
+                keys = ['code', 'name', 'channel_type', 'pid', 'secret', 'notify_url', 'return_url',
+                        'mch_id', 'api_v3_key', 'cert_serial', 'private_key', 'remark']
+                vals = [str(body.get(k, '')) for k in keys]
+                if cid:
+                    sets = ', '.join([k + ' = ?' for k in keys])
+                    db.execute('UPDATE fa_pay_channel SET %s, timeout = ?, sort = ?, status = ?, update_time = ? WHERE id = ?' % sets,
+                               vals + [int(body.get('timeout') or 300), int(body.get('sort') or 0),
+                                       int(body.get('status') or 0), now_ts(), cid])
+                else:
+                    db.execute('INSERT INTO fa_pay_channel (%s, timeout, sort, status, create_time, update_time) VALUES (%s, ?, ?, ?, ?, ?)'
+                               % (','.join(keys), ','.join(['?'] * len(keys))),
+                               vals + [int(body.get('timeout') or 300), int(body.get('sort') or 0),
+                                       int(body.get('status') or 0), now_ts(), now_ts()])
+                db.commit()
+                log_admin_action(db, admin, '支付渠道', '保存支付渠道 %s' % (body.get('name') or ''), ip)
+                ok(None, '支付渠道已保存')
+                return
+
+            # ============================================================
+            # 支付回调日志（永久保留，禁止删除）
+            # ============================================================
+            if path == '/api/admin/pay_callback_logs':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                kw = q('keyword'); page = max(1, int(q('page', 1) or 1)); limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (order_no LIKE ? OR channel LIKE ? OR result LIKE ?)'
+                    args += ['%' + kw + '%'] * 3
+                total = db.execute('SELECT COUNT(*) FROM fa_pay_callback_log ' + where, args).fetchone()[0]
+                rows = db.execute('SELECT * FROM fa_pay_callback_log ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            # ============================================================
+            # 管理员操作日志（永久保留，禁止删除）
+            # ============================================================
+            if path == '/api/admin/admin_logs':
+                kw = q('keyword'); page = max(1, int(q('page', 1) or 1)); limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (admin_name LIKE ? OR module LIKE ? OR content LIKE ?)'
+                    args += ['%' + kw + '%'] * 3
+                total = db.execute('SELECT COUNT(*) FROM fa_admin_log ' + where, args).fetchone()[0]
+                rows = db.execute('SELECT * FROM fa_admin_log ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
+            # ============================================================
+            # 定时任务执行日志（永久保留，禁止删除）
+            # ============================================================
+            if path == '/api/admin/cron_logs':
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403); return
+                kw = q('keyword'); page = max(1, int(q('page', 1) or 1)); limit = max(1, min(200, int(q('limit', 20) or 20)))
+                where, args = 'WHERE 1=1', []
+                if kw:
+                    where += ' AND (task_name LIKE ? OR message LIKE ?)'
+                    args += ['%' + kw + '%'] * 2
+                total = db.execute('SELECT COUNT(*) FROM fa_cron_log ' + where, args).fetchone()[0]
+                rows = db.execute('SELECT * FROM fa_cron_log ' + where + ' ORDER BY id DESC LIMIT ? OFFSET ?',
+                                  args + [limit, (page - 1) * limit]).fetchall()
+                ok({'list': [dict(r) for r in rows], 'total': total, 'page': page, 'limit': limit})
+                return
+
             # ===== 通用资源（后台各菜单真实 CRUD） =====
             if path == '/api/admin/resource/defs':
-                ok({'defs': RESOURCES})
+                defs = {}
+                for k, v in RESOURCES.items():
+                    vv = dict(v)
+                    vv['deletable'] = (k not in FINANCE_NO_DELETE) and v.get('deletable', True)
+                    vv['finance'] = k in FINANCE_NO_DELETE
+                    defs[k] = vv
+                ok({'defs': defs, 'perms': sorted(admin['perms']),
+                    'admin': {'id': admin['id'], 'name': admin['name'], 'role': admin['role']}})
                 return
 
             if path == '/api/admin/resource':
                 res = q('res')
                 spec = RESOURCES.get(res)
                 if not spec:
-                    self.send_json({"code": 0, "msg": "未知资源: " + res})
+                    fail('未知资源: ' + res)
+                    return
+                if not has_perm(admin, 'view'):
+                    fail('无权限查看该模块', 403)
                     return
                 if spec.get('singleton'):
                     row = db.execute('SELECT * FROM res_%s WHERE id = 1' % res).fetchone()
@@ -1924,9 +2612,9 @@ class Handler(BaseHTTPRequestHandler):
                 kw = q('keyword')
                 page = max(1, int(q('page', 1) or 1))
                 limit = max(1, min(200, int(q('limit', 20) or 20)))
-                where, args = '', []
+                where, args = 'WHERE is_deleted = 0', []
                 if kw and spec.get('search'):
-                    where = 'WHERE ' + ' OR '.join([c + ' LIKE ?' for c in spec['search']])
+                    where += ' AND (' + ' OR '.join([c + ' LIKE ?' for c in spec['search']]) + ')'
                     args = ['%' + kw + '%'] * len(spec['search'])
                 total = db.execute('SELECT COUNT(*) FROM res_%s %s' % (res, where), args).fetchone()[0]
                 rows = db.execute('SELECT * FROM res_%s %s ORDER BY id DESC LIMIT ? OFFSET ?' % (res, where),
@@ -1938,32 +2626,138 @@ class Handler(BaseHTTPRequestHandler):
                 res = body.get('res')
                 spec = RESOURCES.get(res)
                 if not spec:
-                    self.send_json({"code": 0, "msg": "未知资源: " + str(res)})
+                    fail('未知资源: ' + str(res))
+                    return
+                rid = int(body.get('id') or 0)
+                if not has_perm(admin, 'edit' if rid else 'add'):
+                    fail('无权限进行该操作', 403)
                     return
                 keys = [f['key'] for f in spec['fields']]
                 vals = [str(body.get(k, '')) for k in keys]
-                rid = int(body.get('id') or 0)
                 if spec.get('singleton') and not rid:
                     rid = 1
                 if rid:
                     sets = ', '.join([k + ' = ?' for k in keys])
-                    db.execute('UPDATE res_%s SET %s WHERE id = ?' % (res, sets), vals + [rid])
+                    db.execute('UPDATE res_%s SET %s, update_time = ? WHERE id = ?' % (res, sets), vals + [now_ts(), rid])
                 else:
-                    db.execute('INSERT INTO res_%s (%s, createtime) VALUES (%s, ?)' % (res, ','.join(keys), ','.join(['?'] * len(keys))),
-                               vals + [now_ts()])
+                    db.execute('INSERT INTO res_%s (%s, createtime, update_time) VALUES (%s, ?, ?)' % (res, ','.join(keys), ','.join(['?'] * len(keys))),
+                               vals + [now_ts(), now_ts()])
                     rid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
                 db.commit()
+                log_admin_action(db, admin, spec.get('title', res), ('编辑' if body.get('id') else '新增') + '%s（#%s）' % (spec.get('title', res), rid), ip)
                 ok({'id': rid}, '保存成功')
                 return
 
             if path == '/api/admin/resource/delete':
                 res = body.get('res')
-                if res not in RESOURCES:
-                    self.send_json({"code": 0, "msg": "未知资源: " + str(res)})
+                spec = RESOURCES.get(res)
+                if not spec:
+                    fail('未知资源: ' + str(res))
                     return
-                db.execute('DELETE FROM res_%s WHERE id = ?' % res, (int(body.get('id') or 0),))
+                # 财务 / 流水数据禁止删除
+                if res in FINANCE_NO_DELETE:
+                    fail('该业务财务数据不允许删除', 403)
+                    return
+                if not has_perm(admin, 'delete'):
+                    fail('无权限删除该数据', 403)
+                    return
+                rid = int(body.get('id') or 0)
+                db.execute('UPDATE res_%s SET is_deleted = 1, update_time = ? WHERE id = ?' % res, (now_ts(), rid))
                 db.commit()
-                ok(None, '已删除')
+                log_admin_action(db, admin, spec.get('title', res), '删除%s（#%s）' % (spec.get('title', res), rid), ip)
+                ok(None, '删除成功')
+                return
+
+            # ===== 列表数据导出 Excel（CSV，带 BOM） =====
+            if path == '/api/admin/export':
+                if not has_perm(admin, 'export'):
+                    fail('无权限导出数据', 403)
+                    return
+                res = q('res')
+                spec = RESOURCES.get(res)
+                if not spec:
+                    fail('未知资源: ' + res)
+                    return
+                kw = q('keyword')
+                cols = spec.get('columns') or [f['key'] for f in spec.get('fields', [])]
+                where, args = 'WHERE is_deleted = 0', []
+                if kw and spec.get('search'):
+                    where += ' AND (' + ' OR '.join([c + ' LIKE ?' for c in spec['search']]) + ')'
+                    args = ['%' + kw + '%'] * len(spec['search'])
+                rows = db.execute('SELECT * FROM res_%s %s ORDER BY id DESC' % (res, where), args).fetchall()
+                import csv as _csv
+                import io as _io
+                buf = _io.StringIO()
+                w = _csv.writer(buf)
+                w.writerow(['ID'] + [resField_label(spec, c) for c in cols])
+                for r in rows:
+                    w.writerow([r['id']] + [str(r[c] if r[c] is not None else '') for c in cols])
+                log_admin_action(db, admin, '数据导出', '导出%s，共 %d 条' % (spec.get('title', res), len(rows)), ip)
+                self._send_csv('\ufeff' + buf.getvalue(), 'export_%s_%s.csv' % (res, datetime.now().strftime('%Y%m%d%H%M%S')))
+                return
+
+            # ===== 专用列表页导出（会员/打手/订单/公告/邀请码） =====
+            if path == '/api/admin/export_table':
+                if not has_perm(admin, 'export'):
+                    fail('无权限导出数据', 403); return
+                t = q('table')
+                sh_map = {0: '待审核', 1: '已通过', 2: '已驳回'}
+                rn_map = {0: '未提交', 1: '待审核', 2: '已认证', 3: '已驳回'}
+                ost = {0: '待付款', 1: '待接单', 2: '服务中', 3: '待结单', 4: '售后中', 5: '已完成'}
+                TABLES = {
+                    'users': ('SELECT id,nickname,type,openid,money,level,createtime FROM users WHERE is_deleted=0 ORDER BY id DESC',
+                              ['ID', '昵称', '类型', 'openid', '余额', '等级', '注册时间'],
+                              lambda r: [r['id'], r['nickname'], '打手用户' if r['type'] == 2 else '普通用户', r['openid'], r['money'], r['level'], fmt_time(r['createtime'])]),
+                    'thug': ('SELECT t.id,t.name,u.nickname un,t.sh_status,t.realname_status,t.createtime FROM thug t LEFT JOIN users u ON u.id=t.user_id WHERE t.is_deleted=0 ORDER BY t.id DESC',
+                             ['ID', '打手名', '所属用户', '审核状态', '实名认证', '申请时间'],
+                             lambda r: [r['id'], r['name'], r['un'], sh_map.get(int(r['sh_status'] or 0), ''), rn_map.get(int(r['realname_status'] or 0), ''), fmt_time(r['createtime'])]),
+                    'orders': ('SELECT id,order_no,title,game_id,pay_price,price,status,status_text,createtime FROM orders WHERE is_deleted=0 ORDER BY id DESC',
+                               ['ID', '订单号', '商品', '游戏ID', '实付', '原价', '状态', '下单时间'],
+                               lambda r: [r['id'], r['order_no'], r['title'], r['game_id'], r['pay_price'], r['price'], r['status_text'] or ost.get(int(r['status'] or 0), ''), fmt_time(r['createtime'])]),
+                    'notices': ('SELECT id,title,synopsis,createtime FROM notices WHERE is_deleted=0 ORDER BY id DESC',
+                                ['ID', '标题', '摘要', '发布时间'],
+                                lambda r: [r['id'], r['title'], r['synopsis'], fmt_time(r['createtime'])]),
+                    'invite_codes': ('SELECT id,code,type,name,createtime FROM invite_codes WHERE is_deleted=0 ORDER BY id DESC',
+                                     ['ID', '邀请码', '类型', '备注名称', '创建时间'],
+                                     lambda r: [r['id'], r['code'], '客服邀请码' if r['type'] == 'cs' else '打手邀请码', r['name'], fmt_time(r['createtime'])]),
+                    'customer_services': ('SELECT id,name,user_id,cs_mode,online FROM customer_services WHERE is_deleted=0 ORDER BY id DESC',
+                                          ['ID', '客服名称', '绑定用户ID', '接入模式', '在线状态'],
+                                          lambda r: [r['id'], r['name'], r['user_id'], '企微外部' if r['cs_mode'] == 'wecom' else '内置客服', '在线' if r['online'] == 1 else '离线']),
+                }
+                if t not in TABLES:
+                    fail('不支持的导出类型: ' + t); return
+                sql, head, mapper = TABLES[t]
+                rows = db.execute(sql).fetchall()
+                import csv as _csv, io as _io
+                buf = _io.StringIO(); w = _csv.writer(buf); w.writerow(head)
+                for r in rows:
+                    w.writerow([('' if v is None else v) for v in mapper(r)])
+                log_admin_action(db, admin, '数据导出', '导出%s，共 %d 条' % (t, len(rows)), ip)
+                self._send_csv('\ufeff' + buf.getvalue(), '%s_%s.csv' % (t, datetime.now().strftime('%Y%m%d%H%M%S')))
+                return
+
+            # ===== 图片上传（仅校验后缀 jpg/jpeg/png/webp，不限制文件大小） =====
+            if path == '/api/admin/upload':
+                if not has_perm(admin, 'edit') and not has_perm(admin, 'add'):
+                    fail('无权限上传文件', 403)
+                    return
+                f = (files or {}).get('file') or (files or {}).get('image')
+                if not f:
+                    fail('未接收到文件')
+                    return
+                fname = f.get('filename', '')
+                ext = os.path.splitext(fname)[1].lower().lstrip('.')
+                if ext not in ('jpg', 'jpeg', 'png', 'webp'):
+                    fail('仅支持 jpg/jpeg/png/webp 格式图片')
+                    return
+                up_dir = os.path.join(WEB_ROOT, 'uploads')
+                os.makedirs(up_dir, exist_ok=True)
+                save_name = secrets.token_hex(8) + '.' + ext
+                with open(os.path.join(up_dir, save_name), 'wb') as fp:
+                    fp.write(f.get('content', b''))
+                url = '/uploads/' + save_name
+                log_admin_action(db, admin, '文件上传', '上传图片 %s（%s）' % (url, fname), ip)
+                ok({'url': url, 'name': save_name}, '上传成功')
                 return
 
             self.send_json({"code": 0, "msg": "未知的后台接口: " + path})

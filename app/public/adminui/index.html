@@ -101,6 +101,14 @@ td .muted{color:var(--muted);font-size:12px}
 .tag.orange{background:#ffedd5;color:#c2410c}
 .tag.red{background:#fee2e2;color:#b91c1c}
 .tag.blue{background:#dbeafe;color:#1d4ed8}
+/* KPI 卡片 */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:16px 18px}
+.kpi{background:#fafbfc;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi-v{font-size:22px;font-weight:800;color:#111827}
+.kpi-l{font-size:12px;color:#6b7280;margin-top:5px}
+.kpi-v.kpi-g{color:#16a34a}
+.kpi-v.kpi-o{color:#c2410c}
+.kpi-v.kpi-r{color:#b91c1c}
 .switch{position:relative;display:inline-block;width:46px;height:26px;flex:0 0 auto;margin-right:8px}
 .switch input{display:none}
 .switch .slider{position:absolute;inset:0;background:#cbd5e1;border-radius:20px;transition:.2s;cursor:pointer}
@@ -112,6 +120,11 @@ td .muted{color:var(--muted);font-size:12px}
 .tabs .tab{padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:#64748b;background:#f1f5f9}
 .tabs .tab.active{background:var(--accent);color:#fff}
 .row-img{width:30px;height:30px;border-radius:8px;object-fit:cover;background:#f1f5f9;vertical-align:middle}
+/* 图片上传组件 */
+.uploader{display:flex;flex-direction:column;gap:10px}
+.uploader .up-prev{width:100%;min-height:96px;border:1px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;background:#fafbfc;overflow:hidden}
+.uploader .up-prev img{width:100%;max-height:200px;object-fit:contain;cursor:zoom-in}
+.uploader .up-actions{display:flex;gap:8px}
 /* 配置 */
 .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;padding:6px}
 .cfg-item{border:1px solid var(--line);border-radius:10px;padding:13px 14px}
@@ -226,7 +239,9 @@ td .muted{color:var(--muted);font-size:12px}
 <script>
 /* ============ 基础工具 ============ */
 const $ = (s, r) => (r || document).querySelector(s)
-const state = { token: '', uid: '', menus: [], page: 'dashboard', cache: {} }
+const state = { token: '', uid: '', menus: [], page: 'dashboard', cache: {}, perms: [] }
+// 权限判断：'*' 表示超级管理员拥有全部权限
+function hasPerm(p) { return state.perms.includes('*') || state.perms.includes(p) }
 
 function toast(msg, ok = true) {
   const t = $('#toast'); t.textContent = msg
@@ -283,6 +298,14 @@ const ICONS = {
   deposit: `<svg ${SVG_ATTRS}><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`,
   wechat_notice: `<svg ${SVG_ATTRS}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
   sms_config: `<svg ${SVG_ATTRS}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+  thug_withdraw: `<svg ${SVG_ATTRS}><path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  aggregate_logs: `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>`,
+  sms_logs: `<svg ${SVG_ATTRS}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>`,
+  pay_channels: `<svg ${SVG_ATTRS}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`,
+  pay_callback_logs: `<svg ${SVG_ATTRS}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 0 15 6.7L21 11"/></svg>`,
+  cron_logs: `<svg ${SVG_ATTRS}><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>`,
+  admin_logs: `<svg ${SVG_ATTRS}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>`,
+  '支付管理': `<svg ${SVG_ATTRS}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`,
   // 分组图标
   '用户管理': `<svg ${SVG_ATTRS}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`,
   '商品管理': `<svg ${SVG_ATTRS}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>`,
@@ -309,6 +332,8 @@ async function yyl(path, body) {
 }
 async function biz(path, body) {
   const opt = { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' } }
+  if (state.uid) { opt.headers['AdminUserId'] = state.uid }
+  if (state.token) { opt.headers['AdminToken'] = state.token }
   if (body) opt.body = JSON.stringify(body)
   const r = await fetch('/api/admin/' + path, opt)
   return r.json()
@@ -346,6 +371,7 @@ const MENUS = [
   { group: '用户管理', children: [
     { key: 'users', name: '会员管理' },
     { key: 'thugs', name: '打手管理' },
+    { key: 'aggregate_logs', name: '聚合登录记录' },
   ]},
   { group: '商品管理', children: [
     { key: 'goods_category', name: '商品分类管理' },
@@ -359,6 +385,7 @@ const MENUS = [
     { key: 'order_complaint', name: '订单投诉' },
   ]},
   { key: 'withdraw', name: '提现记录' },
+  { key: 'thug_withdraw', name: '打手提现记录' },
   { group: '等级管理', children: [
     { key: 'level', name: '等级列表' },
   ]},
@@ -368,6 +395,14 @@ const MENUS = [
   ]},
   { key: 'invites', name: '邀请码管理' },
   { key: 'fine', name: '罚款管理' },
+  { group: '短信管理', children: [
+    { key: 'sms_config', name: '短信配置' },
+    { key: 'sms_logs', name: '短信记录' },
+  ]},
+  { group: '支付管理', children: [
+    { key: 'pay_channels', name: '支付渠道管理' },
+    { key: 'pay_callback_logs', name: '支付回调日志' },
+  ]},
   { group: '上传管理', children: [
     { key: 'upload_storage', name: '存储配置' },
   ]},
@@ -379,8 +414,9 @@ const MENUS = [
     { key: 'admin_user', name: '管理员管理' },
     { key: 'role', name: '角色管理' },
     { key: 'cron', name: '计划任务' },
+    { key: 'cron_logs', name: '任务日志' },
     { key: 'wechat_robot', name: '企业微信机器人' },
-    { key: 'logs', name: '日志管理' },
+    { key: 'admin_logs', name: '操作日志' },
     { key: 'bill', name: '账单管理' },
     { key: 'package', name: '我的套餐' },
     { key: 'auth', name: '平台授权对接' },
@@ -396,9 +432,6 @@ const MENUS = [
   ]},
   { group: '通知管理', children: [
     { key: 'wechat_notice', name: '公众号通知' },
-  ]},
-  { group: '短信管理', children: [
-    { key: 'sms_config', name: '短信配置' },
   ]},
 ]
 const openGroups = new Set(['用户管理', '系统管理'])
@@ -463,20 +496,50 @@ PAGES.dashboard = async () => {
   if (!r.data) { $('#content').innerHTML = '<div class="empty">数据加载失败</div>'; return }
   const d = r.data
   const cards = [
+    ['今日新增会员', d.user_today, 'green'], ['今日新增打手', d.thug_today, 'green'],
+    ['今日打手收款', '¥' + (d.thug_income_today || 0), 'green'],
+    ['订单总量', d.order_count, ''], ['今日订单', d.order_today, 'green'],
+    ['充值总额', '¥' + (d.recharge_total || 0), 'green'],
+    ['待审核提现数量', d.withdraw_pending, 'orange'], ['待审核打手数量', d.thug_pending, 'orange'],
     ['会员总数', d.user_count, ''], ['打手总数', d.thug_count, ''],
-    ['待审核打手', d.thug_pending, 'orange'], ['已通过打手', d.thug_approved, 'green'],
-    ['客服数量', d.cs_count, ''], ['订单总数', d.order_count, ''],
-    ['今日订单', d.order_today, 'green'], ['公告数量', d.notice_count, ''],
+    ['客服数量', d.cs_count, ''], ['公告数量', d.notice_count, ''],
     ['邀请码数量', d.invite_count, ''], ['平台余额合计', '¥' + (d.money_sum || 0), 'green'],
   ]
+  const tr = d.trend || { labels: [], orders: [], recharge: [] }
   $('#content').innerHTML = `
     <div class="stats">${cards.map(c => `<div class="stat"><div class="l">${c[0]}</div><div class="v ${c[2]}">${esc(c[1])}</div></div>`).join('')}</div>
+    <div class="card"><div class="card-head"><h2>近 7 日趋势</h2><span class="muted" style="font-size:12px">● 订单量&nbsp;&nbsp;▲ 充值额</span></div>
+      <div style="padding:16px 18px">${trendChart(tr)}</div></div>
     <div class="card"><div class="card-head"><h2>快捷操作</h2></div><div style="padding:16px 18px" class="toolbar">
       <button class="btn btn-ghost" onclick="go('preview')">📱 打开前端实时预览</button>
       <button class="btn btn-ghost" onclick="go('thugs')">🎮 处理打手入驻审核</button>
+      <button class="btn btn-ghost" onclick="go('thug_withdraw')">💰 打手提现审核</button>
       <button class="btn btn-ghost" onclick="go('orders')">📋 查看订单</button>
       <button class="btn btn-ghost" onclick="go('config')">⚙️ 系统配置</button>
     </div></div>`
+}
+// 纯 SVG 折线/柱状趋势图（订单量柱状 + 充值额折线）
+function trendChart(tr) {
+  const labels = tr.labels || [], orders = tr.orders || [], recharge = tr.recharge || []
+  if (!labels.length) return '<div class="empty">暂无趋势数据</div>'
+  const W = 720, H = 200, pad = 34, n = labels.length
+  const maxO = Math.max(1, ...orders), maxR = Math.max(1, ...recharge)
+  const bw = (W - pad * 2) / n
+  const bars = orders.map((v, i) => {
+    const h = (H - pad * 2) * (v / maxO)
+    const x = pad + i * bw + bw * 0.2, y = H - pad - h
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.6).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#bbf7d0"/>`
+  }).join('')
+  const pts = recharge.map((v, i) => [pad + i * bw + bw / 2, H - pad - (H - pad * 2) * (v / maxR)])
+  const line = pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')
+  const dots = pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#16a34a"/>`).join('')
+  const xlabels = labels.map((l, i) => `<text x="${(pad + i * bw + bw / 2).toFixed(1)}" y="${H - 10}" font-size="11" fill="#94a3b8" text-anchor="middle">${esc(l)}</text>`).join('')
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+    <line x1="${pad}" y1="${H - pad}" x2="${W - pad}" y2="${H - pad}" stroke="#e5e7eb"/>
+    ${bars}
+    <polyline points="${line}" fill="none" stroke="#16a34a" stroke-width="2"/>
+    ${dots}${xlabels}
+  </svg>`
 }
 
 /* ============ 会员管理 ============ */
@@ -495,13 +558,14 @@ PAGES.users = async () => {
     <td>
       <button class="btn btn-ghost btn-sm" onclick="userRecharge(${u.id},'${esc(u.nickname || '')}')">充值</button>
       <button class="btn btn-ghost btn-sm" onclick="userEdit(${u.id},'${esc(u.nickname || '')}',${u.money},${u.level})">编辑</button>
-      <button class="btn btn-danger btn-sm" onclick="userDel(${u.id})">删除</button>
+      ${hasPerm('delete') ? `<button class="btn btn-danger btn-sm" onclick="userDel(${u.id})">删除</button>` : ''}
     </td></tr>`).join('')
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>会员管理 <span class="muted">共 ${d.total} 条</span></h2>
       <div class="toolbar">
         <input id="ukw" placeholder="昵称 / ID 搜索" value="${esc(usersQuery.keyword)}">
         <button class="btn btn-primary btn-sm" onclick="usersSearch()">搜索</button>
+        ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="exportTable('users')">导出Excel</button>` : ''}
       </div></div>
     <table><thead><tr><th>ID</th><th>昵称</th><th>等级</th><th>余额</th><th>类型</th><th>openid</th><th>注册时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="8"><div class="empty">暂无会员数据</div></td></tr>'}</tbody></table></div>`
@@ -551,14 +615,15 @@ PAGES.thugs = async () => {
         ${st !== '1' ? `<button class="btn btn-ghost btn-sm" onclick="thugAudit(${t.id},'approve')">通过</button>` : ''}
         ${st !== '2' ? `<button class="btn btn-ghost btn-sm" onclick="thugAudit(${t.id},'reject')">驳回</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="thugToggleCs(${t.id},${t.is_customer_service == 1 ? 0 : 1})">${t.is_customer_service == 1 ? '取消客服' : '设为客服'}</button>
-        <button class="btn btn-danger btn-sm" onclick="thugDel(${t.id})">删除</button>
+        ${hasPerm('delete') ? `<button class="btn btn-danger btn-sm" onclick="thugDel(${t.id})">删除</button>` : ''}
       </td></tr>`
   }).join('')
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>打手管理 <span class="muted">共 ${list.length} 条</span></h2>
       <div class="tabs">
         ${[['', '全部'], ['0', '待审核'], ['1', '已通过'], ['2', '已驳回']].map(t => `<div class="tab ${thugFilter === t[0] ? 'active' : ''}" onclick="thugSet('${t[0]}')">${t[1]}</div>`).join('')}
-      </div></div>
+      </div>
+      ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="exportTable('thug')">导出Excel</button>` : ''}</div>
     <table><thead><tr><th>ID</th><th>打手名</th><th>所属用户</th><th>审核状态</th><th>实名认证</th><th>客服权限</th><th>申请时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="8"><div class="empty">暂无打手数据</div></td></tr>'}</tbody></table></div>`
 }
@@ -627,12 +692,15 @@ PAGES.cs = async () => {
     <td class="muted">${esc(c.session_timeout || 3)} 分钟</td>
     <td>
       <button class="btn btn-ghost btn-sm" onclick="csEdit(${c.id},${JSON.stringify(c).replace(/"/g, '&quot;')})">编辑</button>
-      <button class="btn btn-danger btn-sm" onclick="csDel(${c.id})">删除</button>
+      ${hasPerm('delete') ? `<button class="btn btn-danger btn-sm" onclick="csDel(${c.id})">删除</button>` : ''}
     </td></tr>`
   }).join('')
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>客服管理 <span class="muted">共 ${list.length} 条 · 全部已接入</span></h2>
-      <button class="btn btn-primary btn-sm" onclick="csEdit(0,null)">+ 新增客服</button></div>
+      <div class="toolbar">
+        ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="exportTable('customer_services')">导出Excel</button>` : ''}
+        <button class="btn btn-primary btn-sm" onclick="csEdit(0,null)">+ 新增客服</button>
+      </div></div>
     <table><thead><tr><th>ID</th><th>客服名称</th><th>接入模式</th><th>绑定用户</th><th>在线状态</th><th>会话超时</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="7"><div class="empty">暂无客服数据</div></td></tr>'}</tbody></table></div>`
 }
@@ -687,6 +755,7 @@ PAGES.orders = async () => {
         <div class="tabs">${[['', '全部'], ['0', '待付款'], ['1', '待接单'], ['2', '服务中'], ['3', '待结单'], ['4', '售后中'], ['5', '已完成']].map(t => `<div class="tab ${orderQuery.status === t[0] ? 'active' : ''}" onclick="orderSet('${t[0]}')">${t[1]}</div>`).join('')}</div>
         <input id="okw" placeholder="订单号 / 商品 / 游戏ID" value="${esc(orderQuery.keyword)}">
         <button class="btn btn-primary btn-sm" onclick="orderSearch()">搜索</button>
+        ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="exportTable('orders')">导出Excel</button>` : ''}
       </div></div>
     <table><thead><tr><th>订单号</th><th>商品</th><th>游戏ID</th><th>金额</th><th>状态</th><th>下单时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="7"><div class="empty">暂无订单数据</div></td></tr>'}</tbody></table></div>`
@@ -714,11 +783,14 @@ PAGES.notices = async () => {
     <td class="muted">${fmtTime(n.createtime)}</td>
     <td>
       <button class="btn btn-ghost btn-sm" onclick='noticeEdit(${JSON.stringify(n)})'>编辑</button>
-      <button class="btn btn-danger btn-sm" onclick="noticeDel(${n.id})">删除</button>
+      ${hasPerm('delete') ? `<button class="btn btn-danger btn-sm" onclick="noticeDel(${n.id})">删除</button>` : ''}
     </td></tr>`).join('')
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>公告管理 <span class="muted">共 ${list.length} 条</span></h2>
-      <button class="btn btn-primary btn-sm" onclick="noticeEdit()">+ 发布公告</button></div>
+      <div class="toolbar">
+        ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="exportTable('notices')">导出Excel</button>` : ''}
+        <button class="btn btn-primary btn-sm" onclick="noticeEdit()">+ 发布公告</button>
+      </div></div>
     <table><thead><tr><th>ID</th><th>标题</th><th>摘要</th><th>发布时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="5"><div class="empty">暂无公告</div></td></tr>'}</tbody></table></div>`
 }
@@ -747,11 +819,12 @@ PAGES.invites = async () => {
     <td class="muted">${fmtTime(v.createtime)}</td>
     <td>
       <button class="btn btn-ghost btn-sm" onclick="inviteCopy('${esc(v.code)}')">复制</button>
-      <button class="btn btn-danger btn-sm" onclick="inviteDel(${v.id})">删除</button>
+      ${hasPerm('delete') ? `<button class="btn btn-danger btn-sm" onclick="inviteDel(${v.id})">删除</button>` : ''}
     </td></tr>`).join('')
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>邀请码管理 <span class="muted">共 ${list.length} 条</span></h2>
       <div class="toolbar">
+        ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="exportTable('invite_codes')">导出Excel</button>` : ''}
         <button class="btn btn-primary btn-sm" onclick="inviteEdit()">+ 生成邀请码</button>
         <button class="btn btn-ghost btn-sm" onclick="inviteGrant()">按用户ID开通权限</button>
       </div></div>
@@ -790,6 +863,316 @@ function inviteCopy(code) {
   else toast('邀请码: ' + code)
 }
 function inviteDel(id) { confirmModal('删除邀请码', '确定删除该邀请码？删除后不可使用。', async () => { const r = await biz('invite/delete', { id }); toast(r.msg); PAGES.invites() }) }
+
+/* ============ 打手提现记录（财务流水，禁止删除） ============ */
+let twQ = { keyword: '', account_type: '', status: '', apply_start: '', apply_end: '', pay_start: '', pay_end: '', page: 1, limit: 20 }
+const TW_ST = { '0': ['待审核', 'orange'], '1': ['审核驳回', 'red'], '2': ['待打款', 'blue'], '3': ['已打款', 'green'] }
+PAGES.thug_withdraw = async () => {
+  const s = (await biz('thug_withdraw/stats')).data || {}
+  const qs = Object.keys(twQ).map(k => k + '=' + encodeURIComponent(twQ[k])).join('&')
+  const r = await biz('thug_withdraws?' + qs)
+  const d = r.data || { list: [], total: 0 }
+  window.__twMap = {}
+  const rows = (d.list || []).map(w => {
+    window.__twMap[w.id] = w
+    const st = TW_ST[String(w.status)] || ['未知', 'gray']
+    return `<tr>
+      <td>${esc(w.id)}</td>
+      <td>${esc(w.thug_id)}</td>
+      <td>${esc(w.thug_name || '-')}</td>
+      <td class="muted">${esc(w.withdraw_no || '-')}</td>
+      <td>¥${esc(w.amount)}</td>
+      <td>¥${esc(w.fee)}</td>
+      <td><b>¥${esc(w.real_amount)}</b></td>
+      <td>${w.account_type === 'alipay' ? '<span class="tag blue">支付宝</span>' : '<span class="tag green">微信</span>'}</td>
+      <td class="muted">${esc(w.account || '-')}</td>
+      <td class="muted">${fmtTime(w.apply_time)}</td>
+      <td class="muted">${w.audit_time ? fmtTime(w.audit_time) : '-'}</td>
+      <td class="muted">${w.pay_time ? fmtTime(w.pay_time) : '-'}</td>
+      <td><span class="tag ${st[1]}">${st[0]}</span></td>
+      <td class="muted">${esc(w.audit_admin || '-')}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="twDetail(${w.id})">查看详情</button></td>
+    </tr>`
+  }).join('')
+  const totalPages = Math.max(1, Math.ceil((d.total || 0) / twQ.limit))
+  const stOpts = [['', '全部状态'], ['0', '待审核'], ['1', '审核驳回'], ['2', '待打款'], ['3', '已打款']]
+  const kpi = (label, val, cls) => `<div class="kpi"><div class="kpi-v ${cls || ''}">${val}</div><div class="kpi-l">${label}</div></div>`
+  $('#content').innerHTML = `<div class="card">
+    <div class="card-head"><h2>打手提现记录 <span class="muted">财务流水 · 禁止删除</span></h2>
+      <div class="toolbar">${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="twExport()">导出Excel</button>` : ''}</div></div>
+    <div class="kpi-row">
+      ${kpi('今日打手收款', '￥' + esc(s.today_income != null ? s.today_income : 0), 'kpi-g')}
+      ${kpi('今日提现申请笔数', esc(s.today_apply != null ? s.today_apply : 0))}
+      ${kpi('今日待审核提现笔数', esc(s.today_pending != null ? s.today_pending : 0), 'kpi-o')}
+      ${kpi('今日驳回笔数', esc(s.today_rejected != null ? s.today_rejected : 0), 'kpi-r')}
+    </div>
+    <div class="toolbar" style="padding:0 18px 14px;flex-wrap:wrap">
+      <input id="tw_kw" placeholder="打手昵称 / 打手ID / 提现单号" value="${esc(twQ.keyword)}" style="min-width:220px">
+      <select id="tw_at">
+        <option value="">全部账户</option>
+        <option value="wechat" ${twQ.account_type === 'wechat' ? 'selected' : ''}>微信</option>
+        <option value="alipay" ${twQ.account_type === 'alipay' ? 'selected' : ''}>支付宝</option>
+      </select>
+      <select id="tw_st">${stOpts.map(o => `<option value="${o[0]}" ${twQ.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <label class="muted" style="font-size:12px">申请时间</label>
+      <input type="date" id="tw_a0" value="${esc(twQ.apply_start)}"><span class="muted">~</span><input type="date" id="tw_a1" value="${esc(twQ.apply_end)}">
+      <label class="muted" style="font-size:12px">打款时间</label>
+      <input type="date" id="tw_p0" value="${esc(twQ.pay_start)}"><span class="muted">~</span><input type="date" id="tw_p1" value="${esc(twQ.pay_end)}">
+      <button class="btn btn-primary btn-sm" onclick="twSearch()">筛选</button>
+      <button class="btn btn-ghost btn-sm" onclick="twReset()">重置</button>
+    </div>
+    <table><thead><tr><th>ID</th><th>打手ID</th><th>打手昵称</th><th>提现单号</th><th>提现金额</th><th>手续费</th><th>实际到账</th><th>账户类型</th><th>收款账号</th><th>申请时间</th><th>审核时间</th><th>打款时间</th><th>状态</th><th>审核管理员</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="15"><div class="empty">暂无提现记录</div></td></tr>'}</tbody></table>
+    <div class="toolbar" style="justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-ghost btn-sm" ${twQ.page <= 1 ? 'disabled' : ''} onclick="twPage(${twQ.page - 1})">上一页</button>
+      <span class="muted" style="font-size:13px">${twQ.page} / ${totalPages}</span>
+      <button class="btn btn-ghost btn-sm" ${twQ.page >= totalPages ? 'disabled' : ''} onclick="twPage(${twQ.page + 1})">下一页</button>
+    </div></div>`
+  $('#tw_kw').addEventListener('keydown', e => { if (e.key === 'Enter') twSearch() })
+}
+function twSearch() {
+  twQ.keyword = $('#tw_kw').value.trim(); twQ.account_type = $('#tw_at').value; twQ.status = $('#tw_st').value
+  twQ.apply_start = $('#tw_a0').value; twQ.apply_end = $('#tw_a1').value
+  twQ.pay_start = $('#tw_p0').value; twQ.pay_end = $('#tw_p1').value; twQ.page = 1; PAGES.thug_withdraw()
+}
+function twReset() { twQ = { keyword: '', account_type: '', status: '', apply_start: '', apply_end: '', pay_start: '', pay_end: '', page: 1, limit: 20 }; PAGES.thug_withdraw() }
+function twPage(p) { if (p < 1) return; twQ.page = p; PAGES.thug_withdraw() }
+async function twExport() {
+  const qs = ['keyword', 'account_type', 'status', 'apply_start', 'apply_end', 'pay_start', 'pay_end']
+    .map(k => k + '=' + encodeURIComponent(twQ[k])).join('&')
+  await downloadCsv('/api/admin/thug_withdraw/export?' + qs, 'thug_withdraw_' + Date.now() + '.csv')
+}
+async function twDetail(id) {
+  const r = await biz('thug_withdraw/detail?id=' + id)
+  const w = r.data || {}
+  const st = TW_ST[String(w.status)] || ['未知', 'gray']
+  const logs = (w.audit_logs || []).map(l => `<div style="font-size:12px;color:#4b5563;padding:6px 0;border-bottom:1px dashed var(--line)"><b>${esc(l.admin_name)}</b> · ${esc(l.content)} · <span class="muted">${fmtTime(l.create_time)}</span></div>`).join('') || '<div class="muted" style="font-size:12px">暂无审核日志</div>'
+  const row = (k, v) => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9"><span class="muted">${k}</span><b>${v}</b></div>`
+  const body = `
+    <div style="display:grid;gap:2px;font-size:13px">
+      ${row('提现单号', esc(w.withdraw_no || '-'))}
+      ${row('打手ID / 昵称', esc(w.thug_id) + ' / ' + esc(w.thug_name || '-'))}
+      ${row('提现金额', '¥' + esc(w.amount))}
+      ${row('平台手续费', '¥' + esc(w.fee))}
+      ${row('实际到账金额', '<span style="color:#16a34a">¥' + esc(w.real_amount) + '</span>')}
+      ${row('收款账户类型', w.account_type === 'alipay' ? '支付宝' : '微信')}
+      ${row('收款账号', esc(w.account || '-'))}
+      ${row('提现状态', `<span class="tag ${st[1]}">${st[0]}</span>`)}
+      ${row('申请时间', w.apply_time ? fmtTime(w.apply_time) : '-')}
+      ${row('审核时间', w.audit_time ? fmtTime(w.audit_time) : '-')}
+      ${row('打款时间', w.pay_time ? fmtTime(w.pay_time) : '-')}
+      ${row('审核管理员', esc(w.audit_admin || '-'))}
+      ${w.reject_reason ? row('驳回原因', '<span style="color:#b91c1c">' + esc(w.reject_reason) + '</span>') : ''}
+      ${row('备注', esc(w.remark || '-'))}
+    </div>
+    <div style="margin-top:14px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">审核日志</div>${logs}</div>`
+  const buttons = []
+  if (hasPerm('edit')) {
+    if (String(w.status) === '0') {
+      buttons.push({ text: '审核通过', cls: 'btn-primary', fn: () => twAudit(id, 'approve') })
+      buttons.push({ text: '驳回', cls: 'btn-danger', fn: () => twReject(id) })
+    } else if (String(w.status) === '2') {
+      buttons.push({ text: '标记已打款', cls: 'btn-primary', fn: () => twAudit(id, 'mark_paid') })
+    }
+  }
+  buttons.push({ text: '关闭', fn: closeModal })
+  openModal('提现详情 · ' + esc(w.withdraw_no || ''), body, buttons)
+}
+async function twAudit(id, action) {
+  const r = await biz('thug_withdraw/audit', { id, action })
+  closeModal(); toast(r.msg, r.code === 200 || r.code === undefined); PAGES.thug_withdraw()
+}
+function twReject(id) {
+  openModal('驳回提现申请', `<div class="field"><label>驳回原因（必填）</label><textarea id="m_reason" style="width:100%;min-height:90px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;outline:none" placeholder="请输入驳回原因，将短信通知打手"></textarea></div>`,
+    [{ text: '取消', fn: closeModal }, { text: '确认驳回', cls: 'btn-danger', fn: async () => {
+      const reason = $('#m_reason').value.trim()
+      if (!reason) { toast('请填写驳回原因', false); return }
+      const r = await biz('thug_withdraw/audit', { id, action: 'reject', reason })
+      closeModal(); toast(r.msg); PAGES.thug_withdraw()
+    } }])
+}
+
+/* ============ 通用日志列表页（搜索 + 分页，永久保留禁止删除） ============ */
+const LOG_PAGES = {}
+function makeLogPage(cfg) {
+  cfg.q = cfg.q || { keyword: '', page: 1, limit: 20 }
+  LOG_PAGES[cfg.id] = cfg
+  return async () => {
+    const qy = cfg.q
+    const r = await biz(cfg.api + `?keyword=${encodeURIComponent(qy.keyword)}&page=${qy.page}&limit=${qy.limit}`)
+    const d = r.data || { list: [], total: 0 }
+    const rows = (d.list || []).map(it => `<tr>${cfg.cells(it).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')
+    const totalPages = Math.max(1, Math.ceil((d.total || 0) / qy.limit))
+    $('#content').innerHTML = `<div class="card">
+      <div class="card-head"><h2>${esc(cfg.title)} <span class="muted">共 ${d.total} 条 · 永久保留</span></h2>
+        <div class="toolbar"><input id="lkw" placeholder="${esc(cfg.ph || '搜索')}" value="${esc(qy.keyword)}" style="min-width:220px"><button class="btn btn-primary btn-sm" onclick="logSearch('${cfg.id}')">搜索</button></div></div>
+      <table><thead><tr>${cfg.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows || `<tr><td colspan="${cfg.head.length}"><div class="empty">暂无数据</div></td></tr>`}</tbody></table>
+      <div class="toolbar" style="justify-content:flex-end;margin-top:14px">
+        <button class="btn btn-ghost btn-sm" ${qy.page <= 1 ? 'disabled' : ''} onclick="logPageGo('${cfg.id}',${qy.page - 1})">上一页</button>
+        <span class="muted" style="font-size:13px">${qy.page} / ${totalPages}</span>
+        <button class="btn btn-ghost btn-sm" ${qy.page >= totalPages ? 'disabled' : ''} onclick="logPageGo('${cfg.id}',${qy.page + 1})">下一页</button>
+      </div></div>`
+    const kw = $('#lkw')
+    if (kw) kw.addEventListener('keydown', e => { if (e.key === 'Enter') logSearch(cfg.id) })
+  }
+}
+function logSearch(id) { const c = LOG_PAGES[id]; c.q.keyword = $('#lkw').value.trim(); c.q.page = 1; PAGES[id]() }
+function logPageGo(id, p) { const c = LOG_PAGES[id]; if (p < 1) return; c.q.page = p; PAGES[id]() }
+
+PAGES.aggregate_logs = makeLogPage({
+  id: 'aggregate_logs', api: 'aggregate_logs', title: '聚合登录记录', ph: '会员ID / 昵称 / openid',
+  head: ['ID', '会员ID', '渠道', 'openid', '昵称', '登录IP', '设备信息', '登录时间'],
+  cells: it => [esc(it.id), esc(it.user_id), `<span class="tag blue">${esc(it.channel || '-')}</span>`, esc(it.openid || '-'),
+    esc(it.nickname || '-'), esc(it.login_ip || '-'), esc(it.device || '-'), `<span class="muted">${fmtTime(it.login_time)}</span>`],
+})
+
+PAGES.sms_logs = makeLogPage({
+  id: 'sms_logs', api: 'sms_logs', title: '短信记录', ph: '手机号 / 模板ID / 内容',
+  head: ['ID', '手机号', '模板ID', '发送内容', '场景', '状态', '服务商返回', '发送时间'],
+  cells: it => [esc(it.id), esc(it.mobile), esc(it.template_id || '-'), esc((it.content || '').slice(0, 40)),
+    esc(it.scene || '-'), it.status == 1 ? '<span class="tag green">成功</span>' : '<span class="tag red">失败</span>',
+    `<span class="muted">${esc((it.provider_resp || '').slice(0, 40))}</span>`, `<span class="muted">${fmtTime(it.create_time)}</span>`],
+})
+
+PAGES.pay_callback_logs = makeLogPage({
+  id: 'pay_callback_logs', api: 'pay_callback_logs', title: '支付回调日志', ph: '订单号 / 渠道 / 结果',
+  head: ['ID', '渠道', '订单号', '验签', '处理', '结果', 'IP', '时间'],
+  cells: it => [esc(it.id), `<span class="tag blue">${esc(it.channel || '-')}</span>`, esc(it.order_no || '-'),
+    it.sign_ok == 1 ? '<span class="tag green">通过</span>' : '<span class="tag red">失败</span>',
+    it.handled == 1 ? '<span class="tag green">已处理</span>' : '<span class="tag orange">未处理</span>',
+    esc(it.result || '-'), esc(it.ip || '-'), `<span class="muted">${fmtTime(it.create_time)}</span>`],
+})
+
+PAGES.admin_logs = makeLogPage({
+  id: 'admin_logs', api: 'admin_logs', title: '管理员操作日志', ph: '管理员 / 模块 / 内容',
+  head: ['ID', '管理员', '操作模块', '操作内容', '操作IP', '操作时间'],
+  cells: it => [esc(it.id), esc(it.admin_name || '-'), `<span class="tag gray">${esc(it.module || '-')}</span>`,
+    esc(it.content || ''), esc(it.ip || '-'), `<span class="muted">${fmtTime(it.create_time)}</span>`],
+})
+
+PAGES.cron_logs = makeLogPage({
+  id: 'cron_logs', api: 'cron_logs', title: '任务执行日志', ph: '任务名 / 消息',
+  head: ['ID', '任务名', '状态', '执行结果', '耗时(ms)', '执行时间'],
+  cells: it => [esc(it.id), esc(it.task_name || '-'), it.status == 1 ? '<span class="tag green">成功</span>' : '<span class="tag red">失败</span>',
+    esc(it.message || '-'), esc(it.cost_ms || 0), `<span class="muted">${fmtTime(it.create_time)}</span>`],
+})
+
+/* ============ 支付渠道管理 ============ */
+PAGES.pay_channels = async () => {
+  const r = await biz('pay_channels')
+  const list = (r.data || {}).list || []
+  window.__pcMap = {}
+  const rows = list.map(c => {
+    window.__pcMap[c.id] = c
+    return `<tr>
+      <td>${esc(c.id)}</td>
+      <td><b>${esc(c.name || '-')}</b><div class="muted" style="font-size:12px">${esc(c.code || '')}</div></td>
+      <td>${esc(c.channel_type || '-')}</td>
+      <td class="muted">${esc(c.pid || c.mch_id || '-')}</td>
+      <td>${esc(c.sort)}</td>
+      <td>${c.status == 1 ? '<span class="tag green">已启用</span>' : '<span class="tag gray">已禁用</span>'}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="pcToggle(${c.id},${c.status == 1 ? 0 : 1})">${c.status == 1 ? '禁用' : '启用'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="pcEdit(${c.id})">配置</button>
+      </td></tr>`
+  }).join('')
+  $('#content').innerHTML = `<div class="card">
+    <div class="card-head"><h2>支付渠道管理 <span class="muted">共 ${list.length} 个渠道 · 充值页按排序展示</span></h2></div>
+    <table><thead><tr><th>ID</th><th>渠道</th><th>类型</th><th>商户/PID</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7"><div class="empty">暂无支付渠道</div></td></tr>'}</tbody></table></div>`
+}
+function payChannelModal(c) {
+  c = c || {}
+  openModal(c.id ? ('配置支付渠道 · ' + (c.name || '')) : '新增支付渠道', `
+    <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      <div class="field"><label>渠道编码</label><input id="p_code" value="${esc(c.code || '')}" placeholder="rainbow / wx_v3"></div>
+      <div class="field"><label>渠道名称</label><input id="p_name" value="${esc(c.name || '')}" placeholder="彩虹支付 / 微信商户V3"></div>
+      <div class="field"><label>渠道类型</label><input id="p_type" value="${esc(c.channel_type || '')}" placeholder="h5 / jsapi"></div>
+      <div class="field"><label>排序（越小越靠前）</label><input id="p_sort" type="number" value="${esc(c.sort || 0)}"></div>
+      <div class="field"><label>商户PID / 商户号</label><input id="p_pid" value="${esc(c.pid || '')}"></div>
+      <div class="field"><label>微信商户号 mch_id</label><input id="p_mch" value="${esc(c.mch_id || '')}"></div>
+      <div class="field"><label>支付密钥 / APIv3密钥</label><input id="p_secret" value="${esc(c.secret || '')}"></div>
+      <div class="field"><label>证书序列号</label><input id="p_cert" value="${esc(c.cert_serial || '')}"></div>
+      <div class="field"><label>异步通知地址</label><input id="p_notify" value="${esc(c.notify_url || '')}" placeholder="https://域名/api/pay/notify"></div>
+      <div class="field"><label>页面跳转地址</label><input id="p_return" value="${esc(c.return_url || '')}"></div>
+      <div class="field"><label>支付超时时间(秒)</label><input id="p_timeout" type="number" value="${esc(c.timeout || 300)}"></div>
+      <div class="field"><label>渠道开关</label><select id="p_status"><option value="1" ${c.status == 1 ? 'selected' : ''}>启用</option><option value="0" ${c.status != 1 ? 'selected' : ''}>禁用</option></select></div>
+      <div class="field" style="grid-column:1/-1"><label>商户私钥（微信V3，PEM 内容）</label><textarea id="p_key" style="width:100%;min-height:70px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-family:monospace;font-size:12px;outline:none">${esc(c.private_key || '')}</textarea></div>
+      <div class="field" style="grid-column:1/-1"><label>备注</label><input id="p_remark" value="${esc(c.remark || '')}"></div>
+    </div>`,
+    [{ text: '保存', cls: 'btn-primary', fn: async () => {
+      const data = { id: c.id || 0, code: $('#p_code').value, name: $('#p_name').value, channel_type: $('#p_type').value,
+        sort: Number($('#p_sort').value || 0), pid: $('#p_pid').value, mch_id: $('#p_mch').value, secret: $('#p_secret').value,
+        cert_serial: $('#p_cert').value, notify_url: $('#p_notify').value, return_url: $('#p_return').value,
+        timeout: Number($('#p_timeout').value || 300), status: Number($('#p_status').value), private_key: $('#p_key').value, remark: $('#p_remark').value }
+      const r = await biz('pay_channel/save', data)
+      closeModal(); toast(r.msg); PAGES.pay_channels()
+    } }])
+}
+function pcEdit(id) { payChannelModal(window.__pcMap[id] || {}) }
+async function pcToggle(id, status) {
+  const c = Object.assign({}, window.__pcMap[id], { status })
+  const r = await biz('pay_channel/save', { id, code: c.code, name: c.name, channel_type: c.channel_type, pid: c.pid,
+    secret: c.secret, notify_url: c.notify_url, return_url: c.return_url, mch_id: c.mch_id, api_v3_key: c.api_v3_key,
+    cert_serial: c.cert_serial, private_key: c.private_key, remark: c.remark, timeout: c.timeout, sort: c.sort, status })
+  toast(r.msg); PAGES.pay_channels()
+}
+
+/* ============ 短信配置（多服务商 / 场景开关 / 测试发送） ============ */
+PAGES.sms_config = async () => {
+  const d = (await biz('sms/config')).data || {}
+  const scenes = d.scenes || {}, names = d.scene_names || {}, tpls = d.templates || {}
+  const sceneRows = Object.keys(names).map(k => `
+    <div class="kpi" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="flex:0 0 128px;font-size:13px;font-weight:600">${esc(names[k])}</div>
+      <input data-tpl="${k}" placeholder="模板ID" value="${esc(tpls[k] || '')}" style="flex:1;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;outline:none">
+      <label class="switch"><input type="checkbox" data-scene="${k}" ${scenes[k] ? 'checked' : ''}><span class="slider"></span></label>
+    </div>`).join('')
+  $('#content').innerHTML = `<div class="card">
+    <div class="card-head"><h2>短信配置</h2>
+      <div class="toolbar">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px">全局短信开关
+          <label class="switch"><input type="checkbox" id="sms_en" ${d.enabled ? 'checked' : ''}><span class="slider"></span></label>
+        </label>
+        <button class="btn btn-primary btn-sm" onclick="smsSave()">保存配置</button>
+      </div></div>
+    <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+      <div class="field"><label>短信服务商</label><select id="sms_provider">
+        ${[['aliyun', '阿里云'], ['tencent', '腾讯云'], ['yunpian', '云片'], ['juhe', '聚合短信']].map(o => `<option value="${o[0]}" ${d.provider === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>AccessKey</label><input id="sms_ak" value="${esc(d.access_key || '')}"></div>
+      <div class="field"><label>AccessSecret</label><input id="sms_as" value="${esc(d.access_secret || '')}"></div>
+      <div class="field"><label>短信签名</label><input id="sms_sign" value="${esc(d.sign || '')}" placeholder="如：创世网络"></div>
+    </div>
+    <div style="padding:6px 18px 0;font-size:13px;font-weight:600">业务场景开关与模板ID</div>
+    <div class="kpi-row" style="grid-template-columns:repeat(auto-fill,minmax(360px,1fr))">${sceneRows}</div>
+    <div style="padding:6px 18px 18px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">测试短信发送</div>
+      <div class="toolbar">
+        <input id="t_mobile" placeholder="手机号" style="min-width:170px">
+        <input id="t_tpl" placeholder="模板ID(可空)" style="min-width:130px">
+        <input id="t_content" placeholder="短信内容" value="【创世网络】测试短信" style="min-width:240px">
+        <button class="btn btn-primary btn-sm" onclick="smsTest()">发送测试短信</button>
+      </div>
+    </div></div>`
+}
+async function smsSave() {
+  const scenes = {}, templates = {}
+  document.querySelectorAll('[data-scene]').forEach(el => { scenes[el.dataset.scene] = el.checked })
+  document.querySelectorAll('[data-tpl]').forEach(el => { templates[el.dataset.tpl] = el.value.trim() })
+  const r = await biz('sms/config/save', {
+    enabled: $('#sms_en').checked, provider: $('#sms_provider').value, access_key: $('#sms_ak').value,
+    access_secret: $('#sms_as').value, sign: $('#sms_sign').value, scenes, templates
+  })
+  toast(r.msg)
+}
+async function smsTest() {
+  const mobile = $('#t_mobile').value.trim()
+  if (!/^1\d{10}$/.test(mobile)) { toast('请输入正确的手机号', false); return }
+  const r = await biz('sms/test', { mobile, template_id: $('#t_tpl').value.trim(), content: $('#t_content').value.trim() })
+  toast(r.msg, r.code === 200)
+}
 
 /* ============ 系统配置 ============ */
 let cfgGroup = 'basic'
@@ -847,6 +1230,8 @@ async function ensureDefs() {
   if (state.resDefs) return state.resDefs
   const r = await biz('resource/defs')
   state.resDefs = (r.data || {}).defs || {}
+  state.perms = (r.data || {}).perms || []
+  state.admin = (r.data || {}).admin || null
   return state.resDefs
 }
 function resCell(spec, k, val) {
@@ -854,14 +1239,25 @@ function resCell(spec, k, val) {
   if (f.type === 'select') return `<span class="tag blue">${esc((f.options || {})[String(val)] || val || '-')}</span>`
   if (f.type === 'switch') return val == '1' ? '<span class="tag green">启用</span>' : '<span class="tag gray">停用</span>'
   if (f.type === 'textarea') return `<span class="muted">${esc(String(val || '').slice(0, 28))}</span>`
-  if (/logo|image|icon|avatar|图片|封面/i.test(k) && val) return `<img class="row-img" src="${esc(val)}" onerror="this.style.visibility='hidden'">`
+  if (/logo|image|icon|avatar|图片|封面/i.test(k) && val) return `<img class="row-img" style="cursor:zoom-in" data-img="${esc(val)}" src="${esc(val)}" onerror="this.style.visibility='hidden'">`
   return esc(val == null || val === '' ? '-' : val)
 }
 function resFormHtml(spec, item) {
   return (spec.fields || []).map(f => {
     const v = item && item[f.key] != null ? item[f.key] : ''
     let input
-    if (f.type === 'select') {
+    if (f.type === 'image') {
+      // 图片上传组件：PC 选择本地文件 / 移动端唤起相册；仅校验后缀，不限文件大小
+      input = `<div class="uploader" id="up_${f.key}">
+        <input type="hidden" id="rf_${f.key}" value="${esc(v)}">
+        <div class="up-prev">${v ? `<img src="${esc(v)}" data-img="${esc(v)}" onerror="this.style.visibility='hidden'">` : '<span class="muted">未选择图片</span>'}</div>
+        <div class="up-actions">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="pickImg('${f.key}')">选择图片</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="clearImg('${f.key}')">移除</button>
+        </div>
+        <input type="file" id="upf_${f.key}" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display:none" onchange="doUpload('${f.key}',this)">
+      </div>`
+    } else if (f.type === 'select') {
       input = `<select id="rf_${f.key}">${Object.keys(f.options || {}).map(o => `<option value="${esc(o)}" ${String(v) === o ? 'selected' : ''}>${esc(f.options[o])}</option>`).join('')}</select>`
     } else if (f.type === 'textarea') {
       input = `<textarea id="rf_${f.key}">${esc(v)}</textarea>`
@@ -888,19 +1284,25 @@ async function renderResourceList(key, spec) {
   const d = r.data || { list: [], total: 0 }
   resCache[key] = d.list || []
   const cols = spec.columns || (spec.fields || []).map(f => f.key)
-  const rows = resCache[key].map(it => `<tr>
+  // 权限联动：新增/编辑/删除/导出 均按当前管理员权限决定按钮显隐
+  const canAdd = hasPerm('add'), canEdit = hasPerm('edit'), canDel = hasPerm('delete') && spec.deletable !== false
+  const rows = resCache[key].map(it => {
+    const acts = []
+    if (canEdit) acts.push(`<button class="btn btn-ghost btn-sm" onclick="resEdit('${key}',${it.id})">编辑</button>`)
+    if (canDel) acts.push(`<button class="btn btn-danger btn-sm" onclick="resDel('${key}',${it.id})">删除</button>`)
+    else if (spec.finance) acts.push(`<button class="btn btn-ghost btn-sm" disabled title="该业务财务数据不允许删除" style="opacity:.5;cursor:not-allowed">删除</button>`)
+    return `<tr>
     <td>${esc(it.id)}</td>
     ${cols.map(c => `<td>${resCell(spec, c, it[c])}</td>`).join('')}
-    <td>
-      <button class="btn btn-ghost btn-sm" onclick="resEdit('${key}',${it.id})">编辑</button>
-      <button class="btn btn-danger btn-sm" onclick="resDel('${key}',${it.id})">删除</button>
-    </td></tr>`).join('')
+    <td>${acts.join(' ') || '<span class="muted">-</span>'}</td></tr>`
+  }).join('')
   const totalPages = Math.max(1, Math.ceil((d.total || 0) / qy.limit))
   $('#content').innerHTML = `<div class="card">
     <div class="card-head"><h2>${esc(spec.title || key)} <span class="muted">共 ${d.total} 条</span></h2>
       <div class="toolbar">
         ${spec.search ? `<input id="rkw" placeholder="搜索 ${esc((spec.search || []).map(c => resField(spec, c).label).join('/'))}" value="${esc(qy.keyword)}"><button class="btn btn-primary btn-sm" onclick="resSearch('${key}')">搜索</button>` : ''}
-        <button class="btn btn-primary btn-sm" onclick="resEdit('${key}',0)">+ 新增</button>
+        ${hasPerm('export') ? `<button class="btn btn-ghost btn-sm" onclick="resExport('${key}')">导出Excel</button>` : ''}
+        ${canAdd ? `<button class="btn btn-primary btn-sm" onclick="resEdit('${key}',0)">+ 新增</button>` : ''}
       </div></div>
     <table><thead><tr><th>ID</th>${cols.map(c => `<th>${esc(resField(spec, c).label)}</th>`).join('')}<th>操作</th></tr></thead>
     <tbody>${rows || `<tr><td colspan="${cols.length + 2}"><div class="empty">暂无数据</div></td></tr>`}</tbody></table>
@@ -911,6 +1313,12 @@ async function renderResourceList(key, spec) {
     </div></div>`
   const kw = $('#rkw')
   if (kw) kw.addEventListener('keydown', e => { if (e.key === 'Enter') resSearch(key) })
+}
+// 导出当前列表为 Excel（CSV，带 BOM），权限由后端校验
+async function resExport(key) {
+  const qy = resQuery[key] || { keyword: '' }
+  await downloadCsv(`/api/admin/export?res=${key}&keyword=${encodeURIComponent(qy.keyword || '')}`,
+    'export_' + key + '_' + Date.now() + '.csv')
 }
 async function renderResourceForm(key, spec) {
   const r = await biz(`resource?res=${key}`)
@@ -940,6 +1348,65 @@ function resDel(key, id) {
     const r = await biz('resource/delete', { res: key, id })
     toast(r.msg); PAGES[key]()
   })
+}
+/* ---- 图片上传（仅校验后缀，不限文件大小；移动端唤起相册） ---- */
+function pickImg(key) { const el = $('#upf_' + key); if (el) el.click() }
+function clearImg(key) {
+  const h = $('#rf_' + key); if (h) h.value = ''
+  const box = $('#up_' + key); if (box) box.querySelector('.up-prev').innerHTML = '<span class="muted">未选择图片</span>'
+}
+async function doUpload(key, inputEl) {
+  const file = inputEl.files && inputEl.files[0]
+  if (!file) return
+  const ext = (file.name.split('.').pop() || '').toLowerCase()
+  if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+    toast('仅支持 jpg/jpeg/png/webp 格式图片', false); inputEl.value = ''; return
+  }
+  const fd = new FormData(); fd.append('file', file)
+  const opt = { method: 'POST', headers: {} }
+  if (state.uid) opt.headers['AdminUserId'] = state.uid
+  if (state.token) opt.headers['AdminToken'] = state.token
+  opt.body = fd
+  try {
+    const r = await (await fetch('/api/admin/upload', opt)).json()
+    if (r.code !== 200) { toast(r.msg || '上传失败', false); inputEl.value = ''; return }
+    const url = r.data.url
+    $('#rf_' + key).value = url
+    $('#up_' + key).querySelector('.up-prev').innerHTML = `<img src="${esc(url)}" data-img="${esc(url)}">`
+    toast('上传成功')
+  } catch (e) { toast('上传失败: ' + e.message, false) }
+  inputEl.value = ''
+}
+/* ---- 图片放大预览 ---- */
+function zoomImg(url) {
+  openModal('图片预览', `<div style="text-align:center"><img src="${esc(url)}" style="max-width:100%;max-height:70vh;border-radius:10px;border:1px solid var(--line)"></div>`,
+    [{ text: '关闭', fn: closeModal }])
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest && e.target.closest('[data-img]')
+  if (el) zoomImg(el.getAttribute('data-img'))
+})
+/* ---- 带鉴权下载 CSV ---- */
+async function downloadCsv(url, filename) {
+  const opt = { headers: {} }
+  if (state.uid) opt.headers['AdminUserId'] = state.uid
+  if (state.token) opt.headers['AdminToken'] = state.token
+  const r = await fetch(url, opt)
+  const ct = r.headers.get('content-type') || ''
+  if (ct.includes('application/json')) {
+    const j = await r.json().catch(() => ({})); toast(j.msg || '导出失败', false); return
+  }
+  const blob = await r.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob); a.download = filename || 'export.csv'
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+  toast('导出成功')
+}
+// 专用列表页导出（会员 / 打手 / 订单 / 公告 / 邀请码 / 客服）
+async function exportTable(table) {
+  await downloadCsv('/api/admin/export_table?table=' + encodeURIComponent(table),
+    table + '_' + Date.now() + '.csv')
 }
 function crudPage(key) {
   return async () => {
@@ -1300,6 +1767,7 @@ async function enterApp() {
     const info = (r.data && (r.data.admin_user || r.data)) || {}
     if (info.nickname) { $('#adminName').textContent = info.nickname; $('#adminAvatar').textContent = (info.nickname || 'A')[0] }
   } catch (e) { /* 忽略 */ }
+  try { await ensureDefs() } catch (e) { /* 忽略 */ }
 }
 ;(function init() {
   const t = sessionStorage.getItem('admin_token'), u = sessionStorage.getItem('admin_uid')

@@ -1,164 +1,124 @@
 <template>
-	<view class="page-container">
+	<view class="pk-page">
 		<!-- 底部导航栏，当前选中第3个（打手专区） -->
 		<commonTabbar :current="2" :placeholder="false"></commonTabbar>
 		<!-- z-paging 滚动列表容器 -->
 		<z-paging ref="paging" v-model="dataList" :default-page-size="8" @query="queryList" auto-show-back-to-top
 			@scrollTopChange="scrollTopChange" :use-page-scroll="false" :refresher-enabled="true">
-			<!-- 顶部导航栏 -->
-			<view class="top-header">
-				<!-- 标题居中 -->
-				<view class="navleft">打手专区</view>
-				<!-- 搜索框铺满横向 -->
-				<view class="search-glass">
-					<u-search placeholder="搜索打手昵称" v-model="keyword" :showAction="false"
-						@search="search"></u-search>
+			<view class="pk-body">
+				<!-- 顶部标题 + 搜索 -->
+				<view class="pk-topbar">
+					<view class="pk-title">打手专区</view>
+					<view class="pk-search">
+						<u-search placeholder="搜索打手昵称" v-model="keyword" :showAction="false" :focus="searchFocus"
+							@search="search"></u-search>
+					</view>
+				</view>
+
+				<!-- 一级分类 chips -->
+				<scroll-view class="pk-cats" scroll-x v-if="categoryList.length">
+					<view class="pk-cats-inner">
+						<view v-for="(item, index) in categoryList" :key="index"
+							:class="['pk-cat', categoryCurrent === index ? 'pk-cat-on' : '']"
+							@click="changeCategory(index)">
+							<view class="pk-cat-ico">
+								<image :src="item.image" mode="aspectFill"></image>
+							</view>
+							<text class="pk-cat-txt">{{item.name}}</text>
+						</view>
+					</view>
+				</scroll-view>
+
+				<!-- 男陪 / 女陪 两张专区 banner -->
+				<view class="pk-banners">
+					<view :class="['pk-banner', 'pk-banner-m', type === '1' ? 'pk-banner-on' : '']"
+						@click="pickBanner('1')">
+						<view class="pk-banner-l">
+							<text class="pk-banner-t">男陪专区</text>
+							<text class="pk-banner-s">[ 专属男神 ]</text>
+						</view>
+						<view class="pk-banner-play">
+							<view class="pk-banner-tri"></view>
+							<view class="pk-banner-tri"></view>
+						</view>
+					</view>
+					<view :class="['pk-banner', 'pk-banner-f', type === '0' ? 'pk-banner-on' : '']"
+						@click="pickBanner('0')">
+						<view class="pk-banner-l">
+							<text class="pk-banner-t">女陪专区</text>
+							<text class="pk-banner-s">[ 终极甜心 ]</text>
+						</view>
+						<view class="pk-banner-play">
+							<view class="pk-banner-tri"></view>
+							<view class="pk-banner-tri"></view>
+						</view>
+					</view>
+				</view>
+
+				<!-- 打手卡片列表 -->
+				<view class="pk-list">
+					<view v-for="(item, index) in dataList" :key="index" class="pk-card" @click="goToPage(item)">
+						<!-- 左侧视频封面 -->
+						<view class="pk-cover-wrap">
+							<image class="pk-cover" :src="coverOf(item)" mode="aspectFill"></image>
+							<view class="pk-play-btn" @click.stop="toggleAudio(index, $event)">
+								<up-icon :name="playingIndex === index ? 'pause' : 'play-right-fill'" size="22rpx"
+									color="#ffffff"></up-icon>
+							</view>
+							<view class="pk-wave">
+								<view class="pk-wave-bar" :class="{'on': playingIndex === index}"
+									:style="{animationDelay:(i*0.12)+'s'}" v-for="i in 4" :key="i"></view>
+							</view>
+							<text class="pk-dur" v-if="durOf(item)">{{durOf(item)}}</text>
+						</view>
+						<!-- 右侧信息 -->
+						<view class="pk-info">
+							<view class="pk-row1">
+								<view class="pk-name-wrap">
+									<text class="pk-name">{{item.name}}</text>
+									<text class="pk-cow" v-if="item.type == 1 || item.is_new == 1">🐮</text>
+									<image class="pk-sex" :src="getSex(item)" mode="aspectFit"></image>
+								</view>
+								<view class="pk-online">
+									<view class="pk-dot" :class="item.jd_status == 0 ? 'off' : ''"></view>
+									<text class="pk-online-txt" :style="getJDstatus(item).color">{{item.jd_status == 0 ? '离线' : '在线'}}</text>
+								</view>
+							</view>
+							<text class="pk-desc">{{ (item.synopsis || item.intro || '').slice(0, 16) }}{{ (item.synopsis || item.intro || '').length > 16 ? '...' : '' }}</text>
+							<view class="pk-row3">
+								<view class="pk-tags">
+									<template v-if="tagsOf(item).length">
+										<text class="pk-tag" :class="'pk-tag-' + (ti % 2)" v-for="(tg, ti) in tagsOf(item)"
+											:key="ti">{{tg}}</text>
+									</template>
+									<text class="pk-tag pk-tag-0" v-else>{{getplayerLevl(item).title}}</text>
+								</view>
+								<view class="pk-order" @click.stop="goToPage(item)">
+									<up-icon name="heart-fill" color="#ffffff" size="20rpx"></up-icon>
+									<text class="pk-order-txt">下单</text>
+								</view>
+							</view>
+						</view>
+					</view>
+					<!-- 空状态 -->
+					<view v-if="!dataList.length" class="pk-empty">
+						<view class="pk-empty-txt">暂无合适的打手</view>
+					</view>
+					<!-- 底部安全区占位 -->
+					<view class="pk-bottom-space"></view>
 				</view>
 			</view>
 
-			<!-- 内容区域 -->
-			<view class="content-area px-3">
-					<!-- 一级分类 -->
-					<view class="category-section" v-if="categoryList.length">
-						<view class="category-grid">
-							<view 
-								v-for="(item, index) in categoryList" 
-								:key="index" 
-								:class="['category-item', categoryCurrent === index ? 'category-item-active' : '']"
-								@click="changeCategory(index)"
-							>
-								<view :class="['category-image-wrap', categoryCurrent === index ? 'category-image-wrap-active' : '']">
-									<image class="category-image" :src="item.image" mode="aspectFill"></image>
-								</view>
-								<view class="category-name-wrap">
-									<text class="category-name">{{item.name}}</text>
-									<view class="category-tag" :class="{'tag-visible': categoryCurrent === index}"></view>
-								</view>
-							</view>
-						</view>
-					</view>
-					<!-- 分类标签横向滚动列表 -->
-					<view class="tabs-container">
-						<view class="tabs-inner">
-							<!-- 遍历标签列表 -->
-							<view class="tab-item position-relative" v-for="(item, index) in tabs" :key="index">
-								<!-- 标签文本，选中状态高亮 -->
-								<view :class="current==index?'sel':'nor'" style="z-index: 1;" @click="changeTag(item,index)">{{item.name}}</view>
-								<!-- 选中标签的下划线 -->
-								<view v-if="current==index" class="position-absolute line"></view>
-							</view>
-						</view>
-					</view>
-
-					<!-- 打手卡片列表 -->
-					<view v-if="dataList.length" v-for="(item,index) in dataList" :key="index"
-						class="rounded-lg flex align-center bg-white mt-1 player-card"
-						@click="goToPage(item)">
-						
-						<!-- 渐变边框 -->
-						<view class="inner-border"></view>
-
-						<!-- 打手头像 -->
-						<view class="avatar-frame-wrapper ml-3 mr-4">
-							<view class="avatar-frame-inner">
-								<u-image :src="item.avatar" mode="aspectFill" width="120rpx" height="120rpx" radius="60rpx"
-									:lazy-load="true"
-									:error-src="'/static/icon/default_avatar.png'"
-									:loading-src="'/static/icon/default_avatar.png'"
-									class="avatar-main"></u-image>
-								<!-- 头像框 -->
-								<image v-if="item.avatar_frame && item.avatar_frame.image" 
-									:src="item.avatar_frame.image" 
-									mode="aspectFill"
-									class="avatar-frame-img"></image>
-							</view>
-						</view>
-						<!-- 卡片右侧内容 -->
-						<view class="flex-1 py-1 px-2">
-							<!-- 第一行：昵称+性别+可接单状态 -->
-							<view class="flex align-center">
-								<!-- 昵称+性别 -->
-							<!-- 昵称+性别 - 位移函数版，逻辑绝对直观 -->
-							<view style="display: flex; align-items: center; line-height: normal;">
-							    <!-- 核心：transform: translateY(2rpx) = 下移2rpx，数值越大越下移 -->
-							    <view style="
-							        color: #000000; 
-							        font-size: 24rpx;  /* 死死固定字号，绝对不变 */
-							        margin-right: 8rpx; /* 和图标间距 */
-							        transform: translateY(2rpx); /* 关键！2rpx=下移，3rpx=更下，-2rpx=上移 */
-							    ">{{item.name}}</view>
-							    
-							    <!-- 图标同步位移，避免错位 -->
-							    <image 
-							        :src="getSex(item)" 
-							        style="width: 25rpx; height: 25rpx; transform: translateY(2rpx);"
-							    ></image>
-							</view>
-								<!-- 可接单状态 -->
-								<view class="ml-auto flex align-center">
-									<view :class="item.jd_status==0?'point1':'point'"></view>
-									<view class="font-24 ml-1" :style="getJDstatus(item).color">{{getJDstatus(item).title}}</view>
-								</view>
-							</view>
-							<!-- 第二行：打手等级标签+VIP图标+语音播放器 -->
-							<view class="flex align-center flex-wrap justify-between">
-								<view class="flex align-center">
-									<view class="tag" :style="getplayerLevl(item).color">
-										{{getplayerLevl(item).title}}
-									</view>
-									<image class="vip-icon" :src="getVipIcon(item)" mode="aspectFit"></image>
-								</view>
-								<!-- 语音播放器 -->
-								<view v-if="item.audio" class="voice-player" :class="{'playing': playingIndex === index}" @click="toggleAudio(index, $event)">
-									<view class="voice-btn-wrapper">
-										<view class="voice-btn-inner">
-											<up-icon :name="playingIndex === index ? 'pause-circle-fill' : 'play-circle-fill'" size="22rpx" color="#FF7A45"></up-icon>
-										</view>
-									</view>
-									<view class="voice-bars">
-										<view class="voice-bar-item" :class="{'active': playingIndex === index}" :style="{animationDelay: (i * 0.12) + 's'}" v-for="i in 5" :key="i"></view>
-									</view>
-								</view>
-							</view>
-							<!-- 第三行：打手简介 -->
-							<view>
-								<up-text :text="item.synopsis" color="#666" lines="1" size="24rpx"></up-text>
-							</view>
-							<!-- 第四行：评分+在线状态 -->
-							<view class="mt-1 flex align-center justify-between">
-								<!-- 评分 -->
-								<view class="score-align-container">
-									<image 
-										src="/static/images/Star.png" 
-										class="star-icon-fixed"
-										mode="aspectFit"
-									></image>
-									<text class="score-text-fixed">{{item.grade || 0}}分</text>
-								</view>
-								<!-- 在线状态 -->
-								<view class="flex align-center">
-									<up-icon name="clock" :color="item.jd_status==0?'#BBBBBB':'#1BD36C'"></up-icon>
-									<view class="font-24 ml-1" :style="getJDstatus(item).color">{{item.jd_status==0?'离线':'在线'}}</view>
-								</view>
-							</view>
-						</view>
-					</view>
-					<!-- 自定义空状态（无数据时显示） -->
-					<view v-if="!dataList.length" class="empty-container">
-						<view class="empty-text">暂无合适的打手</view>
-					</view>
-					<!-- 底部安全区域占位 -->
-					<view class="listpage"></view>
-			</view>
-
-			<!-- 底部tabbar占位，防止内容被遮挡 -->
-			<view style="height: 150rpx;"></view>
-			
-			<!-- 隐藏 z-paging 自带的空状态 -->
+			<!-- 隐藏 z-paging 自带空状态 -->
 			<template #empty>
 				<view></view>
 			</template>
 		</z-paging>
+
+		<!-- 悬浮搜索按钮 -->
+		<view class="pk-fab" @click="focusSearch">
+			<up-icon name="search" color="#ffffff" size="38rpx"></up-icon>
+		</view>
 	</view>
 </template>
 
@@ -185,8 +145,8 @@
 	const dataList = ref([])
 	// 搜索关键词
 	const keyword = ref('')
-	// 当前选中的标签索引
-	const current = ref(0)
+	// 搜索框聚焦状态（悬浮搜索按钮点击时触发）
+	const searchFocus = ref(false)
 	// 导航栏背景色
 	const bgColor = ref('transparent')
 	// 一级分类数据
@@ -195,7 +155,7 @@
 	const categoryCurrent = ref(0)
 	// 当前选中的分类ID
 	const currentCategoryId = ref(0)
-	// 当前选中的打手类型
+	// 当前选中的打手类型：5=全部 1=男陪 0=女陪
 	const type = ref('5')
 	// 加载中状态
 	const isloading = ref(false)
@@ -207,17 +167,42 @@
 		limit: 10,
 		total: 0
 	})
-	// 分类标签数据
-	const tabs = [{
-		name: '推荐',
-		type: '5'
-	}, {
-		name: '男生',
-		type: '1'
-	}, {
-		name: '女生',
-		type: '0'
-	}]
+
+	// 获取打手封面图
+	const coverOf = (item) => {
+		if (!item) return '/static/icon/default_avatar.png'
+		return item.image || item.logo || item.cover || item.avatar || '/static/icon/default_avatar.png'
+	}
+
+	// 获取语音时长文案
+	const durOf = (item) => {
+		if (!item) return ''
+		const d = item.audio_time || item.duration || item.voice_time
+		return d ? (String(d).replace('s', '') + 's') : ''
+	}
+
+	// 获取打手标签
+	const tagsOf = (item) => {
+		if (!item) return []
+		const raw = item.tags || item.label || item.labels || ''
+		if (!raw) return []
+		const arr = Array.isArray(raw) ? raw : String(raw).split(/[,，]/)
+		return arr.map(t => String(t).trim()).filter(Boolean).slice(0, 3)
+	}
+
+	// 切换男陪/女陪专区
+	const pickBanner = (v) => {
+		// 再次点击已选专区则恢复全部
+		type.value = (type.value === v) ? '5' : v
+		paging.value && paging.value.reload()
+	}
+
+	// 悬浮搜索按钮：回到顶部并聚焦搜索框
+	const focusSearch = () => {
+		if (paging.value) paging.value.scrollToTop && paging.value.scrollToTop()
+		searchFocus.value = false
+		setTimeout(() => { searchFocus.value = true }, 50)
+	}
 
 	// 获取打手等级配置
 	const getplayerLevl = (item) => {
@@ -380,14 +365,6 @@
 		})
 	}
 
-	// 切换分类标签
-	const changeTag = (item, index) => {
-		current.value = index
-		type.value = tabs[current.value].type
-		// 重新加载列表
-		paging.value.reload()
-	}
-	
 	// 滚动位置变化，控制导航栏背景
 	const scrollTopChange = (e) => {
 		// 滚动超过100rpx，导航栏变成白色
@@ -996,5 +973,412 @@
 		display: inline-block;
 		vertical-align: middle;
 		margin-left: 8rpx;
+	}
+
+	/* ==================== 打手专区（新样式） ==================== */
+	page {
+		background: #f5f6f8;
+	}
+
+	.pk-page {
+		min-height: 100vh;
+		background: #f5f6f8;
+	}
+
+	.pk-body {
+		padding: 0 24rpx;
+	}
+
+	// 顶部标题 + 搜索
+	.pk-topbar {
+		padding: 24rpx 0 8rpx;
+	}
+
+	.pk-title {
+		font-size: 46rpx;
+		font-weight: 800;
+		color: #1f2937;
+		letter-spacing: 2rpx;
+		margin-bottom: 18rpx;
+	}
+
+	.pk-search ::v-deep .u-search {
+		background: #ffffff;
+		border-radius: 16rpx;
+	}
+
+	// 一级分类 chips
+	.pk-cats {
+		white-space: nowrap;
+		width: 100%;
+		margin-top: 8rpx;
+	}
+
+	.pk-cats-inner {
+		display: inline-flex;
+		align-items: flex-start;
+		padding: 8rpx 0 16rpx;
+	}
+
+	.pk-cat {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		width: 150rpx;
+		margin-right: 16rpx;
+	}
+
+	.pk-cat-ico {
+		width: 132rpx;
+		height: 132rpx;
+		border-radius: 28rpx;
+		overflow: hidden;
+		background: #fdf3e8;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all .25s ease;
+	}
+
+	.pk-cat-ico image {
+		width: 88rpx;
+		height: 88rpx;
+		border-radius: 50%;
+	}
+
+	.pk-cat-txt {
+		font-size: 24rpx;
+		color: #4b5563;
+		margin-top: 10rpx;
+		max-width: 140rpx;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.pk-cat-on .pk-cat-ico {
+		background: linear-gradient(135deg, #8b7cf6 0%, #6d5efc 100%);
+		box-shadow: 0 8rpx 20rpx rgba(109, 94, 252, .35);
+	}
+
+	.pk-cat-on .pk-cat-txt {
+		color: #ffffff;
+		font-weight: 700;
+		background: linear-gradient(135deg, #8b7cf6 0%, #6d5efc 100%);
+		padding: 2rpx 18rpx;
+		border-radius: 20rpx;
+	}
+
+	// 男陪 / 女陪 banner
+	.pk-banners {
+		display: flex;
+		justify-content: space-between;
+		margin: 12rpx 0 20rpx;
+	}
+
+	.pk-banner {
+		flex: 1;
+		height: 168rpx;
+		border-radius: 24rpx;
+		position: relative;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		padding: 0 20rpx;
+		background: linear-gradient(135deg, #b9c0cc 0%, #8b95a5 100%);
+		transition: all .25s ease;
+	}
+
+	.pk-banner + .pk-banner {
+		margin-left: 18rpx;
+	}
+
+	.pk-banner-m.pk-banner-on {
+		background: linear-gradient(135deg, #7c6cf6 0%, #4a6cf7 100%);
+		box-shadow: 0 10rpx 24rpx rgba(90, 96, 250, .35);
+	}
+
+	.pk-banner-f.pk-banner-on {
+		background: linear-gradient(135deg, #ff8bb8 0%, #ff4d94 100%);
+		box-shadow: 0 10rpx 24rpx rgba(255, 77, 148, .35);
+	}
+
+	.pk-banner-l {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	.pk-banner-t {
+		font-size: 40rpx;
+		font-weight: 800;
+		color: #ffffff;
+		letter-spacing: 2rpx;
+		text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, .12);
+	}
+
+	.pk-banner-s {
+		font-size: 22rpx;
+		color: rgba(255, 255, 255, .9);
+		margin-top: 8rpx;
+		letter-spacing: 2rpx;
+	}
+
+	.pk-banner-play {
+		display: flex;
+		align-items: center;
+		margin-top: 14rpx;
+	}
+
+	.pk-banner-tri {
+		width: 0;
+		height: 0;
+		border-top: 9rpx solid transparent;
+		border-bottom: 9rpx solid transparent;
+		border-left: 14rpx solid rgba(255, 255, 255, .85);
+		margin-right: 8rpx;
+	}
+
+	// 打手卡片列表
+	.pk-list {
+		padding-top: 4rpx;
+	}
+
+	.pk-card {
+		display: flex;
+		align-items: stretch;
+		background: #ffffff;
+		border-radius: 24rpx;
+		padding: 16rpx;
+		margin-bottom: 18rpx;
+		box-shadow: 0 4rpx 16rpx rgba(17, 24, 39, .05);
+	}
+
+	.pk-cover-wrap {
+		position: relative;
+		width: 210rpx;
+		height: 210rpx;
+		border-radius: 20rpx;
+		overflow: hidden;
+		flex-shrink: 0;
+		background: #eef0f4;
+	}
+
+	.pk-cover {
+		width: 100%;
+		height: 100%;
+	}
+
+	.pk-play-btn {
+		position: absolute;
+		left: 12rpx;
+		bottom: 12rpx;
+		width: 54rpx;
+		height: 54rpx;
+		border-radius: 50%;
+		background: rgba(0, 0, 0, .55);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2;
+	}
+
+	.pk-wave {
+		position: absolute;
+		left: 76rpx;
+		bottom: 26rpx;
+		display: flex;
+		align-items: flex-end;
+		height: 30rpx;
+		gap: 6rpx;
+		z-index: 2;
+	}
+
+	.pk-wave-bar {
+		width: 6rpx;
+		height: 18rpx;
+		background: rgba(255, 255, 255, .9);
+		border-radius: 4rpx;
+	}
+
+	.pk-wave-bar.on {
+		animation: pk-wave-dance .7s ease-in-out infinite;
+	}
+
+	@keyframes pk-wave-dance {
+		0%, 100% { transform: scaleY(.45); }
+		50% { transform: scaleY(1); }
+	}
+
+	.pk-dur {
+		position: absolute;
+		left: 122rpx;
+		bottom: 20rpx;
+		color: #ffffff;
+		font-size: 24rpx;
+		font-weight: 600;
+		text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, .4);
+		z-index: 2;
+	}
+
+	.pk-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		padding: 4rpx 0 4rpx 20rpx;
+		overflow: hidden;
+	}
+
+	.pk-row1 {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.pk-name-wrap {
+		display: flex;
+		align-items: center;
+		flex: 1;
+		overflow: hidden;
+	}
+
+	.pk-name {
+		font-size: 34rpx;
+		font-weight: 700;
+		color: #1f2937;
+		max-width: 300rpx;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.pk-cow {
+		font-size: 28rpx;
+		margin-left: 8rpx;
+	}
+
+	.pk-sex {
+		width: 30rpx;
+		height: 30rpx;
+		margin-left: 8rpx;
+		flex-shrink: 0;
+	}
+
+	.pk-online {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+		margin-left: 12rpx;
+	}
+
+	.pk-dot {
+		width: 12rpx;
+		height: 12rpx;
+		border-radius: 50%;
+		background: #1BD36C;
+		margin-right: 8rpx;
+	}
+
+	.pk-dot.off {
+		background: #BBBBBB;
+	}
+
+	.pk-online-txt {
+		font-size: 24rpx;
+		color: #1BD36C;
+	}
+
+	.pk-desc {
+		font-size: 26rpx;
+		color: #9ca3af;
+		margin: 14rpx 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.pk-row3 {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.pk-tags {
+		display: flex;
+		align-items: center;
+		flex: 1;
+		overflow: hidden;
+	}
+
+	.pk-tag {
+		font-size: 22rpx;
+		padding: 6rpx 16rpx;
+		border-radius: 10rpx;
+		margin-right: 10rpx;
+		white-space: nowrap;
+	}
+
+	.pk-tag-0 {
+		color: #ff5c8d;
+		background: #fdeef4;
+	}
+
+	.pk-tag-1 {
+		color: #3d7eff;
+		background: #e9f1ff;
+	}
+
+	.pk-order {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #1c1c1e;
+		padding: 10rpx 24rpx;
+		border-radius: 14rpx;
+		flex-shrink: 0;
+	}
+
+	.pk-order-txt {
+		font-size: 26rpx;
+		color: #ffffff;
+		margin-left: 8rpx;
+		font-weight: 600;
+	}
+
+	// 空状态
+	.pk-empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 160rpx 0;
+	}
+
+	.pk-empty-txt {
+		font-size: 30rpx;
+		color: #bbbbbb;
+	}
+
+	// 底部安全区占位
+	.pk-bottom-space {
+		height: calc(160rpx + constant(safe-area-inset-bottom));
+		height: calc(160rpx + env(safe-area-inset-bottom));
+		width: 100%;
+	}
+
+	// 悬浮搜索按钮
+	.pk-fab {
+		position: fixed;
+		right: 40rpx;
+		bottom: calc(200rpx + env(safe-area-inset-bottom));
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #ff9d6e 0%, #ff7a45 100%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 10rpx 26rpx rgba(255, 122, 69, .45);
+		z-index: 99;
 	}
 </style>
