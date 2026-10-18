@@ -218,7 +218,7 @@
 			</view>
 			<view class="bgm-info">
 				<text class="bgm-title">{{ bgmTitle }}</text>
-				<text class="bgm-sub">{{ bgmPlaying ? '正在播放 · 点击暂停' : bgmSub }}</text>
+				<text class="bgm-sub">{{ bgmPlaying ? '正在播放 · 点击暂停' : (userLevelNum < 2 ? '会员专属 · 点击开通会员' : bgmSub) }}</text>
 			</view>
 			<view :class="['bgm-btn', bgmPlaying ? 'bgm-btn-playing' : '']">
 				<text class="bgm-btn-text">{{ bgmPlaying ? '暂停' : '播放' }}</text>
@@ -442,11 +442,13 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		customerServiceList as getCustomerServiceList,
 		thug,
 		configure,
-		orderBroadcast
+		orderBroadcast,
+		getUserInfo
 	} from '../../request/api';
 
 	import {
-		onInit
+		onInit,
+		onShow
 	} from '@dcloudio/uni-app';
 	import {
 		test
@@ -481,6 +483,21 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	const bgmUrl = ref('')
 	const bgmPlaying = ref(false)
 	let bgmAudio = null
+	// 会员等级（V2 及以上为会员，可播放背景音乐）
+	const userLevelNum = ref(0)
+	const loadUserLevel = async () => {
+		try {
+			const token = uni.getStorageSync('token')
+			if (!token) { userLevelNum.value = 0; return }
+			const res = await getUserInfo()
+			if (res && res.code === 1) {
+				const d = res.data || {}
+				const levelName = d.level_name || (d.user_current_level_info && d.user_current_level_info.name) || ''
+				const m = String(levelName).match(/\d+/)
+				userLevelNum.value = m ? Number(m[0]) : 0
+			}
+		} catch (e) { userLevelNum.value = 0 }
+	}
 
 	// 传世武器入口配置（打造与抽奖互斥，只显示一种）
 	const craftMode = ref('lottery')
@@ -623,6 +640,14 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	// 首页背景音乐：播放/暂停
 	const toggleBgm = () => {
 		if (typeof Audio === 'undefined') return
+		// 会员校验：V2 及以上可播放背景音乐
+		if (!bgmPlaying.value && userLevelNum.value < 2) {
+			uni.showToast({ title: '开通会员后可播放背景音乐', icon: 'none' })
+			setTimeout(() => {
+				uni.navigateTo({ url: '/pagesA/mine/level?identity=user' })
+			}, 600)
+			return
+		}
 		if (!bgmUrl.value) {
 			uni.showToast({ title: '请先在后台上传背景音乐', icon: 'none' })
 			return
@@ -651,6 +676,7 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 
 		loadBgm()
 		loadCraft()
+		loadUserLevel()
 		configure().then(res => {
 			if (res.data) {
 				siteConfig.value = res.data
@@ -778,6 +804,11 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 			}
 		});
 	}
+
+	// 每次显示首页时刷新会员等级（从会员页升级后返回可立即生效）
+	onShow(() => {
+		loadUserLevel()
+	})
 
 	const changeCategory = (index) => {
 		current.value = index
