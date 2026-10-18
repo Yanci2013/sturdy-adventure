@@ -76,6 +76,27 @@
 			</view>
 		</view>
 
+		<!-- 会员等级 + 联系客服 双卡片 -->
+		<view class="cards-row">
+			<view class="card-diamond" @click="goLevelPage">
+				<view class="card-diamond-left">
+					<view class="card-diamond-title-row">
+						<uv-icon name="level" size="16" color="#FFC53D"></uv-icon>
+						<text class="card-diamond-title">会员等级</text>
+					</view>
+					<text class="card-diamond-num">V{{ levelNum }}</text>
+				</view>
+				<text class="card-diamond-arrow">›</text>
+			</view>
+			<view class="card-service" @click="openCustomerService">
+				<view class="card-service-left">
+					<text class="card-service-online">7×24 在线</text>
+					<text class="card-service-cta">联系客服</text>
+				</view>
+				<text class="card-diamond-arrow">›</text>
+			</view>
+		</view>
+
 		<!-- 更多功能 -->
 		<view class="section more-section">
 			<text class="section-title more-title">常用功能</text>
