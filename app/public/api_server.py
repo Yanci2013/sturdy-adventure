@@ -36,6 +36,8 @@ def _rf(key, label, t='text', options=None):
 RESOURCES = {
     'goods_category': {'title': '商品分类管理', 'search': ['name'], 'columns': ['name', 'icon', 'sort', 'status'], 'fields': [
         _rf('name', '分类名称'), _rf('icon', '分类图标', 'image'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
+    'game_server': {'title': '区服管理', 'search': ['name', 'game'], 'columns': ['name', 'game', 'sort', 'status'], 'fields': [
+        _rf('name', '区服名称'), _rf('game', '所属游戏'), _rf('sort', '排序', 'number'), _rf('status', '是否启用', 'switch')]},
     'goods': {'title': '商品管理', 'search': ['name'], 'columns': ['name', 'category_id', 'price', 'status'], 'fields': [
         _rf('name', '商品名称'), _rf('category_id', '所属分类ID', 'number'), _rf('logo', '封面图', 'image'),
         _rf('price', '价格', 'number'), _rf('unit', '计价单位'), _rf('status', '上架状态', 'switch'), _rf('remark', '商品简介', 'textarea')]},
@@ -117,6 +119,10 @@ RESOURCE_SEED = {
     'level': [('V1 青铜', '', '10', '1', '初级会员'), ('V2 白银', '', '100', '0.98', '9.8折'),
               ('V3 黄金', '', '500', '0.95', '9.5折'), ('V4 铂金', '', '2000', '0.92', '9.2折'), ('V5 钻石', '', '5000', '0.88', '8.8折')],
     'goods_category': [('陪玩上分', '', '1', '1'), ('娱乐陪玩', '', '2', '1'), ('电竞教学', '', '3', '1')],
+    'game_server': [('微信区', '王者荣耀', '1', '1'), ('QQ区', '王者荣耀', '2', '1'), ('iOS微信', '王者荣耀', '3', '1'),
+                    ('微信区', '和平精英', '4', '1'), ('QQ区', '和平精英', '5', '1'),
+                    ('艾欧尼亚', '英雄联盟', '6', '1'), ('祖安', '英雄联盟', '7', '1'),
+                    ('北方大区', '穿越火线', '8', '1'), ('南方大区', '穿越火线', '9', '1')],
     'goods': [('王者荣耀陪练', '1', '/static/images/header_background.png', '25', '局', '1', '资深王者陪练，带你连胜上分'),
               ('和平精英陪玩', '1', '/static/images/header_background.png', '20', '局', '1', '吃鸡大神带你躺赢'),
               ('英雄联盟陪玩', '1', '/static/images/header_background.png', '30', '局', '1', 'LOL国服王者陪练'),
@@ -1519,6 +1525,17 @@ class Handler(BaseHTTPRequestHandler):
                 "sort": r['sort'],
                 "children": []
             } for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 区服列表（前端下单选择区服） =====
+        if path == '/api/game/serverList':
+            db = get_db()
+            rows = db.execute(
+                'SELECT id, name, game, sort, status FROM res_game_server WHERE is_deleted = 0 AND status = "1" ORDER BY CAST(sort AS INTEGER) ASC, id ASC'
+            ).fetchall()
+            db.close()
+            data = [{"id": r['id'], "name": r['name'] or '', "game": r['game'] or '', "sort": r['sort']} for r in rows]
             self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
