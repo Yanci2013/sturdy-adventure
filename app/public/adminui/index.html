@@ -761,12 +761,16 @@ PAGES.invites = async () => {
 function inviteEdit() {
   openModal('生成邀请码', `
     <div class="field"><label>客服类型</label><select id="m_type"><option value="thug">打手邀请码</option><option value="cs">客服邀请码</option></select></div>
-    <div class="field"><label>邀请码 <span class="muted" style="font-size:12px;font-weight:400">留空则系统随机生成</span></label><input id="m_code" placeholder="自动生成"></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:13px;line-height:1.6;padding:10px 14px;border-radius:8px;margin-bottom:14px">
+      邀请码由系统随机生成（大小写英文字母 + 数字），生成后自动复制到剪贴板，不支持手动输入。
+    </div>
     <div class="field"><label>备注名称</label><input id="m_name" placeholder="如：客服小创"></div>`,
-    [{ text: '保存', cls: 'btn-primary', fn: async () => {
-      const r = await biz('invite/save', { code: $('#m_code').value.trim(), type: $('#m_type').value, name: $('#m_name').value.trim() })
+    [{ text: '生成并复制', cls: 'btn-primary', fn: async () => {
+      const r = await biz('invite/save', { type: $('#m_type').value, name: $('#m_name').value.trim() })
+      closeModal()
       if (r.code === 1 && r.data && r.data.code) inviteCopy(r.data.code)
-      closeModal(); toast(r.msg); PAGES.invites()
+      else toast(r.msg, false)
+      PAGES.invites()
     } }])
 }
 function inviteGrant() {
@@ -971,7 +975,7 @@ const THEME_PRESETS = [
 ]
 const COLOR_FIELDS = [
   ['brand', '品牌主色'], ['brand_gradient', '辅助渐变色'],
-  ['page_bg', '页面背景'], ['card_bg', '卡片背景'],
+  ['card_bg', '卡片背景'],
   ['text_main', '主要文字'], ['text_sub', '次要文字'],
   ['price', '价格强调色'], ['btn_text', '按钮文字色'],
   ['tabbar_bg', '底部导航背景'], ['tabbar_active', '导航选中色'],
@@ -991,8 +995,12 @@ function fillDecoDefaults(c) {
 }
 PAGES.decoration = async () => {
   const r = await biz('decoration')
-  decoCfg = r.data || { name: '活力橙', colors: THEME_PRESETS[1].colors, bg_image: '' }
+  decoCfg = r.data || { name: '纯白简约', colors: THEME_PRESETS[0].colors, bg_image: '' }
   decoCfg.colors = fillDecoDefaults(decoCfg.colors || {})
+  decoCfg.page_bg_type = decoCfg.page_bg_type || 'solid'
+  decoCfg.page_bg_from = decoCfg.page_bg_from || decoCfg.colors.page_bg || '#FFFFFF'
+  decoCfg.page_bg_to = decoCfg.page_bg_to || decoCfg.colors.page_bg || '#FFFFFF'
+  decoCfg.page_bg_deg = decoCfg.page_bg_deg || 180
   decoDirty = false
   const rr = await biz('realname/config')
   rnEnabled = !!(rr.data && rr.data.enabled)
@@ -1027,6 +1035,43 @@ function renderDecoration() {
             <div class="preset-list">${presetBtns}</div>
             <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">自定义配色</div>
             <div class="color-grid">${fields}</div>
+            <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600;display:flex;align-items:center;justify-content:space-between">
+              <span>页面背景</span>
+              <button class="btn btn-ghost btn-sm" onclick="resetBgColor()">恢复初始颜色</button>
+            </div>
+            <div class="color-row">
+              <label>背景类型</label>
+              <select onchange="setPgType(this.value)">
+                <option value="solid" ${decoCfg.page_bg_type !== 'gradient' ? 'selected' : ''}>纯色（初始白色）</option>
+                <option value="gradient" ${decoCfg.page_bg_type === 'gradient' ? 'selected' : ''}>渐变色</option>
+              </select>
+            </div>
+            ${decoCfg.page_bg_type === 'gradient' ? `
+              <div class="color-row">
+                <label>起始色</label>
+                <div class="color-input">
+                  <input type="color" value="${esc(decoCfg.page_bg_from || '#FFFFFF')}" onchange="setPgGrad('from', this.value)" oninput="setPgGrad('from', this.value)">
+                  <input type="text" value="${esc(decoCfg.page_bg_from || '')}" oninput="setPgGrad('from', this.value)" style="flex:1">
+                </div>
+              </div>
+              <div class="color-row">
+                <label>结束色</label>
+                <div class="color-input">
+                  <input type="color" value="${esc(decoCfg.page_bg_to || '#FFFFFF')}" onchange="setPgGrad('to', this.value)" oninput="setPgGrad('to', this.value)">
+                  <input type="text" value="${esc(decoCfg.page_bg_to || '')}" oninput="setPgGrad('to', this.value)" style="flex:1">
+                </div>
+              </div>
+              <div class="color-row">
+                <label>渐变角度</label>
+                <input type="number" value="${esc(decoCfg.page_bg_deg || 180)}" oninput="decoCfg.page_bg_deg=Number(this.value)||0;decoDirty=true;livePreview()">
+              </div>` : `
+              <div class="color-row">
+                <label>背景颜色</label>
+                <div class="color-input">
+                  <input type="color" value="${esc(decoCfg.colors.page_bg || '#FFFFFF')}" onchange="setPgSolid(this.value)" oninput="setPgSolid(this.value)">
+                  <input type="text" value="${esc(decoCfg.colors.page_bg || '')}" oninput="setPgSolid(this.value)" style="flex:1">
+                </div>
+              </div>`}
             <div style="font-size:13px;color:#374151;margin:18px 0 10px;font-weight:600">背景图片（可选）</div>
             <div class="color-row">
               <label>背景图地址</label>
@@ -1100,6 +1145,35 @@ function setColor(key, val) {
   decoDirty = true
   livePreview()
 }
+function setPgType(v) {
+  decoCfg.page_bg_type = v
+  decoCfg.name = '自定义'
+  decoDirty = true
+  renderDecoration(); livePreview()
+}
+function setPgSolid(v) {
+  decoCfg.colors.page_bg = v
+  decoCfg.page_bg_type = 'solid'
+  decoCfg.name = '自定义'
+  decoDirty = true
+  livePreview()
+}
+function setPgGrad(which, v) {
+  if (which === 'from') decoCfg.page_bg_from = v; else decoCfg.page_bg_to = v
+  decoCfg.page_bg_type = 'gradient'
+  decoCfg.name = '自定义'
+  decoDirty = true
+  livePreview()
+}
+function resetBgColor() {
+  decoCfg.page_bg_type = 'solid'
+  decoCfg.colors.page_bg = '#FFFFFF'
+  decoCfg.page_bg_from = '#FFFFFF'
+  decoCfg.page_bg_to = '#FFFFFF'
+  decoDirty = true
+  renderDecoration(); livePreview()
+  toast('已恢复初始颜色（白色）')
+}
 function livePreview() {
   const f = $('#decoFrame')
   if (!f || !f.contentWindow) return
@@ -1114,17 +1188,13 @@ function livePreview() {
     if (doc) {
       const root = doc.documentElement
       Object.keys(decoCfg.colors).forEach(k => root.style.setProperty('--theme-' + k, decoCfg.colors[k]))
-      const bg = decoCfg.colors.page_bg
-      if (bg) {
-        ;['html','body','#app','.uni-page-wrapper','.uni-page-body'].forEach(sel => {
-          doc.querySelectorAll(sel).forEach(el => { el.style.backgroundColor = bg })
-        })
-        doc.body.style.backgroundColor = bg
-      }
-      if (decoCfg.bg_image) {
-        doc.body.style.backgroundImage = 'url(' + decoCfg.bg_image + ')'
-        doc.body.style.backgroundSize = 'cover'
-      }
+      let pageBg
+      if (decoCfg.bg_image) pageBg = 'url(' + decoCfg.bg_image + ') center/cover no-repeat fixed'
+      else if (decoCfg.page_bg_type === 'gradient') pageBg = 'linear-gradient(' + (decoCfg.page_bg_deg || 180) + 'deg,' + (decoCfg.page_bg_from || '#fff') + ' 0%,' + (decoCfg.page_bg_to || '#fff') + ' 100%) fixed'
+      else pageBg = (decoCfg.colors.page_bg || '#FFFFFF') + ' fixed'
+      ;['html','body','#app','.uni-page-wrapper','.uni-page-body'].forEach(sel => {
+        doc.querySelectorAll(sel).forEach(el => { el.style.setProperty('background', pageBg, 'important') })
+      })
     }
   } catch (e) { /* 跨域忽略 */ }
 }
@@ -1138,6 +1208,10 @@ async function saveDecoration() {
   const navStyle = $('#nav_style') ? $('#nav_style').value : (decoCfg.nav_style || 'float_ellipse')
   const r = await biz('decoration/save', {
     name: decoCfg.name, colors: decoCfg.colors, bg_image: decoCfg.bg_image,
+    page_bg_type: decoCfg.page_bg_type || 'solid',
+    page_bg_from: decoCfg.page_bg_from || '#FFFFFF',
+    page_bg_to: decoCfg.page_bg_to || '#FFFFFF',
+    page_bg_deg: decoCfg.page_bg_deg || 180,
     nav_style: navStyle, floating_nav: decoCfg.floating_nav || []
   })
   toast(r.msg)

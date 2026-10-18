@@ -407,11 +407,11 @@ def set_config(name, value):
 
 # ===== 前端装修主题配置 =====
 DEFAULT_DECORATION = {
-    "name": "活力橙",
+    "name": "纯白简约",
     "colors": {
         "brand": "#F25109",
         "brand_gradient": "#FF7C43",
-        "page_bg": "#F5F5F5",
+        "page_bg": "#FFFFFF",
         "card_bg": "#FFFFFF",
         "text_main": "#1A1A1A",
         "text_sub": "#999999",
@@ -429,6 +429,11 @@ DEFAULT_DECORATION = {
         "tabbar_radius": "999",
     },
     "bg_image": "",
+    # 页面背景：solid=纯色 / gradient=渐变色；初始为纯白
+    "page_bg_type": "solid",
+    "page_bg_from": "#FFFFFF",
+    "page_bg_to": "#FFFFFF",
+    "page_bg_deg": 180,
     "nav_style": "float_ellipse",
     "floating_nav": [
         {"text": "首页", "icon": "home", "color": "#22c55e", "link": "/pages/index/index"},
@@ -447,6 +452,10 @@ def get_decoration_config():
             merged['colors'].update(cfg.get('colors', {}))
             merged['name'] = cfg.get('name', DEFAULT_DECORATION['name'])
             merged['bg_image'] = cfg.get('bg_image', '')
+            merged['page_bg_type'] = cfg.get('page_bg_type', DEFAULT_DECORATION['page_bg_type'])
+            merged['page_bg_from'] = cfg.get('page_bg_from', DEFAULT_DECORATION['page_bg_from'])
+            merged['page_bg_to'] = cfg.get('page_bg_to', DEFAULT_DECORATION['page_bg_to'])
+            merged['page_bg_deg'] = cfg.get('page_bg_deg', DEFAULT_DECORATION['page_bg_deg'])
             merged['nav_style'] = cfg.get('nav_style', DEFAULT_DECORATION['nav_style'])
             merged['floating_nav'] = cfg.get('floating_nav', DEFAULT_DECORATION['floating_nav'])
             return merged
@@ -512,6 +521,15 @@ class Handler(BaseHTTPRequestHandler):
     window.__floatingNav = (cfg && cfg.floating_nav) || [];
     window.__navStyle = (cfg && cfg.nav_style) || 'float_ellipse';
     if (window.__onNavConfig) { try { window.__onNavConfig(); } catch(e){} }
+    // 页面背景：图片 > 渐变 > 纯色（初始纯白）
+    var bgType = (cfg && cfg.page_bg_type) || 'solid';
+    var pgFrom = (cfg && cfg.page_bg_from) || c.page_bg || '#FFFFFF';
+    var pgTo = (cfg && cfg.page_bg_to) || c.page_bg || '#FFFFFF';
+    var pgDeg = (cfg && cfg.page_bg_deg) || 180;
+    var pageBg;
+    if (bg) pageBg = 'url('+bg+') center/cover no-repeat fixed';
+    else if (bgType === 'gradient') pageBg = 'linear-gradient('+pgDeg+'deg,'+pgFrom+' 0%,'+pgTo+' 100%) fixed';
+    else pageBg = (c.page_bg || '#FFFFFF') + ' fixed';
     var root = document.documentElement;
     var map = {
       brand:'--theme-brand', brand_gradient:'--theme-brand-gradient',
@@ -525,8 +543,8 @@ class Handler(BaseHTTPRequestHandler):
       tabbar_text_active:'--theme-tabbar-text-active'
     };
     for (var k in map) if (c[k]) root.style.setProperty(map[k], c[k]);
-    if (c.page_bg) document.body.style.backgroundColor = c.page_bg;
-    if (bg) { document.body.style.backgroundImage='url('+bg+')'; document.body.style.backgroundSize='cover'; document.body.style.backgroundPosition='center'; document.body.style.backgroundAttachment='fixed'; }
+    document.body.style.background = pageBg;
+    document.body.style.backgroundAttachment = 'fixed';
     var style = document.getElementById('__theme_override__');
     if (!style) { style = document.createElement('style'); style.id='__theme_override__'; document.head.appendChild(style); }
     style.textContent = [
@@ -549,7 +567,7 @@ class Handler(BaseHTTPRequestHandler):
         '--theme-notice-bg:'+(c.notice_bg||'#FFF3E0')+';',
         '--theme-notice-text:'+(c.notice_text||'#F25109')+';',
       '}',
-      'html,body,#app,.uni-page-wrapper,.uni-page-body{background-color:var(--theme-page-bg)!important;background-image:none!important;}',
+      'html,body,#app,.uni-page-wrapper,.uni-page-body{background:'+pageBg+'!important;background-attachment:fixed!important;}',
       '.uni-tabbar,.uni-tabbar__item,.uni-tabbar-nav{background:var(--theme-tabbar-bg)!important;}',
       // 通用按钮/主色覆盖
       'button,.uv-button--primary,[class*="primary"]{background:linear-gradient(90deg,var(--theme-brand),var(--theme-brand-gradient))!important;color:var(--theme-btn-text)!important;border-color:var(--theme-brand)!important;}',
@@ -1780,17 +1798,24 @@ class Handler(BaseHTTPRequestHandler):
                 import random, string
                 iid = int(body.get('id') or 0)
                 itype = body.get('type', 'thug')
-                code = (body.get('code') or '').strip()
-                if not code:
-                    prefix = 'CS' if itype == 'cs' else 'THUG'
-                    while True:
-                        code = prefix + ''.join(random.choices(string.digits, k=6))
-                        if not db.execute('SELECT id FROM invite_codes WHERE code = ?', (code,)).fetchone():
-                            break
+                # 邀请码仅由后台随机生成（大小写英文字母 + 数字），禁止手动录入
+                alphabet = string.ascii_letters + string.digits
                 if iid:
+                    # 编辑时保持原邀请码不变
+                    row = db.execute('SELECT code FROM invite_codes WHERE id = ?', (iid,)).fetchone()
+                    code = row['code'] if row else ''
+                    if not code:
+                        while True:
+                            code = ''.join(random.choices(alphabet, k=8))
+                            if not db.execute('SELECT id FROM invite_codes WHERE code = ?', (code,)).fetchone():
+                                break
                     db.execute('UPDATE invite_codes SET code = ?, type = ?, name = ? WHERE id = ?',
                                (code, itype, body.get('name', ''), iid))
                 else:
+                    while True:
+                        code = ''.join(random.choices(alphabet, k=8))
+                        if not db.execute('SELECT id FROM invite_codes WHERE code = ?', (code,)).fetchone():
+                            break
                     db.execute('INSERT INTO invite_codes (code, type, user_id, name, createtime) VALUES (?,?,?,?,?)',
                                (code, itype, int(body.get('user_id') or 0),
                                 body.get('name', ''), now_ts()))
@@ -1866,6 +1891,10 @@ class Handler(BaseHTTPRequestHandler):
                     'name': body.get('name') or '自定义',
                     'colors': body.get('colors') or {},
                     'bg_image': body.get('bg_image') or '',
+                    'page_bg_type': body.get('page_bg_type', 'solid'),
+                    'page_bg_from': body.get('page_bg_from', '#FFFFFF'),
+                    'page_bg_to': body.get('page_bg_to', '#FFFFFF'),
+                    'page_bg_deg': body.get('page_bg_deg', 180),
                     'nav_style': body.get('nav_style', 'float_ellipse'),
                     'floating_nav': body.get('floating_nav') or [],
                 }
