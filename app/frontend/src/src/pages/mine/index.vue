@@ -827,13 +827,13 @@ const handleMoreClick = (item) => {
 .card-diamond {
 	flex: 1;
 	min-height: 120rpx;
-	background: #1a1a1a;
+	background: linear-gradient(135deg, #6E5BFF 0%, #A855F7 100%);
 	border-radius: 32rpx;
 	padding: 20rpx 30rpx;
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
-	box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.18);
+	box-shadow: 0 6rpx 22rpx rgba(124,77,255,0.32);
 	position: relative;
 	overflow: hidden;
 	box-sizing: border-box;
@@ -863,7 +863,7 @@ const handleMoreClick = (item) => {
 .card-diamond-num {
 	font-size: 44rpx;
 	font-weight: 700;
-	color: #ffffff;
+	color: #FFE58A;
 }
 .card-service {
 	flex: 1;
