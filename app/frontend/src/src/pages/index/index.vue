@@ -51,12 +51,12 @@
 				<view class="notice-popup-mask" v-if="showNotice" @click="closeNotice">
 					<view class="notice-popup" @click.stop>
 						<view class="notice-popup-header">
-							<text class="notice-title">公告</text>
+							<text class="anno-title">公告</text>
 						</view>
 						<view class="notice-popup-body">
-							<text class="notice-label">{{ notice }}</text>
-							<rich-text class="notice-desc" :nodes="noticeContent" v-if="noticeContent"></rich-text>
-							<image v-if="noticeImage" class="notice-cover" :src="noticeImage" mode="widthFix"></image>
+							<text class="anno-label">{{ notice }}</text>
+							<rich-text class="anno-content" :nodes="noticeContent" v-if="noticeContent"></rich-text>
+							<image v-if="noticeImage" class="anno-cover" :src="noticeImage" mode="widthFix"></image>
 						</view>
 						<view class="notice-popup-close" @click="closeNotice">
 							<text class="close-icon">×</text>
@@ -93,46 +93,70 @@
 					></image>
 				</view>
 
-				<!-- 公告栏（橙色弧形标签） -->
-				<view class="notice-bar" v-if="noticeListData.length" @click="openNotice(noticeListData[0])">
-					<view class="notice-tag">
-						<text class="notice-tag-text">公告</text>
+				<!-- 公告栏 -->
+				<view class="notice-bar" v-if="noticeListData.length && !noticeBarClosed">
+					<view class="notice-bar__main" @click="openNotice(noticeListData[0])">
+						<svg class="notice-bar__icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M4 9.4h3.2l7.3-3.9v11.9l-7.3-3.9H4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+							<path d="M17.6 8.6a5 5 0 0 1 0 6.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+							<path d="M7.2 9.4v5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+						</svg>
+						<text class="notice-bar__text">{{ noticeListData[0].barText || noticeListData[0].title }}</text>
 					</view>
-					<text class="notice-bar__latest">{{ noticeListData[0].barText || noticeListData[0].title }}</text>
+					<view class="notice-bar__close" @click.stop="closeNoticeBar">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M7.5 7.5l9 9M16.5 7.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+						</svg>
+					</view>
 				</view>
 
 				<!-- 活动 / 投诉入口卡片 -->
-		<view class="image-nav rlp20" v-if="navCards.length">
-			<view class="image-nav__row">
-				<view
-					v-for="(item, index) in navCards"
-					:key="item.id || index"
-					class="image-nav__item"
-					@click="openNavCard(item)"
-				>
-					<view class="image-nav__img-wrap">
-						<image v-if="item.image" class="image-nav__img" :src="item.image" mode="aspectFill"></image>
-						<template v-else>
-							<text class="image-nav__card-title">{{ item.cardTitle }}</text>
-							<text class="image-nav__card-sub">{{ item.cardSub }}</text>
-						</template>
+				<view class="entry-cards rlp20" v-if="navCards.length">
+					<view class="entry-cards__row">
+						<view
+							v-for="(item, index) in navCards"
+							:key="item.id || index"
+							class="entry-card"
+							@click="openNavCard(item)"
+						>
+							<image v-if="item.image" class="entry-card__img" :src="item.image" mode="aspectFill"></image>
+							<template v-else>
+								<view class="entry-card__icon">
+									<svg v-if="index === 0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M4 8.6h10.4v6.2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+										<path d="M14.4 10.6h2.4a2 2 0 0 1 0 4h-2.4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+										<path d="M8 5.6v1.2M12 5v1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+									</svg>
+									<svg v-else-if="index === 1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<rect x="5" y="4.5" width="14" height="16" rx="2.4" stroke="currentColor" stroke-width="1.7"/>
+										<path d="M9 4.5a3 3 0 0 1 6 0" stroke="currentColor" stroke-width="1.7"/>
+										<path d="M9 12.2l2 2 4-4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+									</svg>
+									<svg v-else viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M5 15.6V8.2A1.2 1.2 0 0 1 6.2 7h11.6A1.2 1.2 0 0 1 19 8.2v7.4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+										<path d="M4.6 15.4h14.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+										<path d="M8.5 18.6h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+										<path d="M12 6.4l1 2.2 2.4.3-1.8 1.6.5 2.4-2.1-1.2-2.1 1.2.5-2.4-1.8-1.6 2.4-.3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+									</svg>
+								</view>
+								<text class="entry-card__title">{{ item.cardTitle }}</text>
+								<text class="entry-card__sub">{{ item.cardSub }}</text>
+							</template>
+						</view>
 					</view>
-					<text class="image-nav__text">{{ item.label }}</text>
 				</view>
-			</view>
-		</view>
 
 		<!-- 快捷功能入口 -->
-		<view class="quick-section rlp20">
+		<view class="quick-section">
 			<view class="quick-grid">
 				<view class="quick-item" @click="gotoQuick('process')">
 					<view class="quick-icon">
 						<svg class="quick-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M7 11L4.5 13.5M7 11L9.5 8.5M7 11L4.5 8.5M7 11L9.5 13.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M17 11L14.5 13.5M17 11L19.5 8.5M17 11L14.5 8.5M17 11L19.5 13.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M9.5 8.5L12 6L14.5 8.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M3 17.5L4.5 19L7.5 16M21 17.5L19.5 19L16.5 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M7.5 16L10 18.5L12 16.5L14 18.5L16.5 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M7 11L4.5 13.5M7 11L9.5 8.5M7 11L4.5 8.5M7 11L9.5 13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M17 11L14.5 13.5M17 11L19.5 8.5M17 11L14.5 8.5M17 11L19.5 13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M9.5 8.5L12 6L14.5 8.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M3 17.5L4.5 19L7.5 16M21 17.5L19.5 19L16.5 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M7.5 16L10 18.5L12 16.5L14 18.5L16.5 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</view>
 					<text class="quick-name">流程服务</text>
@@ -140,10 +164,10 @@
 				<view class="quick-item" @click="gotoQuick('wallet')">
 					<view class="quick-icon">
 						<svg class="quick-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M3 7C3 5.89543 3.89543 5 5 5H17C18.1046 5 19 5.89543 19 7V8H5C3.89543 8 3 7.10457 3 7Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
-							<rect x="3" y="8" width="18" height="11" rx="2" stroke="white" stroke-width="1.8"/>
-							<circle cx="16.5" cy="13.5" r="1.3" fill="white"/>
-							<path d="M3 12H19" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+							<path d="M3 7C3 5.89543 3.89543 5 5 5H17C18.1046 5 19 5.89543 19 7V8H5C3.89543 8 3 7.10457 3 7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+							<rect x="3" y="8" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/>
+							<circle cx="16.5" cy="13.5" r="1.3" fill="currentColor"/>
+							<path d="M3 12H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
 						</svg>
 					</view>
 					<text class="quick-name">我的钱包</text>
@@ -151,12 +175,12 @@
 				<view class="quick-item" @click="gotoQuick('service')">
 					<view class="quick-icon">
 						<svg class="quick-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 13V12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12V13" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-							<path d="M4 13V15C4 16.1046 4.89543 17 6 17H7V13H4Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
-							<path d="M20 13V15C20 16.1046 19.1046 17 18 17H17V13H20Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
-							<path d="M8 17V18C8 19.6569 9.34315 21 11 21H13C14.6569 21 16 19.6569 16 18V17" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-							<path d="M12 4V2" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-							<circle cx="12" cy="1.5" r="1" fill="white"/>
+							<path d="M4 13V12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+							<path d="M4 13V15C4 16.1046 4.89543 17 6 17H7V13H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+							<path d="M20 13V15C20 16.1046 19.1046 17 18 17H17V13H20Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+							<path d="M8 17V18C8 19.6569 9.34315 21 11 21H13C14.6569 21 16 19.6569 16 18V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+							<path d="M12 4V2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+							<circle cx="12" cy="1.5" r="1" fill="currentColor"/>
 						</svg>
 					</view>
 					<text class="quick-name">联系客服</text>
@@ -164,11 +188,11 @@
 				<view class="quick-item" @click="gotoQuick('recruit')">
 					<view class="quick-icon">
 						<svg class="quick-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M7 8H17C19.2091 8 21 9.79086 21 12C21 14.2091 19.2091 16 17 16H7C4.79086 16 3 14.2091 3 12C3 9.79086 4.79086 8 7 8Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
-							<path d="M7 11V13M6 12H8" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-							<circle cx="16" cy="11" r="1" fill="white"/>
-							<circle cx="18" cy="13" r="1" fill="white"/>
-							<path d="M9 8L8 5H6L7 8M15 8L16 5H18L17 8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M7 8H17C19.2091 8 21 9.79086 21 12C21 14.2091 19.2091 16 17 16H7C4.79086 16 3 14.2091 3 12C3 9.79086 4.79086 8 7 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+							<path d="M7 11V13M6 12H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+							<circle cx="16" cy="11" r="1" fill="currentColor"/>
+							<circle cx="18" cy="13" r="1" fill="currentColor"/>
+							<path d="M9 8L8 5H6L7 8M15 8L16 5H18L17 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</view>
 					<text class="quick-name">招募陪玩</text>
@@ -179,36 +203,46 @@
 		<!-- 传世武器活动横幅（背景音乐上方），打造与抽奖互斥 -->
 		<view v-if="craftMode === 'craft'" class="weapon-banner rlp20" @click="openCraft">
 			<image v-if="craftBanner" :src="craftBanner" mode="aspectFill" class="weapon-banner__img"></image>
-			<view v-else class="weapon-banner__content weapon-banner--purple">
+			<view v-else class="weapon-banner__content">
+				<svg class="weapon-banner__art" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M74 14l2.6 6 6.4.8-4.7 4.3 1.3 6.4-5.9-3.2-5.9 3.2 1.3-6.4-4.7-4.3 6.4-.8z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+					<circle cx="72" cy="52" r="15" stroke="currentColor" stroke-width="1.1"/>
+					<path d="M72 40v24M60 52h24" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+				</svg>
 				<view class="weapon-banner__text">
 					<view class="weapon-banner__title">传世武器体验单</view>
 					<view class="weapon-banner__sub">更多优惠活动等你来</view>
 				</view>
 				<view class="weapon-banner__go">
-					<text class="weapon-banner__go-text">GO</text>
+					<text class="weapon-banner__go-text">立即参与</text>
 				</view>
 			</view>
 		</view>
 		<view v-else class="weapon-banner rlp20" @click="openLottery">
 			<image v-if="lotteryBanner" :src="lotteryBanner" mode="aspectFill" class="weapon-banner__img"></image>
-			<view v-else class="weapon-banner__content weapon-banner--gold">
+			<view v-else class="weapon-banner__content">
+				<svg class="weapon-banner__art" viewBox="0 0 96 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M74 14l2.6 6 6.4.8-4.7 4.3 1.3 6.4-5.9-3.2-5.9 3.2 1.3-6.4-4.7-4.3 6.4-.8z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+					<circle cx="72" cy="52" r="15" stroke="currentColor" stroke-width="1.1"/>
+					<path d="M72 40v24M60 52h24" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+				</svg>
 				<view class="weapon-banner__text">
 					<view class="weapon-banner__title">抽传世武器</view>
 					<view class="weapon-banner__sub">极品传世武器等你来抽</view>
 				</view>
-				<view class="weapon-banner__go weapon-banner__go--gold">
-					<text class="weapon-banner__go-text">GO</text>
+				<view class="weapon-banner__go">
+					<text class="weapon-banner__go-text">立即参与</text>
 				</view>
 			</view>
 		</view>
 
 		<!-- 首页背景音乐（分类上方） -->
-		<view class="bgm-card rlp20" v-if="bgmEnabled && bgmTitle" @click="toggleBgm">
+		<view class="bgm-bar" v-if="bgmEnabled && bgmTitle" @click="toggleBgm">
 			<view class="bgm-icon">
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M9 18V6l10-2v12" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-					<circle cx="6.5" cy="18" r="2.6" stroke="#fff" stroke-width="1.8"/>
-					<circle cx="16.5" cy="16" r="2.6" stroke="#fff" stroke-width="1.8"/>
+					<path d="M9 18V6l10-2v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+					<circle cx="6.5" cy="18" r="2.6" stroke="currentColor" stroke-width="1.8"/>
+					<circle cx="16.5" cy="16" r="2.6" stroke="currentColor" stroke-width="1.8"/>
 				</svg>
 			</view>
 			<view class="bgm-info">
@@ -230,11 +264,26 @@
 						@click="changeCategory(index)"
 					>
 						<view class="category-icon-wrap">
-							<image class="category-icon" :src="item.image" mode="aspectFill"></image>
+							<svg v-if="categoryIconType(item.name) === 'trophy'" class="category-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M7 4.5h10v4a5 5 0 0 1-10 0v-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+								<path d="M7 5.5H4.6a1 1 0 0 0-1 1.1c.2 1.7 1.5 2.9 3.4 2.9M17 5.5h2.4a1 1 0 0 1 1 1.1c-.2 1.7-1.5 2.9-3.4 2.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+								<path d="M12 13.5v3.2M8.5 19.5h7M9.8 19.5l.5-2.8h3.4l.5 2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							<svg v-else-if="categoryIconType(item.name) === 'smile'" class="category-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="12" cy="12" r="8.2" stroke="currentColor" stroke-width="1.6"/>
+								<path d="M8.6 14.2a4.2 4.2 0 0 0 6.8 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+								<path d="M9.2 9.6h.01M14.8 9.6h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+							</svg>
+							<svg v-else-if="categoryIconType(item.name) === 'book'" class="category-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M12 6.6C10.6 5.4 8.7 4.9 6.2 4.9c-1 0-1.8.1-2.4.3v12.6c.6-.2 1.4-.3 2.4-.3 2.5 0 4.4.6 5.8 1.8 1.4-1.2 3.3-1.8 5.8-1.8 1 0 1.8.1 2.4.3V5.2c-.6-.2-1.4-.3-2.4-.3-2.5 0-4.4.5-5.8 1.7z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+								<path d="M12 6.6v12.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+							</svg>
+							<image v-else class="category-icon" :src="item.image" mode="aspectFill"></image>
 						</view>
 						<view :class="['category-name', current === index ? 'category-name-active' : '']">
 							<text class="category-name-text">{{item.name}}</text>
 						</view>
+						<view class="category-underline" :class="{ show: current === index }"></view>
 					</view>
 				</view>
 			</view>
@@ -375,7 +424,7 @@
 												<view class="player-voice-player" :class="{'playing': playingIndex === index}">
 													<view class="player-voice-btn-wrapper">
 														<view class="player-voice-btn-inner">
-															<up-icon :name="playingIndex === index ? 'pause-circle-fill' : 'play-circle-fill'" size="18rpx" color="#FF7A45"></up-icon>
+															<up-icon :name="playingIndex === index ? 'pause-circle-fill' : 'play-circle-fill'" size="18rpx" color="#C05B34"></up-icon>
 														</view>
 													</view>
 													<view class="player-voice-bars">
@@ -468,12 +517,23 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	const noticeImage = ref('')
 	const noticeListData = ref([])
 	const showNotice = ref(false)
+	// 公告条关闭状态（本次会话内）
+	const noticeBarClosed = ref(false)
+	const closeNoticeBar = () => { noticeBarClosed.value = true }
+	// 一级分类图标类型（按名称匹配：奖杯/笑脸/书本），未命中则用后台图片
+	const categoryIconType = (name) => {
+		const n = String(name || '')
+		if (/教学|课程|课堂|培训/.test(n)) return 'book'
+		if (/上分|上星|排位|代练|竞技|技术|战神/.test(n)) return 'trophy'
+		if (/娱乐|陪玩|聊天|交友/.test(n)) return 'smile'
+		return ''
+	}
 	const imageNavs = ref([])
 	// 活动/投诉入口默认卡片（后台无「图片导航」数据时兜底显示）
 	const defaultNavCards = [
-		{ id: 'd_activity', label: '老板消费活动入口', cardTitle: '老板消费活动', cardSub: '(超多福利等你)', action: 'activity' },
-		{ id: 'd_tousu_cs', label: '投诉客服/打手入口', cardTitle: '投诉客服/打手', cardSub: '(官方投诉入口)', action: 'tousu' },
-		{ id: 'd_tousu_boss', label: '向董事长投诉问题', cardTitle: '向董事长投诉问题', cardSub: '(投诉客服和打手问题)', action: 'tousu' }
+		{ id: 'd_activity', label: '消费福利活动', cardTitle: '消费福利活动', cardSub: '限时消费福利', action: 'activity' },
+		{ id: 'd_tousu_cs', label: '订单投诉入口', cardTitle: '订单投诉入口', cardSub: '订单问题快速反馈', action: 'tousu' },
+		{ id: 'd_tousu_boss', label: '升级反馈通道', cardTitle: '升级反馈通道', cardSub: '高阶问题升级反馈', action: 'tousu' }
 	]
 	// 优先使用后台配置的图片导航（需带图片）；无配置时使用默认三项
 	const navCards = computed(() => {
@@ -1080,9 +1140,9 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		if (!item || item.type == null || item.type == undefined) {
 			return { bg: 'background:#999999', title: '普通打手' }
 		}
-		if (item.type == 1) return { bg: 'background:linear-gradient(270deg,#FFB38A 0%,#FF7A45 100%)', title: '钻石打手' }
-		if (item.type == 2) return { bg: 'background:linear-gradient(270deg,#FFD4B8 0%,#FF9D6E 100%)', title: '大师打手' }
-		if (item.type == 3) return { bg: 'background:linear-gradient(270deg,#FFCC5B 0%,#FF8A40 100%)', title: '顶尖打手' }
+		if (item.type == 1) return { bg: 'background:linear-gradient(270deg,#D08A6A 0%,#C05B34 100%)', title: '钻石打手' }
+		if (item.type == 2) return { bg: 'background:linear-gradient(270deg,#CDAE9A 0%,#A64A28 100%)', title: '大师打手' }
+		if (item.type == 3) return { bg: 'background:linear-gradient(270deg,#C8A46A 0%,#8A6A3A 100%)', title: '顶尖打手' }
 		return { bg: 'background:#999999', title: '普通打手' }
 	}
 
@@ -1151,47 +1211,55 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		background: transparent;
 	}
 
-	/* 快捷功能入口 */
+	/* 快捷功能入口（轻量线性图标） */
 	.quick-section {
 		margin-top: 24rpx;
-		background: #fff;
-		border-radius: 24rpx;
-		padding: 28rpx 20rpx;
-		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+		padding: 0 20rpx;
+		background: transparent;
 	}
 
 	.quick-grid {
 		display: flex;
 		flex-direction: row !important;
-		justify-content: space-around;
+		justify-content: space-between;
 	}
 
 	.quick-item {
+		flex: 1 1 0;
+		min-width: 0;
 		display: flex;
 		flex-direction: column !important;
 		align-items: center;
-		gap: 14rpx;
+		gap: 12rpx;
 	}
 
 	.quick-icon {
-		width: 104rpx;
-		height: 104rpx;
-		border-radius: 30rpx;
-		background: linear-gradient(160deg, #C4622F 0%, #9C3D16 55%, #7C2C0E 100%);
+		width: 88rpx;
+		height: 88rpx;
+		border-radius: 20rpx;
+		background: #FFFFFF;
+		border: 2rpx solid #EDEFF2;
+		box-shadow: 0 2rpx 8rpx rgba(16, 24, 40, 0.04);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		box-shadow: 0 8rpx 18rpx rgba(124, 44, 14, 0.32), inset 0 2rpx 6rpx rgba(255, 255, 255, 0.28);
+		transition: background 0.2s ease, border-color 0.2s ease;
+	}
+
+	.quick-item:active .quick-icon {
+		background: #F2F3F5;
+		border-color: #E1E4E9;
 	}
 
 	.quick-svg {
-		width: 56rpx;
-		height: 56rpx;
+		width: 46rpx;
+		height: 46rpx;
+		color: #3A4050;
 	}
 
 	.quick-name {
-		font-size: 24rpx;
-		color: #333;
+		font-size: 22rpx;
+		color: #4B5563;
 	}
 
 	.order-broadcast {
@@ -1206,8 +1274,8 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		padding: 6rpx 24rpx 6rpx 8rpx;
 		box-sizing: border-box;
 		border-radius: 999rpx;
-		background: linear-gradient(90deg, rgba(52, 38, 31, 0.9) 0%, rgba(214, 91, 45, 0.88) 52%, rgba(255, 128, 55, 0.92) 100%);
-		box-shadow: 0 12rpx 28rpx rgba(167, 71, 28, 0.28);
+		background: linear-gradient(90deg, rgba(43, 48, 59, 0.92) 0%, rgba(122, 68, 44, 0.9) 55%, rgba(192, 91, 52, 0.94) 100%);
+		box-shadow: 0 12rpx 28rpx rgba(43, 48, 59, 0.26);
 		transform: translate3d(0, -50%, 0);
 		display: flex;
 		align-items: center;
@@ -1280,7 +1348,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		left: 0;
 		right: 0;
 		height: 760rpx;
-		background: linear-gradient(180deg, #FFF6F0 0%, #FFFFFF 100%);
+		background: linear-gradient(180deg, #F4F5F7 0%, #FFFFFF 100%);
 		z-index: 0;
 		pointer-events: none;
 	}
@@ -1339,7 +1407,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		padding: 0 28rpx;
 		background: #ffffff;
 		border-radius: 999rpx;
-		box-shadow: 0 4rpx 16rpx rgba(217, 74, 24, 0.12);
+		box-shadow: 0 4rpx 16rpx rgba(16, 24, 40, 0.06);
 	}
 
 	.index-search__icon {
@@ -1367,7 +1435,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		height: 64rpx;
 		border-radius: 50%;
 		background: #ffffff;
-		box-shadow: 0 4rpx 12rpx rgba(217, 74, 24, 0.18);
+		box-shadow: 0 4rpx 12rpx rgba(16, 24, 40, 0.08);
 	}
 
 	.club-brand__name {
@@ -1457,46 +1525,58 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		display: block;
 	}
 
-	/* 公告栏 */
+	/* 公告栏：浅灰底 + 喇叭图标 + 关闭按钮 */
 	.notice-bar {
-		margin: 20rpx 20rpx 0 20rpx;
+		margin: 16rpx 20rpx 0 20rpx;
 		width: calc(100% - 40rpx);
-		min-height: 72rpx;
-		background: #fff;
-		border-radius: 20rpx;
+		min-height: 68rpx;
+		background: #F2F3F5;
+		border-radius: 24rpx;
 		display: flex;
 		align-items: center;
-		overflow: hidden;
+		padding: 0 8rpx 0 20rpx;
 		box-sizing: border-box;
-		box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
 	}
 
-	.notice-tag {
-		flex-shrink: 0;
-		display: inline-flex;
-		align-items: center;
-		background: linear-gradient(135deg, #FF7A45 0%, #D94A18 100%);
-		padding: 14rpx 36rpx 14rpx 28rpx;
-		border-radius: 14rpx 100rpx 100rpx 14rpx;
-		position: relative;
-		box-shadow: 0 4rpx 12rpx rgba(217, 74, 24, 0.2);
-	}
-
-	.notice-tag-text {
-		font-size: 28rpx;
-		font-weight: 700;
-		color: #fff;
-		letter-spacing: 2rpx;
-	}
-
-	.notice-bar__latest {
+	.notice-bar__main {
 		flex: 1;
-		font-size: 26rpx;
-		color: #333;
-		padding: 0 20rpx;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		height: 68rpx;
+	}
+
+	.notice-bar__icon {
+		width: 32rpx;
+		height: 32rpx;
+		flex-shrink: 0;
+		color: #9AA0A6;
+	}
+
+	.notice-bar__text {
+		flex: 1;
+		min-width: 0;
+		font-size: 24rpx;
+		color: #6B7280;
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+	}
+
+	.notice-bar__close {
+		width: 56rpx;
+		height: 56rpx;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #B4B8BE;
+	}
+
+	.notice-bar__close svg {
+		width: 26rpx;
+		height: 26rpx;
 	}
 
 	/* 去掉swiper默认白色背景 */
@@ -1595,10 +1675,10 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		padding: 24rpx;
 	}
 
-	.notice-title {
+	.anno-title {
 		font-size: 28rpx;
 		font-weight: 600;
-		color: #333;
+		color: #2B303B;
 	}
 
 	.notice-popup-body {
@@ -1607,7 +1687,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		padding: 24rpx;
 	}
 
-	.notice-cover {
+	.anno-cover {
 		display: block;
 		width: 100%;
 		max-width: 100%;
@@ -1616,18 +1696,18 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		margin-top: 16rpx;
 	}
 
-	.notice-label {
+	.anno-label {
 		font-size: 26rpx;
 		font-weight: 600;
-		color: #222;
+		color: #2B303B;
 		line-height: 1.5;
 		text-align: center;
 		display: block;
 	}
 
-	.notice-desc {
+	.anno-content {
 		font-size: 26rpx;
-		color: #333;
+		color: #5B6472;
 		line-height: 1.6;
 		margin-top: 4rpx;
 		word-break: break-all;
@@ -1669,199 +1749,198 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		text-shadow: 0 1rpx 1rpx rgba(255,255,255,0.5);
 	}
 
-	/* 图片导航 */
-	.image-nav { margin-top: 24rpx; padding: 0 20rpx; margin-bottom: 4rpx; }
+	/* 三大功能入口卡片 */
+	.entry-cards {
+		margin-top: 24rpx;
+	}
 
-	.image-nav__row {
+	.entry-cards__row {
 		display: flex !important;
-		align-items: flex-start;
-		justify-content: space-between;
 		gap: 18rpx;
 	}
 
-	.image-nav__item {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 0;
-		width: calc((100% - 36rpx) / 3);
-		flex: 0 0 calc((100% - 36rpx) / 3);
-	}
-
-	/* 卡片容器 */
-	.image-nav__img-wrap {
+	.entry-card {
 		position: relative;
-		width: 100%;
-		height: 172rpx;
-		border-radius: 20rpx;
-		overflow: hidden;
+		flex: 1 1 0;
+		min-width: 0;
+		min-height: 176rpx;
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background: linear-gradient(160deg, #FFE07A 0%, #FFC93C 100%);
-		box-shadow: 0 6rpx 16rpx rgba(255, 180, 40, 0.28);
+		align-items: flex-start;
+		padding: 24rpx 22rpx;
+		border-radius: 24rpx;
+		background: linear-gradient(150deg, #3A4050 0%, #2B303B 100%);
+		overflow: hidden;
 		transition: transform 0.2s ease;
 	}
 
-	.image-nav__img-wrap:active {
-		transform: scale(0.96);
+	.entry-card:active {
+		transform: scale(0.97);
 	}
 
-	.image-nav__img {
+	.entry-card__img {
+		position: absolute;
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
 		display: block;
 	}
 
-	.image-nav__card-title {
+	.entry-card__icon {
+		width: 48rpx;
+		height: 48rpx;
+		color: #E08A5F;
+	}
+
+	.entry-card__icon svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	.entry-card__title {
+		margin-top: 20rpx;
 		font-size: 26rpx;
-		font-weight: 800;
-		color: #4A2B00;
-		line-height: 1.25;
-		text-align: center;
-		padding: 0 10rpx;
+		font-weight: 500;
+		color: #FFFFFF;
+		line-height: 1.3;
 	}
 
-	.image-nav__card-sub {
-		margin-top: 10rpx;
-		font-size: 18rpx;
-		color: #8A5A12;
-		text-align: center;
-		padding: 0 8rpx;
+	.entry-card__sub {
+		margin-top: 6rpx;
+		font-size: 20rpx;
+		color: rgba(255, 255, 255, 0.55);
+		line-height: 1.3;
 	}
 
-	.image-nav__text {
-		margin-top: 12rpx;
-		font-size: 24rpx;
-		color: #333333;
-		text-align: center;
-		line-height: 1.2;
-	}
-
-	/* 传世武器活动横幅 */
+	/* 活动横幅（传世武器 / 抽奖） */
 	.weapon-banner {
 		margin-top: 24rpx;
 	}
 	.weapon-banner__img {
 		width: 100%;
-		height: 140rpx;
-		border-radius: 40rpx;
+		height: 132rpx;
+		border-radius: 24rpx;
 		display: block;
 	}
 	.weapon-banner__content {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 26rpx 34rpx;
-		border-radius: 40rpx;
+		gap: 20rpx;
+		min-height: 132rpx;
+		box-sizing: border-box;
+		padding: 20rpx 26rpx;
+		border-radius: 24rpx;
 		overflow: hidden;
 		position: relative;
+		background: linear-gradient(120deg, #2E333D 0%, #3B414D 100%);
 	}
-	.weapon-banner--purple {
-		background: linear-gradient(135deg, #4A148C 0%, #7B1FA2 50%, #9C27B0 100%);
-		box-shadow: 0 8rpx 24rpx rgba(123, 31, 162, 0.35);
-	}
-	.weapon-banner--gold {
-		background: linear-gradient(135deg, #3E2723 0%, #5D4037 40%, #8D6E63 100%);
-		box-shadow: 0 8rpx 24rpx rgba(93, 64, 55, 0.35);
+	.weapon-banner__art {
+		width: 108rpx;
+		height: 92rpx;
+		flex: 0 0 108rpx;
+		color: rgba(224, 138, 95, 0.85);
 	}
 	.weapon-banner__text {
+		flex: 1;
+		min-width: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 6rpx;
 		z-index: 2;
 	}
 	.weapon-banner__title {
-		font-size: 38rpx;
-		font-weight: 900;
+		font-size: 30rpx;
+		font-weight: 600;
 		color: #FFFFFF;
-		letter-spacing: 2rpx;
-		text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+		letter-spacing: 1rpx;
 	}
 	.weapon-banner__sub {
 		font-size: 22rpx;
-		color: rgba(255, 255, 255, 0.85);
-		letter-spacing: 1rpx;
+		color: rgba(255, 255, 255, 0.58);
 	}
 	.weapon-banner__go {
-		width: 90rpx;
-		height: 90rpx;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.2);
-		border: 3rpx solid rgba(255, 255, 255, 0.6);
+		flex: 0 0 auto;
+		padding: 12rpx 28rpx;
+		border-radius: 16rpx;
+		background: #C05B34;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		z-index: 2;
 	}
-	.weapon-banner__go--gold {
-		background: rgba(255, 215, 0, 0.25);
-		border-color: rgba(255, 215, 0, 0.8);
-	}
 	.weapon-banner__go-text {
-		font-size: 30rpx;
-		font-weight: 800;
+		font-size: 24rpx;
+		font-weight: 600;
 		color: #FFFFFF;
 	}
 
-	/* 首页背景音乐卡片 */
-	.bgm-card {
+	/* 首页背景音乐（轻量横条） */
+	.bgm-bar {
 		display: flex;
 		align-items: center;
-		gap: 20rpx;
+		gap: 16rpx;
 		margin-top: 24rpx;
-		padding: 22rpx 26rpx;
-		background: #FFFFFF;
-		border-radius: 20rpx;
-		box-shadow: 0 6rpx 20rpx rgba(16, 24, 40, 0.05);
+		min-height: 76rpx;
+		box-sizing: border-box;
+		padding: 14rpx 22rpx;
+		background: #F6F7F9;
+		border-radius: 16rpx;
 	}
 	.bgm-icon {
-		width: 76rpx;
-		height: 76rpx;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #FF9A5A 0%, #FF7A45 100%);
+		width: 52rpx;
+		height: 52rpx;
+		border-radius: 14rpx;
+		background: #EAECEF;
+		color: #5B6472;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		flex: 0 0 76rpx;
+		flex: 0 0 52rpx;
 	}
 	.bgm-icon svg {
-		width: 40rpx;
-		height: 40rpx;
+		width: 30rpx;
+		height: 30rpx;
 	}
 	.bgm-info {
 		flex: 1;
+		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 6rpx;
-		min-width: 0;
+		gap: 4rpx;
 	}
 	.bgm-title {
-		font-size: 30rpx;
-		font-weight: 700;
-		color: #1A1A1A;
+		font-size: 26rpx;
+		font-weight: 500;
+		color: #2B303B;
 	}
 	.bgm-sub {
-		font-size: 24rpx;
-		color: #8A8A8A;
+		font-size: 20rpx;
+		color: #8A8F98;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.bgm-btn {
 		flex: 0 0 auto;
-		padding: 12rpx 32rpx;
-		border-radius: 40rpx;
-		background: linear-gradient(135deg, #FF9A5A 0%, #FF7A45 100%);
+		padding: 8rpx 26rpx;
+		border-radius: 16rpx;
+		background: #FFFFFF;
+		border: 2rpx solid #E3E5E9;
 	}
 	.bgm-btn-playing {
-		background: #8A8A8A;
+		background: rgba(192, 91, 52, 0.10);
+		border-color: rgba(192, 91, 52, 0.28);
 	}
 	.bgm-btn-text {
-		font-size: 26rpx;
-		color: #FFFFFF;
-		font-weight: 600;
+		font-size: 22rpx;
+		font-weight: 500;
+		color: #4B5563;
+	}
+	.bgm-btn-playing .bgm-btn-text {
+		color: #B0522E;
 	}
 
 	/* 一级分类 */
@@ -1887,19 +1966,29 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		flex-grow: 0;
 	}
 
-	/* 正方形圆角图标容器 */
+	/* 图标容器 */
 	.category-icon-wrap {
 		position: relative;
 		width: 78rpx;
 		height: 78rpx;
 		border-radius: 18rpx;
 		overflow: hidden;
-		background: #f5f6f9;
-		transition: all 0.3s ease;
+		background: transparent;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: color 0.25s ease;
 	}
 
-	.category-item-active .category-icon-wrap {
-		box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.25);
+	.category-icon-svg {
+		width: 52rpx;
+		height: 52rpx;
+		color: #7A8291;
+		transition: color 0.25s ease;
+	}
+
+	.category-item-active .category-icon-svg {
+		color: #C05B34;
 	}
 
 	.category-icon {
@@ -1908,38 +1997,40 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		display: block;
 	}
 
-	/* 胶囊式分类名 - 未选中：白色卡片黑字 */
+	/* 分类名：选中态仅文字变色 + 底部细线下划线 */
 	.category-name {
 		position: relative;
-		margin-top: 9rpx;
-		padding: 5rpx 13rpx;
-		border-radius: 19rpx;
-		background: #ffffff;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+		margin-top: 8rpx;
 		max-width: 100%;
 		box-sizing: border-box;
-		transition: all 0.3s ease;
 	}
 
 	.category-name-text {
-		position: relative;
-		font-size: 19rpx;
-		color: #333333;
+		display: block;
+		font-size: 22rpx;
+		color: #3A4050;
 		text-align: center;
 		white-space: nowrap;
-		line-height: 1;
-		display: block;
-	}
-
-	/* 选中态：暖珊瑚橘卡片，白色文字 */
-	.category-name-active {
-		background: linear-gradient(135deg, #FF7A45 0%, #FF9D6E 100%);
-		box-shadow: 0 4rpx 14rpx rgba(255, 122, 69, 0.3);
+		line-height: 1.2;
+		transition: color 0.25s ease;
 	}
 
 	.category-name-active .category-name-text {
-		color: #ffffff;
+		color: #C05B34;
 		font-weight: 600;
+	}
+
+	.category-underline {
+		margin-top: 6rpx;
+		width: 36rpx;
+		height: 4rpx;
+		border-radius: 4rpx;
+		background: transparent;
+		transition: background 0.25s ease;
+	}
+
+	.category-underline.show {
+		background: #C05B34;
 	}
 
 	/* 二级分类 + 筛选 */
@@ -2015,9 +2106,9 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	.goods_classify_box .select {
 		color: #ffffff;
 		font-weight: 500;
-		background: linear-gradient(135deg, #FF7A45 0%, #FF9D6E 100%);
+		background: linear-gradient(135deg, #C05B34 0%, #A64A28 100%);
 		border: none;
-		box-shadow: 0 4rpx 14rpx rgba(255, 122, 69, 0.3);
+		box-shadow: 0 4rpx 14rpx rgba(192, 91, 52, 0.3);
 		transform: none;
 		border-radius: 32rpx;
 	}
@@ -2043,9 +2134,9 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		width: 62rpx;
 		line-height: 62rpx;
 		padding: 0;
-		background: linear-gradient(135deg, #FF7A45 0%, #FF9D6E 100%);
+		background: linear-gradient(135deg, #C05B34 0%, #A64A28 100%);
 		border: 1rpx solid rgba(255, 255, 255, .8);
-		box-shadow: 0 4rpx 14rpx rgba(255, 122, 69, 0.25);
+		box-shadow: 0 4rpx 14rpx rgba(192, 91, 52, 0.25);
 		color: #ffffff;
 		border-radius: 50%;
 		display: flex;
@@ -2291,7 +2382,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 
 	.goods-list.goods-list--cols-1 .goods-item__ft__price .value {
 		font-size: 34rpx;
-		color: #ff4d1f;
+		color: var(--theme-price, #C05B34);
 	}
 
 	.goods-list.goods-list--cols-1 .goods-item__ft__price .list_price,
@@ -2306,7 +2397,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		width: 44rpx;
 		height: 44rpx;
 		border-radius: 50%;
-		background: linear-gradient(135deg, #FF7A45 0%, #FF9D6E 100%);
+		background: linear-gradient(135deg, #C05B34 0%, #A64A28 100%);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -2412,7 +2503,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 
 	.goods-list .goods-item__ft__price .start {
 		font-size: 22rpx;
-		color: #f50b00;
+		color: var(--theme-price, #C05B34);
 		font-weight: 600;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 		flex-shrink: 0;
@@ -2420,7 +2511,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 
 	.goods-list .goods-item__ft__price .value {
 		font-size: 26rpx;
-		color: #fc630a;
+		color: var(--theme-price, #C05B34);
 		font-weight: 600;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 		flex-shrink: 0;
@@ -2591,7 +2682,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 
 	.player-category-icon-wrap-active {
 		box-shadow:
-			0 4rpx 16rpx rgba(255, 122, 69, 0.3),
+			0 4rpx 16rpx rgba(192, 91, 52, 0.3),
 			inset 0 2rpx 4rpx rgba(255, 255, 255, 0.6),
 			inset 0 -2rpx 4rpx rgba(0, 0, 0, 0.08);
 	}
@@ -2651,9 +2742,9 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 
 	.player-tab-active {
 		color: #fff;
-		background: linear-gradient(180deg, #FF7A45 0%, #FF9D6E 100%);
+		background: linear-gradient(180deg, #C05B34 0%, #A64A28 100%);
 		box-shadow:
-			0 4rpx 16rpx rgba(255, 122, 69, 0.35),
+			0 4rpx 16rpx rgba(192, 91, 52, 0.35),
 			0 0 0 1rpx rgba(255, 255, 255, 0.2) inset,
 			inset 0 2rpx 6rpx rgba(255, 255, 255, 0.45),
 			inset 0 -2rpx 6rpx rgba(0, 0, 0, 0.08);
@@ -2688,7 +2779,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		padding: 0rpx;
 		overflow: visible;
 		box-shadow:
-			0 6rpx 24rpx rgba(255, 122, 69, 0.10),
+			0 6rpx 24rpx rgba(192, 91, 52, 0.10),
 			0 2rpx 8rpx rgba(0, 0, 0, 0.06),
 			inset 0 2rpx 6rpx rgba(255, 255, 255, 0.9),
 			inset 0 -2rpx 6rpx rgba(0, 0, 0, 0.05),
@@ -2897,7 +2988,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 
 	.player-score-text {
 		font-size: 24rpx;
-		color: #FF9500;
+		color: #C0873C;
 		font-weight: 500;
 	}
 
@@ -2914,8 +3005,8 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		flex-shrink: 0;
 		padding: 6rpx 12rpx;
 		border-radius: 40rpx;
-		background: linear-gradient(135deg, #FF7A45 0%, #FF9D6E 100%);
-		box-shadow: 0 3rpx 15rpx rgba(255, 122, 69, 0.4),
+		background: linear-gradient(135deg, #C05B34 0%, #A64A28 100%);
+		box-shadow: 0 3rpx 15rpx rgba(192, 91, 52, 0.4),
 			0 0 0 1rpx rgba(255, 255, 255, 0.2) inset;
 		transition: all 0.3s ease;
 		overflow: visible;
@@ -2923,8 +3014,8 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	}
 
 	.player-voice-player.playing {
-		box-shadow: 0 4rpx 24rpx rgba(255, 122, 69, 0.7),
-			0 0 30rpx rgba(255, 122, 69, 0.4),
+		box-shadow: 0 4rpx 24rpx rgba(192, 91, 52, 0.7),
+			0 0 30rpx rgba(192, 91, 52, 0.4),
 			0 0 0 1rpx rgba(255, 255, 255, 0.3) inset;
 	}
 
@@ -2948,7 +3039,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		border-radius: 50%;
 		background: #ffffff;
 		box-shadow: 0 1.5rpx 6rpx rgba(0, 0, 0, 0.15),
-			0 0 0 1.5rpx rgba(255, 122, 69, 0.3);
+			0 0 0 1.5rpx rgba(192, 91, 52, 0.3);
 		transition: all 0.3s ease;
 	}
 
@@ -2957,8 +3048,8 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	}
 
 	@keyframes player-voice-btn-pulse {
-		0%, 100% { transform: scale(1); box-shadow: 0 1.5rpx 6rpx rgba(0, 0, 0, 0.15), 0 0 0 1.5rpx rgba(255, 122, 69, 0.3); }
-		50% { transform: scale(1.05); box-shadow: 0 3rpx 9rpx rgba(0, 0, 0, 0.2), 0 0 0 3rpx rgba(255, 122, 69, 0.5); }
+		0%, 100% { transform: scale(1); box-shadow: 0 1.5rpx 6rpx rgba(0, 0, 0, 0.15), 0 0 0 1.5rpx rgba(192, 91, 52, 0.3); }
+		50% { transform: scale(1.05); box-shadow: 0 3rpx 9rpx rgba(0, 0, 0, 0.2), 0 0 0 3rpx rgba(192, 91, 52, 0.5); }
 	}
 
 	.player-voice-bars {

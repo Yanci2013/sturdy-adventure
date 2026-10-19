@@ -1043,40 +1043,40 @@ def wecom_alert(title, content):
 
 # ===== 前端装修主题配置 =====
 DEFAULT_DECORATION = {
-    "name": "纯白简约",
+    "name": "电竞暗橙",
     "colors": {
-        "brand": "#F25109",
-        "brand_gradient": "#FF7C43",
-        "page_bg": "#FFFFFF",
+        "brand": "#C05B34",
+        "brand_gradient": "#A64A28",
+        "page_bg": "#F4F5F7",
         "card_bg": "#FFFFFF",
-        "text_main": "#1A1A1A",
-        "text_sub": "#999999",
-        "price": "#EA3A1C",
+        "text_main": "#2B303B",
+        "text_sub": "#8A8F98",
+        "price": "#C05B34",
         "btn_text": "#FFFFFF",
         "tabbar_bg": "#FFFFFF",
         "top_text": "#FFFFFF",
-        "search_bg": "#FFF8F1",
-        "card_border": "#E8E8E8",
-        "notice_bg": "#FFF3E0",
-        "notice_text": "#F25109",
-        "tabbar_active": "#F25109",
-        "tabbar_text": "#999999",
-        "tabbar_text_active": "#F25109",
+        "search_bg": "#FFFFFF",
+        "card_border": "#EAECEF",
+        "notice_bg": "#F2F3F5",
+        "notice_text": "#6B7280",
+        "tabbar_active": "#C05B34",
+        "tabbar_text": "#9AA0A6",
+        "tabbar_text_active": "#C05B34",
         "tabbar_radius": "999",
     },
     "bg_image": "",
     # 页面背景：solid=纯色 / gradient=渐变色；初始为纯白
-    "page_bg_type": "solid",
-    "page_bg_from": "#FFFFFF",
+    "page_bg_type": "gradient",
+    "page_bg_from": "#F4F5F7",
     "page_bg_to": "#FFFFFF",
     "page_bg_deg": 180,
     "nav_style": "float_ellipse",
     "floating_nav": [
-        {"text": "首页", "icon": "home", "color": "#F25109", "link": "/pages/index/index"},
-        {"text": "分类", "icon": "grid", "color": "#F25109", "link": "/pages/classify/index"},
-        {"text": "挑选打手", "icon": "gamepad", "color": "#F25109", "link": "/pages/player/index"},
-        {"text": "消息", "icon": "chat", "color": "#F25109", "link": "/pages/message/index"},
-        {"text": "我的", "icon": "user", "color": "#F25109", "link": "/pages/mine/index"},
+        {"text": "首页", "icon": "home", "color": "#C05B34", "link": "/pages/index/index"},
+        {"text": "分类", "icon": "grid", "color": "#C05B34", "link": "/pages/classify/index"},
+        {"text": "挑选打手", "icon": "gamepad", "color": "#C05B34", "link": "/pages/player/index"},
+        {"text": "消息", "icon": "chat", "color": "#C05B34", "link": "/pages/message/index"},
+        {"text": "我的", "icon": "user", "color": "#C05B34", "link": "/pages/mine/index"},
     ],
 }
 
@@ -1621,14 +1621,14 @@ class Handler(BaseHTTPRequestHandler):
       '.uni-tabbar,.uni-tabbar__item,.uni-tabbar-nav{background:var(--theme-tabbar-bg)!important;}',
       // 通用按钮/主色覆盖
       'button,.uv-button--primary,[class*="primary"]{background:linear-gradient(90deg,var(--theme-brand),var(--theme-brand-gradient))!important;color:var(--theme-btn-text)!important;border-color:var(--theme-brand)!important;}',
-      // 卡片/容器背景
-      '[class*="card"],[class*="Card"],[class*="item"][class*="bg"]{background-color:var(--theme-card-bg)!important;}',
+      // 卡片/容器背景（排除 BEM 子元素，避免给子节点误加底色）
+      '[class*="card"]:not([class*="__"]),[class*="Card"]:not([class*="__"]),[class*="item"][class*="bg"]{background-color:var(--theme-card-bg)!important;}',
       // 文字颜色
       'uni-text,text,.uni-text{color:var(--theme-text-main);}',
-      '[class*="sub"],[class*="muted"],[class*="desc"]{color:var(--theme-text-sub)!important;}',
+      '[class*="sub"]:not([class*="__"]),[class*="muted"],[class*="desc"]{color:var(--theme-text-sub)!important;}',
       '[class*="price"],[class*="money"]{color:var(--theme-price)!important;}',
-      '[class*="notice"],[class*="Notice"]{background:var(--theme-notice-bg)!important;color:var(--theme-notice-text)!important;}',
-      '[class*="search"],[class*="Search"]{background:var(--theme-search-bg)!important;}'
+      '[class*="notice"]:not([class*="__"]):not([class*="popup"]),[class*="Notice"]:not([class*="__"]){background:var(--theme-notice-bg)!important;color:var(--theme-notice-text)!important;}',
+      '[class*="search"]:not([class*="__"]):not([class*="popup"]),[class*="Search"]:not([class*="__"]){background:var(--theme-search-bg)!important;}'
     ].join('');
   }
   fetch('/api/frontend/decoration',{cache:'no-store'}).then(function(r){return r.json();}).then(function(res){

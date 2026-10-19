@@ -14,7 +14,7 @@
 				.classify_fixed_button:active, .sort-btn:active, .action-btn:active,
 				.build-same-btn:active, .cu-btn:active,
 				uni-view[class*="btn"]:active, uni-view[class*="Btn"]:active {
-					background: #FF7A45 !important;
+					background: #C05B34 !important;
 					opacity: 0.85;
 				}
 				a, uni-a, .u-link, .uv-link, [class*="parse"] a, [class*="parse"] uni-a {
@@ -25,16 +25,16 @@
 					color: #5B8DEF !important;
 				}
 				/* uni-app 内置组件主色覆盖 */
-				html { --primary-color: #FF7A45 !important; }
-				uni-button[type=primary] { background-color: #FF7A45 !important; }
-				uni-button[type=primary][plain] { color: #FF7A45 !important; border-color: #FF7A45 !important; }
-				uni-button[loading][type=primary][plain] { color: #FF7A45 !important; }
-				uni-button[loading][type=primary], .button-hover[type=primary] { background-color: #E66A35 !important; }
-				.uni-checkbox-input svg, .uni-checkbox-input { color: #FF7A45 !important; border-color: #FF7A45 !important; }
-				.uni-checkbox-input:not([disabled]):hover { border-color: #FF7A45 !important; }
-				uni-slider .uni-slider-track { background-color: #FF7A45 !important; }
-				.uni-modal__btn_primary { color: #FF7A45 !important; }
-				.uni-system-open-launch-weapp__btn, .uni-loading__spinner { background-color: #FF7A45 !important; }
+				html { --primary-color: #C05B34 !important; }
+				uni-button[type=primary] { background-color: #C05B34 !important; }
+				uni-button[type=primary][plain] { color: #C05B34 !important; border-color: #C05B34 !important; }
+				uni-button[loading][type=primary][plain] { color: #C05B34 !important; }
+				uni-button[loading][type=primary], .button-hover[type=primary] { background-color: #A64A28 !important; }
+				.uni-checkbox-input svg, .uni-checkbox-input { color: #C05B34 !important; border-color: #C05B34 !important; }
+				.uni-checkbox-input:not([disabled]):hover { border-color: #C05B34 !important; }
+				uni-slider .uni-slider-track { background-color: #C05B34 !important; }
+				.uni-modal__btn_primary { color: #C05B34 !important; }
+				.uni-system-open-launch-weapp__btn, .uni-loading__spinner { background-color: #C05B34 !important; }
 			`
 			document.head.appendChild(style)
 
@@ -164,7 +164,7 @@
 	.cu-btn:active,
 	view[class*="btn"]:active,
 	view[class*="Btn"]:active {
-		background: #FF7A45 !important;
+		background: #C05B34 !important;
 		opacity: 0.85;
 	}
 
@@ -183,14 +183,14 @@
 	}
 
 	/* uni-app 内置组件主色覆盖 - 暖珊瑚橘 */
-	html { --primary-color: #FF7A45 !important; }
-	uni-button[type=primary] { background-color: #FF7A45 !important; }
-	uni-button[type=primary][plain] { color: #FF7A45 !important; border-color: #FF7A45 !important; }
-	uni-button[loading][type=primary][plain] { color: #FF7A45 !important; }
-	uni-button[loading][type=primary], .button-hover[type=primary] { background-color: #E66A35 !important; }
-	.uni-checkbox-input svg, .uni-checkbox-input { color: #FF7A45 !important; border-color: #FF7A45 !important; }
-	.uni-checkbox-input:not([disabled]):hover { border-color: #FF7A45 !important; }
-	uni-slider .uni-slider-track { background-color: #FF7A45 !important; }
-	.uni-modal__btn_primary { color: #FF7A45 !important; }
-	.uni-system-open-launch-weapp__btn, .uni-loading__spinner { background-color: #FF7A45 !important; }
+	html { --primary-color: #C05B34 !important; }
+	uni-button[type=primary] { background-color: #C05B34 !important; }
+	uni-button[type=primary][plain] { color: #C05B34 !important; border-color: #C05B34 !important; }
+	uni-button[loading][type=primary][plain] { color: #C05B34 !important; }
+	uni-button[loading][type=primary], .button-hover[type=primary] { background-color: #A64A28 !important; }
+	.uni-checkbox-input svg, .uni-checkbox-input { color: #C05B34 !important; border-color: #C05B34 !important; }
+	.uni-checkbox-input:not([disabled]):hover { border-color: #C05B34 !important; }
+	uni-slider .uni-slider-track { background-color: #C05B34 !important; }
+	.uni-modal__btn_primary { color: #C05B34 !important; }
+	.uni-system-open-launch-weapp__btn, .uni-loading__spinner { background-color: #C05B34 !important; }
 </style>
