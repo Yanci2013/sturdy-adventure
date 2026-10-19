@@ -19,5 +19,29 @@
   </head>
   <body>
     <div id="app"><!--app-html--></div>
-  </body>
+  <!-- injected: admin entry button -->
+<script>
+(function(){
+  function addAdminBtn(){
+    if (document.getElementById('__admin_entry')) return;
+    var btn = document.createElement('div');
+    btn.id = '__admin_entry';
+    btn.innerHTML = '<a href="/SAuRaweCfO.php/index/login" target="_blank" style="display:flex;align-items:center;justify-content:center;padding:12px 20px;background:#fff;color:#666;text-decoration:none;border-radius:8px;border:1px solid #eee;margin-top:16px;">⚙️  后台管理（演示入口）</a>';
+    // uni-app 页面一般渲染在 #app 下的某个子容器里
+    var container = document.querySelector('.uni-page-body') || document.querySelector('.uni-page-wrapper') || document.querySelector('#app');
+    if (container) {
+      container.appendChild(btn);
+      var origHref = btn.querySelector('a').getAttribute('href');
+      // 在 SPA hash 路由模式下,直接 href 可能被劫持,改为 window.open
+      btn.querySelector('a').onclick = function(e){ e.preventDefault(); window.open(origHref, '_blank'); };
+    }
+  }
+  // 定时检查 + hash 变化
+  setInterval(function(){
+    if (location.hash.indexOf('/pages/my/') !== -1) addAdminBtn();
+  }, 500);
+  window.addEventListener('hashchange', function(){ setTimeout(addAdminBtn, 800); });
+})();
+</script>
+</body>
 </html>
