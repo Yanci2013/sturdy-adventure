@@ -61,6 +61,12 @@ export const lotteryConfig = (params) => http.get('lottery/config', {
 })
 //传世武器抽奖 - 抽奖
 export const lotteryDraw = (data) => http.post('lottery/draw', data)
+//统一支付通道 - 支付方式配置
+export const payConfig = () => http.get('pay/config')
+//统一支付通道 - 创建支付单（所有需要支付的功能都走这里）
+export const payCreate = (data) => http.post('pay/create', data)
+//统一支付通道 - 查询支付结果
+export const payQuery = (data) => http.post('pay/query', data)
 //订单列表
 export const orderList = (params) => http.get('goods/orderList', {
 	params

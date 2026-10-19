@@ -2198,13 +2198,36 @@ function renderDecoration() {
                 <label>点击跳转</label>
                 <input type="text" id="lottery_jump" value="${esc(craftCfg.lottery_jump || '')}" placeholder="/pages/lottery/detail">
               </div>
+              <div class="color-row">
+                <label>活动标题</label>
+                <input type="text" id="lottery_title" value="${esc(craftCfg.lottery_title || '')}" placeholder="如：传世武器转盘">
+              </div>
+              <div class="color-row">
+                <label>活动副标题</label>
+                <input type="text" id="lottery_subtitle" value="${esc(craftCfg.lottery_subtitle || '')}" placeholder="如：奖品在商品池随机抽取">
+              </div>
+              <div class="color-row">
+                <label>单次价格(¥)</label>
+                <input type="number" step="0.01" id="lottery_price" value="${esc(craftCfg.lottery_price || '9.90')}" placeholder="9.90">
+              </div>
+              <div class="color-row">
+                <label>默认玩法</label>
+                <select id="lottery_mode">
+                  <option value="wheel" ${craftCfg.lottery_mode==='box'?'':'selected'}>转盘</option>
+                  <option value="box" ${craftCfg.lottery_mode==='box'?'selected':''}>盲盒</option>
+                </select>
+              </div>
+              <div class="color-row" style="align-items:flex-start">
+                <label>活动规则</label>
+                <textarea id="lottery_rules" rows="4" style="flex:1;width:100%" placeholder="每行一条规则">${esc(craftCfg.lottery_rules || '')}</textarea>
+              </div>
               <div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
                   <span style="font-size:13px;font-weight:600;color:#374151">抽奖奖励与爆率</span>
                   <span class="muted" style="font-size:12px">爆率越高中奖概率越大（权重）</span>
                 </div>
                 <table style="width:100%">
-                  <thead><tr><th style="width:34%">奖励名称</th><th style="width:20%">图片</th><th style="width:14%">爆率</th><th style="width:12%">库存</th><th style="width:10%">启用</th><th style="width:10%">操作</th></tr></thead>
+                  <thead><tr><th style="width:26%">奖励名称</th><th style="width:18%">图片</th><th style="width:12%">爆率</th><th style="width:10%">库存</th><th style="width:12%">服务价(¥)</th><th style="width:8%">启用</th><th style="width:14%">操作</th></tr></thead>
                   <tbody>${lpRows}</tbody>
                 </table>
                 <div style="padding:10px 12px"><button class="btn btn-ghost btn-sm" onclick="lpAddPrize()">＋ 新增奖励</button></div>
@@ -2323,6 +2346,11 @@ async function saveCraft() {
     lottery_jump: ($('#lottery_jump')||{}).value ? $('#lottery_jump').value.trim() : '',
     lottery_cover: ($('#lottery_cover')||{}).value ? $('#lottery_cover').value.trim() : '',
     lottery_images: ($('#lottery_images')||{}).value ? $('#lottery_images').value.trim() : '',
+    lottery_title: ($('#lottery_title')||{}).value ? $('#lottery_title').value.trim() : '',
+    lottery_subtitle: ($('#lottery_subtitle')||{}).value ? $('#lottery_subtitle').value.trim() : '',
+    lottery_price: ($('#lottery_price')||{}).value ? $('#lottery_price').value.trim() : '9.90',
+    lottery_mode: ($('#lottery_mode')||{}).value ? $('#lottery_mode').value : 'wheel',
+    lottery_rules: ($('#lottery_rules')||{}).value ? $('#lottery_rules').value : '',
   })
   toast(r.msg)
 }
@@ -2378,6 +2406,7 @@ function buildPrizeRows(prizes) {
       <button class="btn btn-ghost btn-sm" onclick="lpUploadIcon(${p.id})">传</button></div></td>
     <td><input data-lp="rate" type="number" value="${esc(p.rate || '0')}" style="${cls}"></td>
     <td><input data-lp="stock" type="number" value="${esc(p.stock || '0')}" style="${cls}"></td>
+    <td><input data-lp="price" type="number" step="0.01" value="${esc(p.price || '0')}" style="${cls}"></td>
     <td>
       <input data-lp="status" type="hidden" value="${p.status == '1' ? '1' : '0'}">
       <input type="checkbox" ${p.status == '1' ? 'checked' : ''} onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
@@ -2391,6 +2420,7 @@ function buildPrizeRows(prizes) {
     <td><input data-lp="icon" placeholder="图片地址" style="${cls}"></td>
     <td><input data-lp="rate" type="number" value="10" style="${cls}"></td>
     <td><input data-lp="stock" type="number" value="0" style="${cls}"></td>
+    <td><input data-lp="price" type="number" step="0.01" value="0" style="${cls}"></td>
     <td><input data-lp="status" type="hidden" value="1"><input type="checkbox" checked onchange="this.previousElementSibling.value = this.checked ? '1' : '0'"></td>
     <td><button class="btn btn-primary btn-sm" onclick="lpAddPrize()">添加</button></td></tr>`
   return (rows || '') + newRow
@@ -2410,7 +2440,8 @@ async function lpSavePrize(id) {
   const r = await biz('resource/save', {
     res: 'prize_pool', id,
     name: _lpRowVal(row, 'name'), icon: _lpRowVal(row, 'icon'),
-    rate: _lpRowVal(row, 'rate'), stock: _lpRowVal(row, 'stock'), status: _lpRowVal(row, 'status')
+    rate: _lpRowVal(row, 'rate'), stock: _lpRowVal(row, 'stock'),
+    price: _lpRowVal(row, 'price'), status: _lpRowVal(row, 'status')
   })
   if (r.code == 1) { toast(r.msg || '保存成功'); await refreshCraftCfg() }
   else toast(r.msg || '保存失败', false)
@@ -2422,7 +2453,8 @@ async function lpAddPrize() {
   const r = await biz('resource/save', {
     res: 'prize_pool',
     name: _lpRowVal(row, 'name'), icon: _lpRowVal(row, 'icon'),
-    rate: _lpRowVal(row, 'rate'), stock: _lpRowVal(row, 'stock'), status: _lpRowVal(row, 'status')
+    rate: _lpRowVal(row, 'rate'), stock: _lpRowVal(row, 'stock'),
+    price: _lpRowVal(row, 'price'), status: _lpRowVal(row, 'status')
   })
   if (r.code == 1) { toast('新增成功'); await refreshCraftCfg() }
   else toast(r.msg || '新增失败', false)

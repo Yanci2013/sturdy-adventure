@@ -50,7 +50,7 @@ RESOURCES = {
         _rf('price', '价格', 'number'), _rf('unit', '计价单位'), _rf('status', '上架状态', 'switch'), _rf('remark', '商品简介', 'textarea')]},
     'prize_pool': {'title': '奖池管理', 'search': ['name'], 'columns': ['name', 'rate', 'stock', 'status'], 'fields': [
         _rf('name', '奖品名称'), _rf('icon', '奖品图', 'image'), _rf('rate', '中奖概率(%)', 'number'),
-        _rf('stock', '库存数量', 'number'), _rf('status', '是否启用', 'switch')]},
+        _rf('price', '服务价格(¥)', 'number'), _rf('stock', '库存数量', 'number'), _rf('status', '是否启用', 'switch')]},
     'gift': {'title': '礼物管理', 'search': ['name'], 'columns': ['name', 'icon', 'price', 'sort', 'status'], 'fields': [
         _rf('name', '礼物名称'), _rf('icon', '礼物图标', 'image'), _rf('price', '礼物价格', 'number'),
         _rf('sort', '排序', 'number'), _rf('status', '是否上架', 'switch')]},
@@ -507,6 +507,29 @@ def init_db():
             (code, name, channel_type, mch_id, notify_url, timeout, sort, status, remark, create_time, update_time)
             VALUES ('wechat_v3', '微信商户V3', 'wechat_v3', '', '/api/pay/notify/wechat', 300, 2, 0,
                     '微信支付V3，支持 JSAPI/H5', ?, ?)''', (_now, _now))
+    # 统一支付单：所有支付场景共用，异步回调/主动查询按场景发货
+    cur.execute('''CREATE TABLE IF NOT EXISTS res_pay_order (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, out_trade_no TEXT DEFAULT '', user_id TEXT DEFAULT '',
+        scene TEXT DEFAULT '', target_id TEXT DEFAULT '', title TEXT DEFAULT '',
+        amount TEXT DEFAULT '0', pay_type TEXT DEFAULT '', status TEXT DEFAULT '0',
+        trade_no TEXT DEFAULT '', createtime INTEGER DEFAULT 0, paytime INTEGER DEFAULT 0)''')
+    cur.execute('CREATE INDEX IF NOT EXISTS idx_pay_order_no ON res_pay_order(out_trade_no)')
+    # 传世武器抽奖券
+    cur.execute('''CREATE TABLE IF NOT EXISTS res_lottery_ticket (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT DEFAULT '', times INTEGER DEFAULT 1,
+        used INTEGER DEFAULT 0, source TEXT DEFAULT '', out_trade_no TEXT DEFAULT '',
+        createtime INTEGER DEFAULT 0)''')
+    # 传世武器抽奖记录（含游戏信息）
+    cur.execute('''CREATE TABLE IF NOT EXISTS res_lottery_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT DEFAULT '', prize_id TEXT DEFAULT '',
+        prize_name TEXT DEFAULT '', prize_icon TEXT DEFAULT '', region TEXT DEFAULT '',
+        game_nick TEXT DEFAULT '', game_id TEXT DEFAULT '', helper TEXT DEFAULT '',
+        createtime INTEGER DEFAULT 0)''')
+    # 奖池价格字段（前端奖品池展示服务价）
+    try:
+        cur.execute("ALTER TABLE res_prize_pool ADD COLUMN price TEXT DEFAULT '0'")
+    except Exception:
+        pass
     # 业务模块演示数据（仅空表写入）
     cur.execute('SELECT COUNT(*) FROM fa_thug_withdraw')
     if cur.fetchone()[0] == 0:
@@ -675,14 +698,31 @@ def pick_prize_weighted():
             break
     return chosen
 
-def gen_epay_url(epay, out_trade_no, name, money):
-    """生成彩虹易支付 GET 收银台地址"""
+PAY_TYPE_MAP = {
+    'wechat': 'wxpay', 'wxpay': 'wxpay', 'epay_wxpay': 'wxpay', 'native_wechat': 'wxpay',
+    'alipay': 'alipay', 'epay_alipay': 'alipay',
+    'qq': 'qqpay', 'qqpay': 'qqpay', 'epay_qqpay': 'qqpay',
+    'bank': 'bank', 'epay_bank': 'bank',
+}
+
+def get_epay_return_url(epay=None):
+    """支付完成后的同步跳转地址（收银台支付成功后返回的页面）"""
+    url = get_config('epay_return_url', '')
+    if url:
+        return url
+    notify = (epay or get_epay_config()).get('notify_url', '')
+    if notify and '://' in notify:
+        return notify.split('://', 1)[0] + '://' + notify.split('://', 1)[1].split('/')[0] + '/h5/#/pages/index/paysuccess'
+    return ''
+
+def gen_epay_url(epay, out_trade_no, name, money, pay_type='wxpay'):
+    """生成彩虹易支付收银台地址（支持微信/支付宝/QQ/云闪付）"""
     params = {
         'pid': epay.get('pid', ''),
-        'type': 'wxpay',
+        'type': PAY_TYPE_MAP.get(str(pay_type), 'wxpay'),
         'out_trade_no': out_trade_no,
         'notify_url': epay.get('notify_url', ''),
-        'return_url': epay.get('notify_url', ''),
+        'return_url': get_epay_return_url(epay),
         'name': name,
         'money': '%.2f' % float(money),
     }
@@ -692,6 +732,145 @@ def gen_epay_url(epay, out_trade_no, name, money):
     base = epay.get('apiurl', '').rstrip('/')
     return base + '/submit.php?' + urlencode(params)
 
+def epay_verify_sign(epay, data):
+    """校验彩虹易支付异步通知签名"""
+    sign = str(data.get('sign', ''))
+    if not sign:
+        return False
+    raw = '&'.join('%s=%s' % (k, data[k]) for k in sorted(data) if k not in ('sign', 'sign_type') and str(data[k]) != '')
+    return hashlib.md5((raw + epay.get('key', '')).encode('utf-8')).hexdigest() == sign
+
+def epay_query(epay, out_trade_no):
+    """主动查询易支付订单状态，返回 True 表示已支付"""
+    base = epay.get('apiurl', '').rstrip('/')
+    if not (base and epay.get('pid') and epay.get('key')):
+        return None
+    try:
+        q = urlencode({'act': 'order', 'pid': epay['pid'], 'key': epay['key'], 'out_trade_no': out_trade_no})
+        with _urlreq.urlopen(base + '/api.php?' + q, timeout=8) as resp:
+            info = json.loads(resp.read().decode('utf-8'))
+        return str(info.get('trade_status', '')) == 'TRADE_SUCCESS' or int(info.get('code', 0) or 0) == 1
+    except Exception:
+        return None
+
+
+
+PAY_SCENE_TITLE = {
+    'recharge': '账户充值', 'bill': '系统缴费', 'fine': '罚款缴纳',
+    'order': '陪玩服务', 'lottery': '传世武器抽奖', 'level': '开通会员', 'deposit': '保证金缴纳',
+    'gift': '赠送礼物', 'reward': '打赏打手',
+}
+
+def create_pay_order(user_id, scene, target_id, amount, title='', pay_type='wechat', out_trade_no=None):
+    """创建统一支付单，返回商户订单号"""
+    ono = out_trade_no or gen_order_no('P')
+    db = get_db()
+    db.execute('INSERT INTO res_pay_order (out_trade_no,user_id,scene,target_id,title,amount,pay_type,status,createtime) '
+               'VALUES (?,?,?,?,?,?,?,?,?)',
+               (ono, str(user_id), scene, str(target_id or ''), title or PAY_SCENE_TITLE.get(scene, '在线支付'),
+                '%.2f' % float(amount), pay_type, '0', now_ts()))
+    db.commit()
+    db.close()
+    return ono
+
+def apply_pay_scene(scene, user_id, target_id, amount, out_trade_no='', online=True):
+    """按支付场景发货（充值加余额；缴费/罚款置已缴；订单置已支付；抽奖发券；会员开通）"""
+    db = get_db()
+    bal = None
+    if scene == 'recharge':
+        if online:
+            row = db.execute('SELECT money FROM users WHERE id = ?', (str(user_id),)).fetchone()
+            bal = float(row['money'] or 0) if row else 0.0
+            after = round(bal + float(amount), 2)
+            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, str(user_id)))
+        db.commit()
+        db.close()
+        if online and bal is not None:
+            add_balance_log(user_id, amount, bal, round(bal + float(amount), 2), 1, '账户充值')
+        return True
+    if scene == 'bill':
+        db.execute("UPDATE res_sys_bill SET status = '1', update_time = ? WHERE id = ?", (now_ts(), str(target_id)))
+    elif scene == 'fine':
+        db.execute("UPDATE res_fine SET status = '1', update_time = ? WHERE id = ?", (now_ts(), str(target_id)))
+    elif scene == 'order':
+        db.execute('UPDATE orders SET status = 1, status_text = ?, paytime = ? WHERE id = ?',
+                   (ORDER_STATUS_TEXT[1], now_ts(), target_id))
+    elif scene == 'level':
+        db.execute('UPDATE users SET level = ? WHERE id = ?', (target_id, str(user_id)))
+    elif scene == 'deposit':
+        db.execute('INSERT INTO res_deposit (user_id, amount, status, remark, createtime) VALUES (?,?,?,?,?)',
+                   (str(user_id), '%.2f' % float(amount), '0', '保证金缴纳（在线）', now_ts()))
+    elif scene == 'lottery':
+        try:
+            times = int(str(target_id) or '1')
+        except Exception:
+            times = 1
+        times = 1 if times < 1 else (10 if times > 10 else times)
+        db.execute('INSERT INTO res_lottery_ticket (user_id, times, used, source, out_trade_no, createtime) '
+                   'VALUES (?,?,?,?,?,?)', (str(user_id), times, 0, 'pay', out_trade_no, now_ts()))
+    elif scene == 'gift':
+        parts = str(target_id or '').split('|')
+        tid = parts[0] if len(parts) > 0 else '0'
+        gid = parts[1] if len(parts) > 1 else '0'
+        num = int(parts[2]) if len(parts) > 2 and str(parts[2]).isdigit() else 1
+        g = db.execute('SELECT * FROM res_gift WHERE id = ? AND is_deleted = 0', (gid,)).fetchone()
+        if g:
+            db.execute('INSERT INTO fa_gift_record (user_id, thug_id, gift_id, gift_name, gift_icon, num, amount, '
+                       'pay_type, order_no, status, create_time) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                       (str(user_id), tid, g['id'], g['name'], g['icon'], num, '%.2f' % float(amount),
+                        'epay', out_trade_no, 1, now_ts()))
+    elif scene == 'reward':
+        db.execute('INSERT INTO fa_thug_reward (user_id, thug_id, money, pay_type, order_no, status, create_time) '
+                   'VALUES (?,?,?,?,?,?,?)',
+                   (str(user_id), str(target_id or '0'), '%.2f' % float(amount), 'epay', out_trade_no, 1, now_ts()))
+    db.commit()
+    db.close()
+    return True
+
+def legacy_fulfill(out_trade_no):
+    """兼容旧流程：订单号/充值单号直接作为商户订单号"""
+    db = get_db()
+    o = db.execute('SELECT id, status FROM orders WHERE order_no = ? AND is_deleted = 0', (out_trade_no,)).fetchone()
+    if o:
+        if str(o['status']) == '0':
+            db.execute('UPDATE orders SET status = 1, status_text = ?, paytime = ? WHERE id = ?',
+                       (ORDER_STATUS_TEXT[1], now_ts(), o['id']))
+            db.commit()
+        db.close()
+        return True
+    r = db.execute('SELECT id, user_id, amount, status FROM res_recharge_order WHERE order_no = ?', (out_trade_no,)).fetchone()
+    if r:
+        if str(r['status']) == '0':
+            row = db.execute('SELECT money FROM users WHERE id = ?', (str(r['user_id']),)).fetchone()
+            bal = float(row['money'] or 0) if row else 0.0
+            after = round(bal + float(r['amount'] or 0), 2)
+            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, str(r['user_id'])))
+            db.execute("UPDATE res_recharge_order SET status = '1', update_time = ? WHERE id = ?", (now_ts(), r['id']))
+            db.commit()
+            db.close()
+            add_balance_log(r['user_id'], float(r['amount'] or 0), bal, after, 1, '账户充值')
+            return True
+        db.close()
+        return True
+    db.close()
+    return False
+
+def mark_pay_paid(out_trade_no, trade_no=''):
+    """支付成功发货（幂等）"""
+    db = get_db()
+    row = db.execute('SELECT * FROM res_pay_order WHERE out_trade_no = ?', (out_trade_no,)).fetchone()
+    if not row:
+        db.close()
+        return legacy_fulfill(out_trade_no)
+    if str(row['status']) == '1':
+        db.close()
+        return True
+    db.execute("UPDATE res_pay_order SET status = '1', trade_no = ?, paytime = ? WHERE id = ?",
+               (str(trade_no or ''), now_ts(), row['id']))
+    db.commit()
+    db.close()
+    return apply_pay_scene(row['scene'], row['user_id'], row['target_id'],
+                           float(row['amount'] or 0), out_trade_no, online=True)
 
 
 def get_user_by_token(token):
@@ -1188,20 +1367,69 @@ def get_craft_entry_config():
 
 
 def get_prize_pool_list():
-    """获取奖池奖励列表（含爆率 rate 与库存 stock）"""
+    """获取奖池奖励列表（含爆率 rate、库存 stock、服务价格 price）"""
     try:
         conn = get_db()
         rows = conn.execute(
-            'SELECT id, name, icon, rate, stock, status FROM res_prize_pool '
+            'SELECT id, name, icon, rate, stock, price, status FROM res_prize_pool '
             'WHERE is_deleted = 0 ORDER BY CAST(rate AS REAL) DESC, id ASC'
         ).fetchall()
         conn.close()
         return [{
             'id': r['id'], 'name': r['name'] or '', 'icon': r['icon'] or '',
-            'rate': r['rate'] or '0', 'stock': r['stock'] or '0', 'status': r['status'] or '1'
+            'rate': r['rate'] or '0', 'stock': r['stock'] or '0',
+            'price': r['price'] or '0', 'status': r['status'] or '1'
         } for r in rows]
     except Exception:
         return []
+
+
+def _norm_lottery_pool(p, idx, all_prizes):
+    """规范化单个传世武器奖池（转盘/盲盒）"""
+    p = p or {}
+    pids = [str(v) for v in (p.get('prize_ids') or [])]
+    prizes = [x for x in all_prizes if str(x['id']) in pids] if pids else all_prizes
+    imgs = p.get('images') or []
+    if isinstance(imgs, str):
+        imgs = [u for u in re.split(r'[,\n]', imgs) if u.strip()]
+    return {
+        'id': str(p.get('id') or idx),
+        'name': p.get('name') or ('奖池%d' % (idx + 1)),
+        'mode': p.get('mode') if p.get('mode') in ('wheel', 'box') else 'wheel',
+        'title': p.get('title') or p.get('name') or '传世武器抽奖',
+        'subtitle': p.get('subtitle') or '奖品在商品池随机抽取',
+        'cover': p.get('cover') or '',
+        'images': imgs,
+        'price': str(p.get('price') if p.get('price') is not None else '9.90'),
+        'rules': p.get('rules') or '',
+        'prizes': prizes,
+    }
+
+
+def get_lottery_pools():
+    """传世武器抽奖：多奖池配置（转盘/盲盒），未配置时回退为单一默认池"""
+    all_prizes = get_prize_pool_list()
+    raw = get_config('lottery_pools', '')
+    pools = []
+    if raw:
+        try:
+            data = json.loads(raw)
+            if isinstance(data, list):
+                pools = [_norm_lottery_pool(p, i, all_prizes) for i, p in enumerate(data)]
+        except Exception:
+            pools = []
+    if not pools:
+        cfg = get_craft_entry_config()
+        pools = [_norm_lottery_pool({
+            'name': '传世武器组', 'mode': get_config('lottery_mode', 'wheel'),
+            'title': get_config('lottery_title', '') or '传世武器抽奖',
+            'subtitle': get_config('lottery_subtitle', '') or '极品传世武器等你来抽',
+            'cover': cfg['lottery_cover'] or cfg['lottery_banner'],
+            'images': cfg['lottery_images_list'],
+            'price': get_config('lottery_price', '9.90'),
+            'rules': get_config('lottery_rules', ''),
+        }, 0, all_prizes)]
+    return pools
 
 
 def get_auto_settle_config():
@@ -1526,10 +1754,13 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 print('multipart parse error:', e)
         else:
-            try:
-                post_data = json.loads(raw_body) if raw_body else {}
-            except json.JSONDecodeError:
-                post_data = {}
+            if 'application/x-www-form-urlencoded' in ctype:
+                post_data = {k: v[0] for k, v in parse_qs(raw_body.decode('utf-8', errors='ignore')).items()}
+            else:
+                try:
+                    post_data = json.loads(raw_body) if raw_body else {}
+                except json.JSONDecodeError:
+                    post_data = {}
         if path.startswith('/api/'):
             self.handle_api(path, qs, 'POST', post_data, files=files)
             return
@@ -2264,25 +2495,30 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
-        # ===== 抽传世武器活动：活动配置（封面/抽奖图片/奖励爆率）=====
+        # ===== 抽传世武器活动：活动配置（封面/抽奖图片/奖励爆率/支付方式）=====
         if path == '/api/lottery/config':
-            cfg = get_craft_entry_config()
+            pools = get_lottery_pools()
+            epay = get_epay_config()
             self.send_json({"code": 1, "msg": "成功", "data": {
                 "enabled": get_config('craft_enabled', '1'),
-                "title": get_config('lottery_title', '') or '传世武器抽奖',
-                "subtitle": get_config('lottery_subtitle', '') or '极品传世武器等你来抽',
-                "cover": cfg['lottery_cover'] or cfg['lottery_banner'],
-                "banner": cfg['lottery_banner'],
-                "images": cfg['lottery_images_list'],
-                "rules": get_config('lottery_rules', '') or '1. 每次抽奖消耗一次抽奖机会。\n2. 奖品按后台配置的爆率随机产出。\n3. 抽中奖品将发放到账户，请注意查收。',
-                "price": get_config('craft_price', '1'),
-                "prizes": cfg['lottery_prizes'],
+                "pools": pools,
+                "pay_methods": epay['pay_methods'].split(','),
+                "epay_enabled": bool(epay['apiurl'] and epay['pid'] and epay['key']),
             }})
             return
 
         # ===== 抽传世武器活动：抽奖（按后台爆率加权）=====
         if path == '/api/lottery/draw':
-            prizes = [p for p in get_prize_pool_list() if p['status'] == '1' and float(p['rate'] or 0) > 0]
+            pool_id = str(body.get('pool_id', '0')) if isinstance(body, dict) else '0'
+            pools = get_lottery_pools()
+            pool = None
+            for p in pools:
+                if str(p['id']) == pool_id:
+                    pool = p
+                    break
+            pool = pool or (pools[0] if pools else None)
+            prizes = [p for p in (pool['prizes'] if pool else [])
+                      if p['status'] == '1' and float(p['rate'] or 0) > 0]
             times = int(body.get('times', 1) or 1) if isinstance(body, dict) else 1
             times = 1 if times < 1 else (10 if times > 10 else times)
             if not prizes:
@@ -2302,8 +2538,17 @@ class Handler(BaseHTTPRequestHandler):
                         break
                 results.append({
                     "id": chosen['id'], "name": chosen['name'],
-                    "icon": chosen['icon'], "rate": chosen['rate']
+                    "icon": chosen['icon'], "rate": chosen['rate'],
+                    "price": chosen.get('price') or '0'
                 })
+                try:
+                    _d = get_db()
+                    _d.execute("UPDATE res_prize_pool SET stock = CAST(stock AS INTEGER) - 1 "
+                               "WHERE id = ? AND CAST(stock AS INTEGER) > 0", (chosen['id'],))
+                    _d.commit()
+                    _d.close()
+                except Exception:
+                    pass
             self.send_json({"code": 1, "msg": "抽奖成功", "data": {"results": results, "times": times}})
             return
 
@@ -2406,6 +2651,138 @@ class Handler(BaseHTTPRequestHandler):
                     "epay_pid": epay['pid']
                 }
             })
+            return
+
+        # ===== 统一支付：创建支付单（所有需要支付的功能都走这里）=====
+        if path == '/api/pay/create':
+            u = get_user_by_token(self.get_token())
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            scene = str(body.get('scene') or '')
+            target_id = str(body.get('target_id') or '')
+            pay_type = str(body.get('pay_type') or 'wechat')
+            title = str(body.get('title') or '')
+            amount = 0.0
+            if scene == 'recharge':
+                amount = float(body.get('amount') or 0)
+            elif scene == 'lottery':
+                times = int(body.get('times') or 1)
+                times = 1 if times < 1 else (10 if times > 10 else times)
+                unit = float(get_config('lottery_price', '9.90') or 0)
+                amount = round(unit * times, 2)
+                target_id = str(times)
+                title = title or '传世武器抽奖x%d' % times
+            elif scene in ('bill', 'fine', 'order'):
+                table = {'bill': 'res_sys_bill', 'fine': 'res_fine', 'order': 'orders'}[scene]
+                dbq = get_db()
+                r = dbq.execute('SELECT * FROM %s WHERE id = ?' % table, (target_id,)).fetchone()
+                dbq.close()
+                if not r:
+                    self.send_json({"code": 0, "msg": "支付对象不存在"})
+                    return
+                amount = float(r['amount'] if scene != 'order' else (r['pay_price'] or r['price'] or 0) or 0)
+                title = title or (PAY_SCENE_TITLE.get(scene) or '在线支付')
+            elif scene == 'level':
+                amount = float(get_config('thug_level_price_%s' % target_id, '0') or 0)
+            elif scene == 'deposit':
+                amount = float(body.get('amount') or 0)
+                title = title or '保证金缴纳'
+            elif scene == 'reward':
+                amount = float(body.get('money') or body.get('amount') or 0)
+                target_id = str(body.get('thug_id') or target_id or '0')
+                title = title or '打赏打手'
+            elif scene == 'gift':
+                gid = body.get('gift_id')
+                num = max(1, int(body.get('num') or 1))
+                thug_id = str(body.get('thug_id') or '0')
+                dbq = get_db()
+                g = dbq.execute('SELECT * FROM res_gift WHERE id = ? AND is_deleted = 0', (gid,)).fetchone()
+                dbq.close()
+                if not g:
+                    self.send_json({"code": 0, "msg": "礼物不存在或已下架"})
+                    return
+                amount = round(float(g['price'] or 0) * num, 2)
+                target_id = '%s|%s|%d' % (thug_id, g['id'], num)
+                title = title or ('赠送礼物(%s)' % g['name'])
+            if amount <= 0:
+                self.send_json({"code": 0, "msg": "支付金额异常"})
+                return
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < amount:
+                    self.send_json({"code": 0, "msg": "余额不足，请先充值"})
+                    return
+                after = round(bal - amount, 2)
+                dbq = get_db()
+                dbq.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                dbq.commit()
+                dbq.close()
+                add_balance_log(u['id'], -amount, bal, after, 2, PAY_SCENE_TITLE.get(scene, '消费'))
+                ono = create_pay_order(u['id'], scene, target_id, amount, title, pay_type)
+                dbq = get_db()
+                dbq.execute("UPDATE res_pay_order SET status = '1', paytime = ? WHERE out_trade_no = ?", (now_ts(), ono))
+                dbq.commit()
+                dbq.close()
+                apply_pay_scene(scene, u['id'], target_id, amount, ono, online=False)
+                self.send_json({"code": 1, "msg": "支付成功", "data": {"paid": True, "out_trade_no": ono}})
+                return
+            epay = get_epay_config()
+            if not (epay.get('apiurl') and epay.get('pid') and epay.get('key')):
+                self.send_json({"code": 0, "msg": "在线支付未配置，请在后台填写商户信息或使用余额支付"})
+                return
+            ono = create_pay_order(u['id'], scene, target_id, amount, title, pay_type)
+            url = gen_epay_url(epay, ono, title or PAY_SCENE_TITLE.get(scene, '在线支付'), amount, pay_type)
+            self.send_json({"code": 1, "msg": "请前往支付",
+                            "data": {"paid": False, "out_trade_no": ono, "url": url}})
+            return
+
+        # ===== 统一支付：查询支付结果（H5 从收银台返回后轮询）=====
+        if path in ('/api/pay/query', '/api/payment/sync'):
+            out_trade_no = str(body.get('out_trade_no') or qs.get('out_trade_no', [''])[0] or '')
+            paid = False
+            if out_trade_no:
+                dbq = get_db()
+                row = dbq.execute('SELECT status FROM res_pay_order WHERE out_trade_no = ?', (out_trade_no,)).fetchone()
+                dbq.close()
+                if row and str(row['status']) == '1':
+                    paid = True
+                else:
+                    epay = get_epay_config()
+                    if epay.get('apiurl') and epay.get('pid') and epay.get('key'):
+                        if epay_query(epay, out_trade_no):
+                            paid = mark_pay_paid(out_trade_no)
+            self.send_json({"code": 1, "msg": "成功", "data": {"paid": bool(paid)}})
+            return
+
+        # ===== 彩虹易支付：异步通知（验签后发货）=====
+        if path == '/api/pay/notify/epay':
+            epay = get_epay_config()
+            data = {}
+            data.update({k: v[0] for k, v in qs.items()})
+            if isinstance(body, dict):
+                data.update({k: str(v) for k, v in body.items()})
+            sign_ok = epay_verify_sign(epay, data)
+            out_trade_no = str(data.get('out_trade_no') or '')
+            handled = 0
+            result = 'sign fail'
+            if sign_ok and str(data.get('trade_status', '')) == 'TRADE_SUCCESS' and out_trade_no:
+                handled = 1 if mark_pay_paid(out_trade_no, data.get('trade_no', '')) else 0
+                result = 'ok' if handled else 'order not found'
+            try:
+                dbq = get_db()
+                dbq.execute('INSERT INTO fa_pay_callback_log (channel, order_no, raw, sign_ok, handled, result, ip, create_time) '
+                            'VALUES (?,?,?,?,?,?,?,?)',
+                            ('epay', out_trade_no, json.dumps(data, ensure_ascii=False), 1 if sign_ok else 0,
+                             handled, result, self.client_address[0], today_ts()))
+                dbq.commit()
+                dbq.close()
+            except Exception:
+                pass
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'success' if (sign_ok and handled) else b'fail')
             return
 
         # ===== 第三方登录绑定 =====
@@ -3286,21 +3663,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "充值成功", "data": {"out_trade_no": ono, "paid": True}})
             return
 
-        # ===== 易支付：同步待支付订单 =====
-        if path == '/api/payment/sync':
-            out_trade_no = str(body.get('out_trade_no') or '')
-            paid = False
-            if out_trade_no:
-                db = get_db()
-                row = db.execute('SELECT status FROM orders WHERE order_no = ? AND is_deleted = 0', (out_trade_no,)).fetchone()
-                if not row:
-                    row = db.execute('SELECT status FROM res_recharge_order WHERE order_no = ?', (out_trade_no,)).fetchone()
-                db.close()
-                if row and str(row['status']) not in ('0', ''):
-                    paid = True
-            self.send_json({"code": 1, "msg": "成功", "data": {"paid": paid}})
-            return
-
         # ===== 我的团队 =====
         if path == '/api/user/userShare':
             u = get_user_by_token(token)
@@ -3469,14 +3831,18 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "修改成功"})
             return
 
-        def _online_pay(prefix, name, amount):
-            """在线支付：已配置易支付则返回收银台地址，否则给出提示"""
+        def _online_pay(prefix, name, amount, scene='', target_id='', user_id='', pay_type='wechat'):
+            """在线支付：已配置易支付则创建统一支付单并返回收银台地址"""
             epay = get_epay_config()
-            ono = gen_order_no(prefix)
             if epay.get('apiurl') and epay.get('pid') and epay.get('key'):
+                if scene:
+                    ono = create_pay_order(user_id, scene, target_id, amount, name, pay_type)
+                else:
+                    ono = gen_order_no(prefix)
                 return {"code": 1, "msg": "请前往支付",
-                        "data": {"out_trade_no": ono, "url": gen_epay_url(epay, ono, name, amount), "paid": False}}
-            return {"code": 0, "msg": "在线支付暂未开通，请使用余额支付"}
+                        "data": {"out_trade_no": ono,
+                                 "url": gen_epay_url(epay, ono, name, amount, pay_type), "paid": False}}
+            return {"code": 0, "msg": "在线支付未开通，请使用余额支付"}
 
         # ===== 打手保证金充值 =====
         if path == '/api/thug/bond':
@@ -3577,7 +3943,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"code": 1, "msg": "缴纳成功"})
                 return
             db.close()
-            self.send_json(_online_pay('F', '罚款缴纳', amount))
+            self.send_json(_online_pay('F', '罚款缴纳', amount, scene='fine', target_id=row['id'], user_id=u['id'], pay_type=pay_type))
             return
 
         if path == '/api/fine/fineCreate':
@@ -3680,7 +4046,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"code": 1, "msg": "缴纳成功"})
                 return
             db.close()
-            self.send_json(_online_pay('S', '系统缴费', amount))
+            self.send_json(_online_pay('S', '系统缴费', amount, scene='bill', target_id=row['id'], user_id=u['id'], pay_type=pay_type))
             return
 
         # ===== 礼物墙 =====
@@ -3759,7 +4125,9 @@ class Handler(BaseHTTPRequestHandler):
                                 "data": {"gift_icon": gift['icon'], "num": num, "amount": amount}})
                 return
             db.close()
-            self.send_json(_online_pay('G', '赠送礼物', amount))
+            target = '%d|%s|%d' % (tid, gift['id'], num)
+            self.send_json(_online_pay('G', '赠送礼物', amount, scene='gift',
+                                       target_id=target, user_id=u['id'], pay_type=pay_type))
             return
 
         # ===== 打赏 =====
@@ -3789,7 +4157,8 @@ class Handler(BaseHTTPRequestHandler):
                 add_balance_log(u['id'], -money, bal, after, 2, '打赏打手')
                 self.send_json({"code": 1, "msg": "打赏成功"})
                 return
-            self.send_json(_online_pay('R', '打赏打手', money))
+            self.send_json(_online_pay('R', '打赏打手', money, scene='reward',
+                                       target_id=str(tid), user_id=u['id'], pay_type=pay_type))
             return
 
         if path == '/api/thug/thugRewardList':
@@ -4359,7 +4728,16 @@ class Handler(BaseHTTPRequestHandler):
 
             # 传世武器入口配置
             if path == '/api/admin/craft':
-                ok(get_craft_entry_config())
+                data = get_craft_entry_config()
+                data.update({
+                    'lottery_title': get_config('lottery_title', ''),
+                    'lottery_subtitle': get_config('lottery_subtitle', ''),
+                    'lottery_rules': get_config('lottery_rules', ''),
+                    'lottery_price': get_config('lottery_price', '9.90'),
+                    'lottery_mode': get_config('lottery_mode', 'wheel'),
+                    'lottery_pools': get_config('lottery_pools', ''),
+                })
+                ok(data)
                 return
 
             if path == '/api/admin/craft/save':
@@ -4376,6 +4754,23 @@ class Handler(BaseHTTPRequestHandler):
                     if isinstance(imgs, list):
                         imgs = ','.join([str(x).strip() for x in imgs if str(x).strip()])
                     set_config('lottery_images', str(imgs))
+                # 抽奖基础参数：标题/副标题/规则/单价/默认模式
+                if 'lottery_title' in body:
+                    set_config('lottery_title', str(body.get('lottery_title', '')))
+                if 'lottery_subtitle' in body:
+                    set_config('lottery_subtitle', str(body.get('lottery_subtitle', '')))
+                if 'lottery_rules' in body:
+                    set_config('lottery_rules', str(body.get('lottery_rules', '')))
+                if 'lottery_price' in body:
+                    set_config('lottery_price', str(body.get('lottery_price', '9.90')))
+                if 'lottery_mode' in body:
+                    set_config('lottery_mode', str(body.get('lottery_mode', 'wheel')))
+                # 多奖池（转盘/盲盒）配置，前端传 JSON 字符串或数组
+                if 'lottery_pools' in body:
+                    pools = body.get('lottery_pools', '')
+                    if isinstance(pools, (list, dict)):
+                        pools = json.dumps(pools, ensure_ascii=False)
+                    set_config('lottery_pools', str(pools))
                 ok(None, '传世武器入口配置已保存')
                 return
 
