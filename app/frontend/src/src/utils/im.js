@@ -162,7 +162,8 @@ class XBCIM {
 						lastMessage: conv.last_message,
 						lastMessageTime: conv.last_message_time,
 						profile: profile,
-						userId: conv.type === 'group' ? profile.id || conv.target_id : conv.target_id
+						userId: conv.type === 'group' ? profile.id || conv.target_id : conv.target_id,
+						accepted: !!conv.accepted
 					}
 				})
 			}

@@ -2,20 +2,18 @@ import { createChat } from './im'
 import { customerServiceList } from '../request/api'
 
 export async function openCustomerServiceChat(item) {
-	if (item && item.type === 'im' && item.user_id) {
-		uni.showLoading({ title: '连接客服...', mask: true })
+	if (item && item.type === 'im' && item.user_id !== undefined && item.user_id !== null && item.user_id !== '') {
+		// 最佳努力创建会话，失败也不阻塞进入聊天页（聊天页内部会自行 IM 登录与拉取消息）
+		let convId = ''
 		try {
 			const conv = await createChat(item.user_id)
-			if (!conv) {
-				uni.showToast({ title: '客服连接失败', icon: 'none' })
-				return
-			}
-			uni.navigateTo({
-				url: `/pagesA/im/chat?target_user_id=${item.user_id}&target_name=${encodeURIComponent(item.name || '客服')}&target_avatar=${encodeURIComponent(item.image || '')}&conversation_id=${conv.conversationId || ''}&conversation_type=single`
-			})
-		} finally {
-			uni.hideLoading()
+			if (conv) convId = conv.conversationId || ''
+		} catch (e) {
+			console.warn('创建客服会话失败，直接进入聊天页', e)
 		}
+		uni.navigateTo({
+			url: `/pagesA/im/chat?target_user_id=${item.user_id}&target_name=${encodeURIComponent(item.name || '客服')}&target_avatar=${encodeURIComponent(item.avatar || '')}&conversation_id=${encodeURIComponent(convId)}&conversation_type=single`
+		})
 		return
 	}
 	if (item && item.url) {

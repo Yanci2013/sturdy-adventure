@@ -264,6 +264,9 @@ const moreList = computed(() => {
 	// 客服入口组：已是客服显示「客服端」，未入驻显示「客服入驻」
 	if (isCs) {
 		list.push({ label: '客服端', icon: 'phone', action: 'customer' })
+		list.push({ label: '上传商品', icon: 'shopping-cart', action: 'csGoodsAdd' })
+		list.push({ label: '添加分类', icon: 'grid', action: 'csCategoryAdd' })
+		list.push({ label: '发布公告', icon: 'volume', action: 'csNoticeAdd' })
 	} else {
 		list.push({ label: '客服入驻', icon: 'plus-circle', action: 'csruzhu' })
 	}
@@ -476,6 +479,12 @@ const handleMoreClick = (item) => {
 		openIdentityPopup()
 	} else if (item.action === 'setting') {
 		updateUserInfo()
+	} else if (item.action === 'csGoodsAdd') {
+		router.navigateTo({ url: 'pagesA/mine/cs-goods-add' })
+	} else if (item.action === 'csCategoryAdd') {
+		router.navigateTo({ url: 'pagesA/mine/cs-category-add' })
+	} else if (item.action === 'csNoticeAdd') {
+		router.navigateTo({ url: 'pagesA/mine/cs-notice-add' })
 	} else if (item.action === 'service') {
 		openCustomerService()
 	}

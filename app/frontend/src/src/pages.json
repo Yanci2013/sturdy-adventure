@@ -259,6 +259,24 @@
 					"style": {
 						"navigationStyle": "custom"
 					}
+				},
+				{
+					"path": "cs-goods-add",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "cs-category-add",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "cs-notice-add",
+					"style": {
+						"navigationStyle": "custom"
+					}
 				}
 			]
 		},

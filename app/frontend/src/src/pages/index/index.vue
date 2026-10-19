@@ -111,17 +111,17 @@
 				</view>
 
 				<!-- 活动 / 投诉入口卡片 -->
-				<view class="entry-cards rlp20" v-if="navCards.length">
-					<view class="entry-cards__row">
+				<view class="entry-tiles rlp20" v-if="navCards.length">
+					<view class="entry-tiles__row">
 						<view
 							v-for="(item, index) in navCards"
 							:key="item.id || index"
-							class="entry-card"
+							class="entry-tile"
 							@click="openNavCard(item)"
 						>
-							<image v-if="item.image" class="entry-card__img" :src="item.image" mode="aspectFill"></image>
+							<image v-if="item.image" class="entry-tile__img" :src="item.image" mode="aspectFill"></image>
 							<template v-else>
-								<view class="entry-card__icon">
+								<view class="entry-tile__icon">
 									<svg v-if="index === 0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 										<path d="M4 8.6h10.4v6.2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8.6z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
 										<path d="M14.4 10.6h2.4a2 2 0 0 1 0 4h-2.4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
@@ -139,8 +139,8 @@
 										<path d="M12 6.4l1 2.2 2.4.3-1.8 1.6.5 2.4-2.1-1.2-2.1 1.2.5-2.4-1.8-1.6 2.4-.3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
 									</svg>
 								</view>
-								<text class="entry-card__title">{{ item.cardTitle }}</text>
-								<text class="entry-card__sub">{{ item.cardSub }}</text>
+								<text class="entry-tile__title">{{ item.cardTitle }}</text>
+								<text class="entry-tile__sub">{{ item.cardSub }}</text>
 							</template>
 						</view>
 					</view>
@@ -1750,16 +1750,16 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	}
 
 	/* 三大功能入口卡片 */
-	.entry-cards {
+	.entry-tiles {
 		margin-top: 24rpx;
 	}
 
-	.entry-cards__row {
+	.entry-tiles__row {
 		display: flex !important;
 		gap: 18rpx;
 	}
 
-	.entry-card {
+	.entry-tile {
 		position: relative;
 		flex: 1 1 0;
 		min-width: 0;
@@ -1775,11 +1775,11 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		transition: transform 0.2s ease;
 	}
 
-	.entry-card:active {
+	.entry-tile:active {
 		transform: scale(0.97);
 	}
 
-	.entry-card__img {
+	.entry-tile__img {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -1788,19 +1788,19 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		display: block;
 	}
 
-	.entry-card__icon {
+	.entry-tile__icon {
 		width: 48rpx;
 		height: 48rpx;
 		color: #E08A5F;
 	}
 
-	.entry-card__icon svg {
+	.entry-tile__icon svg {
 		width: 100%;
 		height: 100%;
 		display: block;
 	}
 
-	.entry-card__title {
+	.entry-tile__title {
 		margin-top: 20rpx;
 		font-size: 26rpx;
 		font-weight: 500;
@@ -1808,7 +1808,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		line-height: 1.3;
 	}
 
-	.entry-card__sub {
+	.entry-tile__sub {
 		margin-top: 6rpx;
 		font-size: 20rpx;
 		color: rgba(255, 255, 255, 0.55);

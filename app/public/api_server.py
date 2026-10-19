@@ -268,6 +268,30 @@ def init_db():
         avatar TEXT,
         online INTEGER DEFAULT 1
     )''')
+    # IM 会话表
+    cur.execute('''CREATE TABLE IF NOT EXISTS im_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id TEXT UNIQUE,
+        user_a INTEGER,
+        user_b INTEGER,
+        last_msg TEXT DEFAULT '',
+        last_time INTEGER DEFAULT 0,
+        accepted INTEGER DEFAULT 0,
+        accepted_by INTEGER DEFAULT 0,
+        createtime INTEGER,
+        is_deleted INTEGER DEFAULT 0
+    )''')
+    # IM 消息表
+    cur.execute('''CREATE TABLE IF NOT EXISTS im_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id TEXT,
+        sender_id INTEGER,
+        receiver_id INTEGER,
+        msg_type TEXT DEFAULT 'text',
+        content TEXT,
+        is_read INTEGER DEFAULT 0,
+        createtime INTEGER
+    )''')
     # 邀请码表
     cur.execute('''CREATE TABLE IF NOT EXISTS invite_codes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2290,13 +2314,196 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
-        # ===== IM 会话列表（mock：返回空，因为没有真实 IM） =====
-        if path == '/api/im/getConversationList' or path == '/api/im/init':
-            self.send_json({
-                "code": 1,
-                "msg": "成功",
-                "data": {"list": [], "total": 0}
-            })
+        # ===== IM 初始化 =====
+        if path == '/api/im/init':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 0, "msg": "未登录"})
+                return
+            self.send_json({"code": 1, "msg": "成功", "data": {"user": {"id": u['id'], "nickname": u['nickname'], "avatar": u['avatar']}}})
+            return
+
+        # ===== IM 创建会话 =====
+        if path == '/api/im/createConversation':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 0, "msg": "未登录"}); return
+            target_id = int(body.get('target_id') or 0)
+            if target_id < 0:
+                self.send_json({"code": 0, "msg": "参数错误"}); return
+            a, b = sorted([u['id'], target_id])
+            cid = 'c_%d_%d' % (a, b)
+            db = get_db()
+            row = db.execute('SELECT * FROM im_conversations WHERE conversation_id = ?', (cid,)).fetchone()
+            now = now_ts()
+            if not row:
+                db.execute('INSERT INTO im_conversations (conversation_id, user_a, user_b, createtime) VALUES (?,?,?,?)',
+                           (cid, a, b, now))
+            # 普通用户联系内置客服(target_id=0)时，重置为未接入，进入接入池
+            if target_id == 0:
+                is_sender_cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+                if not is_sender_cs:
+                    db.execute('UPDATE im_conversations SET accepted = 0, accepted_by = 0 WHERE conversation_id = ?', (cid,))
+            db.commit()
+            # 内置客服 target_id=0 时返回客服信息
+            if target_id == 0:
+                target = {"id": 0, "nickname": "平台客服", "avatar": "/static/yun/customer.png", "userId": 0}
+            else:
+                tr = db.execute('SELECT id, nickname, avatar FROM users WHERE id = ?', (target_id,)).fetchone()
+                target = {"id": tr['id'], "nickname": tr['nickname'] or '用户', "avatar": tr['avatar'] or '', "userId": tr['id']} if tr else {}
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "conversation_id": cid,
+                "target": {"id": target['id'], "nickname": target['nickname'] or '用户', "avatar": target['avatar'] or '', "userId": target['id']} if target else {}
+            }})
+            return
+
+        # ===== IM 会话列表 =====
+        if path == '/api/im/getConversationList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 1, "msg": "成功", "data": {"list": [], "total": 0}}); return
+            db = get_db()
+            # 判断当前用户是否为客服
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if cs:
+                # 客服：看到所有接入池会话（任一方为内置客服0）+ 自己参与的会话
+                rows = db.execute(
+                    'SELECT * FROM im_conversations WHERE is_deleted = 0 AND ((user_a = 0 OR user_b = 0) OR user_a = ? OR user_b = ?) ORDER BY last_time DESC, id DESC',
+                    (u['id'], u['id'])).fetchall()
+            else:
+                rows = db.execute(
+                    'SELECT * FROM im_conversations WHERE is_deleted = 0 AND (user_a = ? OR user_b = ?) ORDER BY last_time DESC, id DESC',
+                    (u['id'], u['id'])).fetchall()
+            list_data = []
+            for r in rows:
+                # 客服接入池：任一方为0时，另一方为真实咨询用户
+                if r['user_a'] == 0:
+                    other_id = r['user_b']
+                elif r['user_b'] == 0:
+                    other_id = r['user_a']
+                else:
+                    other_id = r['user_b'] if r['user_a'] == u['id'] else r['user_a']
+                # 客服接入池：other_id=0 时取客服名称
+                if other_id == 0:
+                    other = {"id": 0, "nickname": "平台客服", "avatar": "/static/yun/customer.png", "userId": 0}
+                else:
+                    ou = db.execute('SELECT id, nickname, avatar FROM users WHERE id = ?', (other_id,)).fetchone()
+                    other = {"id": ou['id'], "nickname": ou['nickname'] or '用户', "avatar": ou['avatar'] or '', "userId": ou['id']} if ou else {}
+                unread = db.execute('SELECT COUNT(*) FROM im_messages WHERE conversation_id = ? AND receiver_id = ? AND is_read = 0',
+                                    (r['conversation_id'], u['id'])).fetchone()[0]
+                list_data.append({
+                    "target_id": other_id,
+                    "type": "single",
+                    "unread_count": unread,
+                    "last_message": r['last_msg'] or '',
+                    "last_message_time": r['last_time'] or r['createtime'],
+                    "target": other,
+                    "accepted": r['accepted'] or 0
+                })
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": {"list": list_data, "total": len(list_data)}})
+            return
+
+        # ===== IM 发送消息 =====
+        if path == '/api/im/sendMessage':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 0, "msg": "未登录"}); return
+            target_id = int(body.get('target_id') or 0)
+            msg_type = body.get('msg_type') or 'text'
+            content = body.get('content') or ''
+            if target_id < 0 or not content:
+                self.send_json({"code": 0, "msg": "参数错误"}); return
+            a, b = sorted([u['id'], target_id])
+            cid = 'c_%d_%d' % (a, b)
+            db = get_db()
+            row = db.execute('SELECT * FROM im_conversations WHERE conversation_id = ?', (cid,)).fetchone()
+            now = now_ts()
+            if not row:
+                db.execute('INSERT INTO im_conversations (conversation_id, user_a, user_b, createtime) VALUES (?,?,?,?)', (cid, a, b, now))
+            # 普通用户给内置客服(target_id=0)发消息时，重置为未接入，重新进入接入池
+            is_sender_cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if target_id == 0 and not is_sender_cs:
+                db.execute('UPDATE im_conversations SET accepted = 0, accepted_by = 0 WHERE conversation_id = ?', (cid,))
+            preview = content if msg_type == 'text' else ('[图片]' if msg_type == 'image' else '[消息]')
+            db.execute('UPDATE im_conversations SET last_msg = ?, last_time = ? WHERE conversation_id = ?', (preview[:80], now, cid))
+            db.execute('INSERT INTO im_messages (conversation_id, sender_id, receiver_id, msg_type, content, createtime) VALUES (?,?,?,?,?,?)',
+                       (cid, u['id'], target_id, msg_type, content, now))
+            mid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            db.commit()
+            sender = {"id": u['id'], "nickname": u['nickname'], "avatar": u['avatar']}
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "id": mid, "target_id": target_id, "sender_id": u['id'], "sender": sender,
+                "msg_type": msg_type, "content": content, "createtime": now
+            }})
+            return
+
+        # ===== IM 消息列表 =====
+        if path == '/api/im/getMessageList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 1, "msg": "成功", "data": {"list": [], "has_more": False}}); return
+            target_id = int(qs.get('target_id', ['0'])[0] or 0)
+            if target_id:
+                a, b = sorted([u['id'], target_id])
+                cid = 'c_%d_%d' % (a, b)
+            else:
+                cid = qs.get('conversation_id', [''])[0]
+            db = get_db()
+            rows = db.execute('SELECT * FROM im_messages WHERE conversation_id = ? ORDER BY id DESC LIMIT 50', (cid,)).fetchall()
+            # 标记收到的消息为已读
+            db.execute('UPDATE im_messages SET is_read = 1 WHERE conversation_id = ? AND receiver_id = ?', (cid, u['id']))
+            db.commit()
+            msgs = []
+            for r in rows:
+                s = db.execute('SELECT id, nickname, avatar FROM users WHERE id = ?', (r['sender_id'],)).fetchone()
+                msgs.append({
+                    "id": r['id'], "target_id": target_id, "sender_id": r['sender_id'],
+                    "sender": {"id": s['id'], "nickname": s['nickname'] or '用户', "avatar": s['avatar'] or ''} if s else {},
+                    "msg_type": r['msg_type'], "content": r['content'], "createtime": r['createtime']
+                })
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": {"list": list(reversed(msgs)), "has_more": False}})
+            return
+
+        # ===== IM 标记已读 =====
+        if path == '/api/im/markAsRead':
+            u = get_user_by_token(token)
+            if u:
+                target_id = int(body.get('target_id') or 0)
+                if target_id:
+                    a, b = sorted([u['id'], target_id])
+                    cid = 'c_%d_%d' % (a, b)
+                    db = get_db()
+                    db.execute('UPDATE im_messages SET is_read = 1 WHERE conversation_id = ? AND receiver_id = ?', (cid, u['id']))
+                    db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "成功"})
+            return
+
+        # ===== 客服接入会话（从接入池转入回复池） =====
+        if path == '/api/im/acceptConversation':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 0, "msg": "未登录"}); return
+            db = get_db()
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if not cs:
+                db.close(); self.send_json({"code": 0, "msg": "无客服权限"}); return
+            target_id = int(body.get('target_id') or 0)
+            a, b = sorted([u['id'], target_id])
+            # 接入池会话是 user_b=0 的公共会话；客服接入后更新 accepted
+            pool_cid = 'c_%d_%d' % tuple(sorted([target_id, 0]))
+            db.execute('UPDATE im_conversations SET accepted = 1, accepted_by = ? WHERE conversation_id = ?', (u['id'], pool_cid))
+            # 同时在客服与该用户之间建立一对一可见会话
+            own_cid = 'c_%d_%d' % (a, b)
+            now = now_ts()
+            if not db.execute('SELECT id FROM im_conversations WHERE conversation_id = ?', (own_cid,)).fetchone():
+                db.execute('INSERT INTO im_conversations (conversation_id, user_a, user_b, accepted, accepted_by, createtime) VALUES (?,?,?,?,?,?)',
+                           (own_cid, a, b, 1, u['id'], now))
+            db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "接入成功"})
             return
 
         # ===== 抢单相关（保留原有） =====
@@ -3113,6 +3320,137 @@ class Handler(BaseHTTPRequestHandler):
                 'FROM thug t LEFT JOIN users u ON u.id = t.user_id ' + where + ' ORDER BY t.id DESC', args).fetchall()
             db.close()
             self.send_json({"code": 1, "msg": "成功", "data": {"list": [dict(r) for r in rows], "total": len(rows)}})
+            return
+
+        # ===== 客服端：踢打手（下架/驳回） =====
+        if path == '/api/cs/thugKick':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"}); return
+            db = get_db()
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if not cs:
+                db.close(); self.send_json({"code": 0, "msg": "无客服权限"}); return
+            thug_id = int(body.get('thug_id') or 0)
+            reason = (body.get('reason') or '').strip()
+            if not thug_id:
+                db.close(); self.send_json({"code": 0, "msg": "参数错误"}); return
+            t = db.execute('SELECT user_id FROM thug WHERE id = ?', (thug_id,)).fetchone()
+            if not t:
+                db.close(); self.send_json({"code": 0, "msg": "打手不存在"}); return
+            db.execute('UPDATE thug SET sh_status = 2, status = 0 WHERE id = ?', (thug_id,))
+            db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "已踢出打手"})
+            return
+
+        # ===== 客服端：罚款打手 =====
+        if path == '/api/cs/thugFine':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"}); return
+            db = get_db()
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if not cs:
+                db.close(); self.send_json({"code": 0, "msg": "无客服权限"}); return
+            thug_id = int(body.get('thug_id') or 0)
+            amount = float(body.get('amount') or 0)
+            reason = (body.get('reason') or '').strip()
+            if not thug_id or amount <= 0:
+                db.close(); self.send_json({"code": 0, "msg": "请填写正确的罚款金额"}); return
+            t = db.execute('SELECT user_id, name FROM thug WHERE id = ?', (thug_id,)).fetchone()
+            if not t:
+                db.close(); self.send_json({"code": 0, "msg": "打手不存在"}); return
+            target_uid = t['user_id']
+            ur = db.execute('SELECT money FROM users WHERE id = ?', (target_uid,)).fetchone()
+            before = float(ur['money'] or 0) if ur else 0.0
+            after = max(0.0, before - amount)
+            now = now_ts()
+            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, target_uid))
+            db.execute('INSERT INTO res_fine (name, amount, user_id, reason, status, createtime, update_time) VALUES (?,?,?,?,?,?,?)',
+                       (t['name'] or ('打手#' + str(thug_id)), amount, target_uid, reason, 0, now, now))
+            db.execute('INSERT INTO res_balance (user_id, amount, before, after, type, remark, createtime, update_time) VALUES (?,?,?,?,?,?,?,?)',
+                       (target_uid, amount, before, after, 'fine', '客服罚款：' + reason, now, now))
+            db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "罚款成功，已扣除余额 %.2f 元" % amount})
+            return
+
+        # ===== 客服端：商品分类列表（用于添加商品时选择分类） =====
+        if path == '/api/cs/categoryList':
+            db = get_db()
+            rows = db.execute('SELECT id, name, icon, sort, status FROM res_goods_category WHERE is_deleted = 0 AND status = "1" ORDER BY CAST(sort AS INTEGER) ASC, id ASC').fetchall()
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": [dict(r) for r in rows]})
+            return
+
+        # ===== 客服端：添加商品 =====
+        if path == '/api/cs/goodsAdd':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"}); return
+            db = get_db()
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if not cs:
+                db.close(); self.send_json({"code": 0, "msg": "无客服权限"}); return
+            name = (body.get('name') or '').strip()
+            category_id = int(body.get('category_id') or 0)
+            price = float(body.get('price') or 0)
+            logo = body.get('logo') or ''
+            unit = (body.get('unit') or '次').strip()
+            remark = (body.get('remark') or '').strip()
+            if not name:
+                db.close(); self.send_json({"code": 0, "msg": "请填写商品名称"}); return
+            if not category_id:
+                db.close(); self.send_json({"code": 0, "msg": "请选择商品分类"}); return
+            now = now_ts()
+            db.execute('INSERT INTO res_goods (name, category_id, logo, price, unit, status, remark, createtime, update_time) VALUES (?,?,?,?,?,?,?,?,?)',
+                       (name, category_id, logo, price, unit, '1', remark, now, now))
+            gid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "商品发布成功", "data": {"id": gid}})
+            return
+
+        # ===== 客服端：添加分类 =====
+        if path == '/api/cs/categoryAdd':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"}); return
+            db = get_db()
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if not cs:
+                db.close(); self.send_json({"code": 0, "msg": "无客服权限"}); return
+            name = (body.get('name') or '').strip()
+            icon = body.get('icon') or ''
+            sort = (body.get('sort') or '0').strip()
+            if not name:
+                db.close(); self.send_json({"code": 0, "msg": "请填写分类名称"}); return
+            now = now_ts()
+            db.execute('INSERT INTO res_goods_category (name, icon, sort, status, createtime, update_time) VALUES (?,?,?,?,?,?)',
+                       (name, icon, sort, '1', now, now))
+            cid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "分类添加成功", "data": {"id": cid}})
+            return
+
+        # ===== 客服端：发布公告 =====
+        if path == '/api/cs/noticeAdd':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"}); return
+            db = get_db()
+            cs = db.execute('SELECT id FROM thug WHERE user_id = ? AND is_customer_service = 1 AND sh_status = 1', (u['id'],)).fetchone()
+            if not cs:
+                db.close(); self.send_json({"code": 0, "msg": "无客服权限"}); return
+            title = (body.get('title') or '').strip()
+            synopsis = (body.get('synopsis') or '').strip()
+            content = (body.get('content') or '').strip()
+            if not title:
+                db.close(); self.send_json({"code": 0, "msg": "请填写公告标题"}); return
+            now = now_ts()
+            db.execute('INSERT INTO notices (title, synopsis, content, type, createtime) VALUES (?,?,?,?,?)',
+                       (title, synopsis, content, '1', now))
+            nid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            db.commit(); db.close()
+            self.send_json({"code": 1, "msg": "公告发布成功", "data": {"id": nid}})
             return
 
         # ===== 前端装修配置（公开接口，H5 加载时拉取主题/背景）=====

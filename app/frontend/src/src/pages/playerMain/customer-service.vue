@@ -308,6 +308,40 @@
 							</view>
 						</view>
 					</view>
+
+					<!-- 运营管理 -->
+					<view class="mine-section">
+						<text class="section-title">运营管理</text>
+						<view class="mine-menu">
+							<view class="menu-item" @click="goCsGoodsAdd">
+								<view class="menu-left">
+									<view class="menu-icon-wrap"><up-icon name="shopping-cart" size="20" color="#C05B34"></up-icon></view>
+									<text class="menu-text">上传商品</text>
+								</view>
+								<view class="menu-right">
+									<up-icon name="arrow-right" size="14" color="#ccc"></up-icon>
+								</view>
+							</view>
+							<view class="menu-item" @click="goCsCategoryAdd">
+								<view class="menu-left">
+									<view class="menu-icon-wrap"><up-icon name="grid" size="20" color="#C05B34"></up-icon></view>
+									<text class="menu-text">添加分类</text>
+								</view>
+								<view class="menu-right">
+									<up-icon name="arrow-right" size="14" color="#ccc"></up-icon>
+								</view>
+							</view>
+							<view class="menu-item" @click="goCsNoticeAdd">
+								<view class="menu-left">
+									<view class="menu-icon-wrap"><up-icon name="volume" size="20" color="#C05B34"></up-icon></view>
+									<text class="menu-text">发布公告</text>
+								</view>
+								<view class="menu-right">
+									<up-icon name="arrow-right" size="14" color="#ccc"></up-icon>
+								</view>
+							</view>
+						</view>
+					</view>
 				</scroll-view>
 			</view>
 		</view>
@@ -346,6 +380,33 @@
 						<image v-if="thugDetail.realname_back" class="idcard-img" :src="thugDetail.realname_back" mode="aspectFill" @click="previewImg(thugDetail.realname_back)"></image>
 					</view>
 					<text v-else class="idcard-empty">未上传身份证照片</text>
+					<!-- 打手管理操作 -->
+					<view class="thug-actions">
+						<view class="thug-action-btn danger" @click="kickThug">踢出打手</view>
+						<view class="thug-action-btn warn" @click="openFineModal">罚款打手</view>
+						<view class="thug-action-btn primary" @click="contactThug">联系打手</view>
+					</view>
+				</view>
+			</view>
+		</view>
+
+		<!-- 罚款打手弹窗 -->
+		<view class="identity-popup-mask" v-if="showFineModal" @click="showFineModal = false">
+			<view class="identity-popup fine-popup" @click.stop>
+				<view class="identity-popup-header">
+					<text class="identity-popup-title">罚款打手</text>
+					<view class="identity-popup-close" @click="showFineModal = false"><text class="close-icon-dark">×</text></view>
+				</view>
+				<view class="fine-body">
+					<view class="fine-row">
+						<text class="fine-label">罚款金额(元)</text>
+						<input class="fine-input" type="digit" v-model="fineForm.amount" placeholder="请输入金额" />
+					</view>
+					<view class="fine-row">
+						<text class="fine-label">罚款原因</text>
+						<textarea class="fine-textarea" v-model="fineForm.reason" placeholder="请输入罚款原因" maxlength="200" />
+					</view>
+					<view class="fine-submit" @click="submitFine">确认罚款</view>
 				</view>
 			</view>
 		</view>
@@ -378,7 +439,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getConversationList } from '../../utils/im'
+import { getConversationList, createChat } from '../../utils/im'
 import { getUserInfo } from '../../request/api'
 
 const statusBarHeight = ref(44)
@@ -404,6 +465,8 @@ const thugKeyword = ref('')
 const thugList = ref([])
 const showThugPopup = ref(false)
 const thugDetail = ref(null)
+const showFineModal = ref(false)
+const fineForm = ref({ amount: '', reason: '' })
 let timer = null
 
 const tabbarList = [
@@ -522,6 +585,78 @@ const openThugDetail = (t) => {
 	showThugPopup.value = true
 }
 
+const csPost = (path, body) => {
+	const token = uni.getStorageSync('token') || ''
+	return fetch(path, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', 'token': token },
+		body: JSON.stringify(body)
+	}).then(r => r.json())
+}
+
+const kickThug = () => {
+	if (!thugDetail.value) return
+	uni.showModal({
+		title: '提示',
+		content: `确定要踢出打手「${thugDetail.value.name || ('打手#' + thugDetail.value.id)}」吗？踢出后将无法接单。`,
+		success: async (res) => {
+			if (!res.confirm) return
+			uni.showLoading({ title: '处理中', mask: true })
+			try {
+				const r = await csPost('/api/cs/thugKick', { thug_id: thugDetail.value.id, reason: '客服踢出' })
+				uni.showToast({ title: r.msg || (r.code == 1 ? '已踢出' : '操作失败'), icon: 'none' })
+				if (r.code == 1) {
+					showThugPopup.value = false
+					loadThugList()
+				}
+			} finally {
+				uni.hideLoading()
+			}
+		}
+	})
+}
+
+const openFineModal = () => {
+	fineForm.value = { amount: '', reason: '' }
+	showFineModal.value = true
+}
+
+const submitFine = async () => {
+	const amount = parseFloat(fineForm.value.amount)
+	if (!amount || amount <= 0) {
+		uni.showToast({ title: '请输入正确的罚款金额', icon: 'none' }); return
+	}
+	if (!fineForm.value.reason.trim()) {
+		uni.showToast({ title: '请填写罚款原因', icon: 'none' }); return
+	}
+	uni.showLoading({ title: '处理中', mask: true })
+	try {
+		const r = await csPost('/api/cs/thugFine', {
+			thug_id: thugDetail.value.id,
+			amount: amount,
+			reason: fineForm.value.reason
+		})
+		uni.showToast({ title: r.msg || (r.code == 1 ? '罚款成功' : '操作失败'), icon: 'none' })
+		if (r.code == 1) {
+			showFineModal.value = false
+		}
+	} finally {
+		uni.hideLoading()
+	}
+}
+
+const contactThug = async () => {
+	if (!thugDetail.value) return
+	const uid = thugDetail.value.user_id
+	if (!uid) { uni.showToast({ title: '该打手无关联用户', icon: 'none' }); return }
+	try {
+		await createChat(uid)
+	} catch (e) {}
+	uni.navigateTo({
+		url: `/pagesA/im/chat?target_user_id=${uid}&target_name=${encodeURIComponent(thugDetail.value.name || '打手')}&target_avatar=&conversation_type=single`
+	})
+}
+
 const previewImg = (url) => {
 	if (!url) return
 	uni.previewImage({ urls: [url] })
@@ -613,13 +748,20 @@ const gotoChat = (item) => {
 	})
 }
 
-const onSessionAction = (item) => {
+const onSessionAction = async (item) => {
 	if (currentPool.value === 0) {
+		// 接入池：调用后端标记已接入
+		try {
+			const token = uni.getStorageSync('token') || ''
+			await fetch('/api/im/acceptConversation', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'token': token },
+				body: JSON.stringify({ target_id: item.userId || item.targetId })
+			})
+		} catch (e) {}
 		item.accepted = true
-		gotoChat(item)
-	} else {
-		gotoChat(item)
 	}
+	gotoChat(item)
 }
 
 const avatarChar = (name) => {
@@ -691,6 +833,18 @@ const changeAvatar = () => {
 const refreshProfile = () => {
 	loadUserInfo()
 	uni.showToast({ title: '已刷新', icon: 'success' })
+}
+
+const goCsGoodsAdd = () => {
+	uni.navigateTo({ url: '/pagesA/mine/cs-goods-add' })
+}
+
+const goCsCategoryAdd = () => {
+	uni.navigateTo({ url: '/pagesA/mine/cs-category-add' })
+}
+
+const goCsNoticeAdd = () => {
+	uni.navigateTo({ url: '/pagesA/mine/cs-notice-add' })
 }
 
 const goBack = () => {
@@ -938,4 +1092,16 @@ const selectIdentity = async (item) => {
 .idcard-row { display: flex; gap: 16rpx; margin-top: 24rpx; }
 .idcard-img { flex: 1; height: 180rpx; border-radius: 12rpx; background: #f5f5f5; }
 .idcard-empty { display: block; text-align: center; font-size: 24rpx; color: #bbb; margin-top: 24rpx; }
+.thug-actions { display: flex; gap: 16rpx; margin-top: 32rpx; }
+.thug-action-btn { flex: 1; text-align: center; padding: 18rpx 0; border-radius: 12rpx; font-size: 26rpx; color: #fff; }
+.thug-action-btn.danger { background: #E5484D; }
+.thug-action-btn.warn { background: #F5A623; color: #333; }
+.thug-action-btn.primary { background: #C05B34; }
+.fine-popup { max-height: 70vh; }
+.fine-body { padding: 24rpx; }
+.fine-row { margin-bottom: 24rpx; }
+.fine-label { display: block; font-size: 26rpx; color: #333; margin-bottom: 12rpx; font-weight: 500; }
+.fine-input { width: 100%; height: 80rpx; border: 1rpx solid #e8e8e8; border-radius: 12rpx; padding: 0 20rpx; font-size: 28rpx; box-sizing: border-box; background: #fafafa; }
+.fine-textarea { width: 100%; min-height: 160rpx; border: 1rpx solid #e8e8e8; border-radius: 12rpx; padding: 16rpx 20rpx; font-size: 26rpx; box-sizing: border-box; background: #fafafa; }
+.fine-submit { width: 100%; height: 88rpx; line-height: 88rpx; text-align: center; background: #C05B34; color: #fff; border-radius: 12rpx; font-size: 30rpx; margin-top: 12rpx; }
 </style>
