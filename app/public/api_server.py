@@ -71,6 +71,12 @@ RESOURCES = {
     'fine': {'title': '罚款管理', 'search': ['name'], 'columns': ['name', 'amount', 'user_id', 'status'], 'fields': [
         _rf('name', '罚款项目'), _rf('amount', '罚款金额', 'number'), _rf('user_id', '用户ID', 'number'),
         _rf('reason', '罚款原因', 'textarea'), _rf('status', '状态', 'select', {'0': '待缴纳', '1': '已缴纳', '2': '已免除'})]},
+    'sys_bill': {'title': '系统缴费', 'search': ['bill_no', 'project'], 'columns': ['bill_no', 'project', 'user_id', 'amount', 'status'], 'fields': [
+        _rf('user_id', '打手用户ID', 'number'), _rf('bill_no', '缴费单号'),
+        _rf('project', '缴费项目'), _rf('reason', '缴纳原因'),
+        _rf('remark', '缴费备注', 'textarea'), _rf('amount', '缴费金额', 'number'),
+        _rf('deadline', '缴费截止日(YYYY-MM-DD)'),
+        _rf('status', '状态', 'select', {'0': '待执行', '1': '已缴纳', '2': '已逾期'})]},
     'quick_entry': {'title': '快捷入口', 'search': ['name'], 'columns': ['name', 'icon', 'color', 'link', 'sort'], 'fields': [
         _rf('name', '入口名称'), _rf('icon', '图标'), _rf('color', '图标颜色'), _rf('link', '跳转链接'),
         _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
@@ -3601,6 +3607,82 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "已撤销"})
             return
 
+        # ===== 系统缴费 =====
+        if path in ('/api/bill/billList', '/api/bill/billRecordList'):
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            today = time.strftime('%Y-%m-%d')
+            db = get_db()
+            # 到期未缴自动置为已逾期
+            db.execute("UPDATE res_sys_bill SET status = '2' WHERE is_deleted = 0 AND status = '0' "
+                       "AND IFNULL(deadline,'') != '' AND deadline < ?", (today,))
+            db.commit()
+            where = "is_deleted = 0 AND user_id = ?"
+            args = [str(u['id'])]
+            if path == '/api/bill/billRecordList':
+                where += " AND status = '1'"
+            else:
+                where += " AND status != '1'"
+                st = qs.get('status', ['-1'])[0]
+                if st not in ('-1', '', 'None'):
+                    where += " AND status = ?"
+                    args.append(str(st))
+            rows = db.execute('SELECT * FROM res_sys_bill WHERE %s ORDER BY id DESC' % where, tuple(args)).fetchall()
+            db.close()
+            data = [{"id": r['id'], "bill_no": r['bill_no'] or '', "project": r['project'] or '',
+                     "reason": r['reason'] or '', "remark": r['remark'] or '',
+                     "amount": float(r['amount'] or 0), "deadline": r['deadline'] or '',
+                     "status": int(r['status'] or 0),
+                     "createtime": fmt_time(r['createtime'])} for r in rows]
+            start = (page - 1) * limit
+            self.send_json({"code": 1, "msg": "成功",
+                            "data": {"list": {"data": data[start:start + limit], "total": len(data)}}})
+            return
+
+        if path in ('/api/bill/billPay', '/api/bill/billPayFor'):
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            bill_id = body.get('id')
+            bill_no = body.get('bill_no')
+            pay_type = body.get('pay_type') or 'balance'
+            db = get_db()
+            if bill_id:
+                row = db.execute('SELECT * FROM res_sys_bill WHERE id = ? AND is_deleted = 0', (bill_id,)).fetchone()
+            else:
+                row = db.execute('SELECT * FROM res_sys_bill WHERE bill_no = ? AND is_deleted = 0', (bill_no,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "缴费单不存在"})
+                return
+            if str(row['status']) == '1':
+                db.close()
+                self.send_json({"code": 0, "msg": "该缴费单已缴纳"})
+                return
+            amount = float(row['amount'] or 0)
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < amount:
+                    db.close()
+                    self.send_json({"code": 0, "msg": "余额不足，请先充值"})
+                    return
+                after = round(bal - amount, 2)
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute("UPDATE res_sys_bill SET status = '1', update_time = ? WHERE id = ?", (now_ts(), row['id']))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], -amount, bal, after, 2, '系统缴费')
+                self.send_json({"code": 1, "msg": "缴纳成功"})
+                return
+            db.close()
+            self.send_json(_online_pay('S', '系统缴费', amount))
+            return
+
         # ===== 礼物墙 =====
         if path == '/api/giftwall/getThugGifts':
             db = get_db()
@@ -4724,6 +4806,11 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 keys = [f['key'] for f in spec['fields']]
                 vals = [str(body.get(k, '')) for k in keys]
+                # 系统缴费：未填缴费单号时自动生成 20 位单号
+                if res == 'sys_bill' and 'bill_no' in keys:
+                    i = keys.index('bill_no')
+                    if not vals[i].strip():
+                        vals[i] = time.strftime('%Y%m%d%H%M%S') + '%06d' % random.randint(0, 999999)
                 if spec.get('singleton') and not rid:
                     rid = 1
                 if rid:

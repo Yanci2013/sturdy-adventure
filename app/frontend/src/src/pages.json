@@ -380,6 +380,12 @@
 					}
 				},
 				{
+					"path": "bill",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
 					"path": "center",
 					"style": {
 						"navigationStyle": "custom"

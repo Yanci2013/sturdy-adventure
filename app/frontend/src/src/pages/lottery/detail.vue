@@ -23,7 +23,7 @@
 					</view>
 					<scroll-view scroll-x class="lt-images">
 						<view class="lt-images-row">
-							<view class="lt-image-item" v-for="(img, i) in images" :key="i">
+							<view class="lt-image-item" v-for="(img, i) in images" :key="i" @click="previewImages(i)">
 								<image class="lt-image" :src="img" mode="aspectFill"></image>
 							</view>
 						</view>
@@ -50,11 +50,11 @@
 						<text class="lt-section-tip">爆率为中奖权重，数值越高越容易中</text>
 					</view>
 					<view class="lt-prize-list">
-						<view class="lt-prize-item" v-for="p in prizes" :key="p.id">
+						<view class="lt-prize-item" v-for="p in prizes" :key="p.id" @click="openPrize(p)">
 							<image class="lt-prize-icon" :src="p.icon || '/static/ym/1.png'" mode="aspectFill"></image>
 							<view class="lt-prize-info">
 								<text class="lt-prize-name">{{ p.name }}</text>
-								<text class="lt-prize-stock">剩余库存：{{ p.stock }}</text>
+								<text class="lt-prize-stock">剩余库存：{{ p.stock }} · 点击查看外观</text>
 							</view>
 							<view class="lt-prize-rate">
 								<text class="lt-prize-rate-num">{{ p.rate }}</text>
@@ -76,6 +76,20 @@
 				<view style="height: 60rpx;"></view>
 			</view>
 		</scroll-view>
+
+		<!-- 奖品外观详情弹窗 -->
+		<view class="lt-result-mask" v-if="prizeShow" @click="closePrize">
+			<view class="lt-result" @click.stop>
+				<text class="lt-prize-detail-title">奖品外观</text>
+				<image class="lt-prize-detail-img" :src="currentPrize.icon || '/static/ym/1.png'" mode="aspectFit"></image>
+				<text class="lt-prize-detail-name">{{ currentPrize.name }}</text>
+				<view class="lt-prize-detail-meta">
+					<text class="lt-prize-detail-rate">爆率 {{ currentPrize.rate }}</text>
+					<text class="lt-prize-detail-stock">剩余库存 {{ currentPrize.stock }}</text>
+				</view>
+				<view class="lt-result-btn" @click="closePrize">知道了</view>
+			</view>
+		</view>
 
 		<!-- 抽奖结果弹窗 -->
 		<view class="lt-result-mask" v-if="resultShow" @click="closeResult">
@@ -145,6 +159,20 @@
 
 	const closeResult = () => {
 		resultShow.value = false
+	}
+
+	const prizeShow = ref(false)
+	const currentPrize = ref({})
+	const openPrize = (p) => {
+		currentPrize.value = p || {}
+		prizeShow.value = true
+	}
+	const closePrize = () => {
+		prizeShow.value = false
+	}
+	const previewImages = (i) => {
+		if (!images.value.length) return
+		uni.previewImage({ urls: images.value, current: i })
 	}
 </script>
 
@@ -271,4 +299,14 @@
 		display: flex; align-items: center; justify-content: center;
 		color: #fff; font-size: 28rpx; font-weight: 600;
 	}
+
+	.lt-prize-detail-title { font-size: 32rpx; font-weight: 800; color: #222; margin-bottom: 20rpx; }
+	.lt-prize-detail-img {
+		width: 420rpx; height: 420rpx; border-radius: 20rpx;
+		background: #f7f7f9; margin-bottom: 20rpx;
+	}
+	.lt-prize-detail-name { font-size: 32rpx; font-weight: 700; color: #222; }
+	.lt-prize-detail-meta { display: flex; flex-direction: row; gap: 28rpx; margin-top: 14rpx; }
+	.lt-prize-detail-rate { font-size: 26rpx; font-weight: 700; color: #FF7A45; }
+	.lt-prize-detail-stock { font-size: 26rpx; color: #999; }
 </style>

@@ -248,6 +248,15 @@ export const fineCheck = (params) => http.get('fine/fineCheck', { params })
 //撤销罚单
 export const fineRevoke = (data) => http.post('fine/fineRevoke', data)
 
+//系统缴费：我的缴费列表
+export const billList = (params) => http.get('bill/billList', { params })
+//系统缴费：缴纳记录
+export const billRecordList = (params) => http.get('bill/billRecordList', { params })
+//系统缴费：去补缴
+export const billPay = (data) => http.post('bill/billPay', data)
+//系统缴费：代缴
+export const billPayFor = (data) => http.post('bill/billPayFor', data)
+
 ////////////////////////////////////IM聊天////////////////////////////////////////////
 //获取IM授权码
 export const imGetToken = (params) => http.get('im/getToken', { params })

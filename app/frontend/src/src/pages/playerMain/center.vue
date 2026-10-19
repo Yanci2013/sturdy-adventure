@@ -30,7 +30,7 @@
 				<view class="bill-row">
 					<view class="bill-item"><text class="bill-num">{{ dataInfo.fine_paid_total || 0 }}</text><text class="bill-label">总已交罚款</text></view>
 					<view class="bill-item" @click="gotoFine"><text class="bill-num warn-num">{{ dataInfo.fine_unpaid_total || 0 }}</text><text class="bill-label">待交罚款</text></view>
-					<view class="bill-item"></view>
+					<view class="bill-item" @click="gotoBill"><text class="bill-num">系统缴费</text><text class="bill-label">我的缴费</text></view>
 				</view>
 			</view>
 		</view>
@@ -111,6 +111,8 @@ const gotoPage = (item) => {
 }
 
 const gotoFine = () => router.navigateTo({ url: 'pages/playerMain/fine' })
+
+const gotoBill = () => router.navigateTo({ url: 'pages/playerMain/bill' })
 
 const getThugTypeText = () => {
 	const typeMap = { 1: '普通打手', 2: '金牌打手', 3: '陪护打手' }

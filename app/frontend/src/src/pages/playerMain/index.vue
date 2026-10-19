@@ -205,6 +205,7 @@ const moreList = [
 	{ label: '打手客服', icon: 'kefu-ermai', action: 'kefu' },
 	{ label: '客服端', icon: 'chat', action: 'customer-service' },
 	{ label: '平台通知', icon: 'volume', action: 'notice' },
+	{ label: '系统缴费', icon: 'order', action: 'bill' },
 	{ label: '充保证金', icon: 'empty-permission', action: 'bond' },
 	{ label: '切换身份', icon: 'reload', action: 'switch' },
 	{ label: '设置', icon: 'setting', action: 'setting' }
@@ -402,6 +403,7 @@ const handleMoreClick = (item) => {
 		router.navigateTo({ url: 'pages/playerMain/customer-service' })
 	}
 	else if (item.action === 'notice') uni.navigateTo({ url: 'pagesA/mine/notice/index' })
+	else if (item.action === 'bill') router.navigateTo({ url: 'pages/playerMain/bill' })
 	else if (item.action === 'bond') router.navigateTo({ url: 'pages/playerMain/bound' })
 	else if (item.action === 'myorder') router.navigateTo({ url: 'pages/playerOrder/index' })
 	else if (item.action === 'switch') openIdentityPopup()
