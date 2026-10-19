@@ -160,8 +160,7 @@ RESOURCE_SEED = {
                     ('熔岩双刃', '', 'stage', '1', '集齐10个碎片', '3', '1'),
                     ('折叠直刀', '', 'normal', '2', '', '1', '1'), ('机械拳套', '', 'stage', '2', '集齐10个碎片', '2', '1')],
     'craft_package': [('体验1次', '1', '1', '1', '1'), ('打造10次', '10', '9', '2', '1'), ('打造50次', '50', '40', '3', '1')],
-    'quick_entry': [('打手入驻', '/static/ym/kf.png', '#2B6EFF', '/pages/hatchet/index', '1', '1'),
-                    ('客服入驻', '/static/ym/ss.png', '#FF7A45', '/pages/cs/index', '2', '1')],
+    'quick_entry': [],
     'upload_storage': [('local', '', '', '', '', '', '', '')],
     'my_setting': [('创世网络', '', '© 创世网络工作室', '', '根据国家法律规定，未成年人禁止下单！')],
     'wechat_robot': [('', '0', '')],
@@ -398,6 +397,15 @@ def init_db():
         ]
         for item in config_items:
             cur.execute('INSERT INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)', item)
+    # 确保首页顶部俱乐部名称 / Logo 配置项存在（兼容旧库）
+    for _name, _title, _tip, _type, _value in [
+        ('club_name', '俱乐部名称', '首页顶部显示的俱乐部名称', 'string', '创世网络'),
+        ('site_logo', '站点Logo', '首页顶部Logo图片地址（支持后台上传）', 'image', '/static/eon.png'),
+    ]:
+        cur.execute('SELECT COUNT(*) FROM fa_config WHERE name = ?', (_name,))
+        if cur.fetchone()[0] == 0:
+            cur.execute('INSERT INTO fa_config (name, group_name, title, tip, type, visible, value, content, rule, extend, setting) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                        (_name, 'basic', _title, _tip, _type, '', _value, '', '', '', ''))
     db.commit()
     # ===== 通用资源表（后台各菜单 CRUD） =====
     for _res, _spec in RESOURCES.items():
@@ -2068,10 +2076,10 @@ class Handler(BaseHTTPRequestHandler):
                     "qiangdan_price": 25,
                     "qiangdan_enabled": 1,
                     "qiangdan_free_thugs": "1",
-                    "club_name": "创世网络",
-                    "brand_name": "创世网络",
-                    "site_logo": "/static/eon.png",
-                    "site_name": "创世网络",
+                    "club_name": get_config('club_name', '创世网络'),
+                    "brand_name": get_config('club_name', '创世网络'),
+                    "site_logo": get_config('site_logo', '/static/eon.png'),
+                    "site_name": get_config('club_name', '创世网络'),
                     "small_lunbo": small_lunbo.split(',') if small_lunbo else [],
                     "goods_card_col": int(goods_card_col) if goods_card_col.isdigit() else 2
                 }

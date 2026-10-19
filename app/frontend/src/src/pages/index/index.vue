@@ -14,19 +14,15 @@
 			<view class="box">
 				<image class="box-bg" src="/static/images/header_background.png" mode="widthFix"></image>
 				<view class="header-content">
-					<!-- 左侧标题 -->
-					<view class="header-title">
-						<image v-if="siteConfig.site_icon" class="header-title-icon" :src="siteConfig.site_icon" mode="aspectFit"></image>
-						<text class="header-title-text">{{ siteConfig.site_title || '电竞' }}</text>
+					<!-- 搜索栏 -->
+					<view class="index-search" @click="toggleSearch">
+						<image class="index-search__icon" src="/static/ym/ss.png" mode="aspectFit"></image>
+						<text class="index-search__ph">搜索你喜欢的单子</text>
 					</view>
-					<!-- 右侧图标 -->
-					<view class="header-icons">
-						<view class="service-btn" @click="toSeivice">
-							<image class="service-icon" src="/static/ym/kf.png" mode="aspectFit"></image>
-						</view>
-						<view class="search-ball" @click="toggleSearch">
-							<image class="search-ball-icon" src="/static/ym/ss.png" mode="aspectFit"></image>
-						</view>
+					<!-- 俱乐部 Logo + 名称（后台可配） -->
+					<view class="club-brand">
+						<image class="club-brand__logo" :src="siteConfig.site_logo || '/static/eon.png'" mode="aspectFill"></image>
+						<text class="club-brand__name">{{ siteConfig.club_name || '创世网络' }}</text>
 					</view>
 				</view>
 
@@ -105,30 +101,29 @@
 					<text class="notice-bar__latest">{{ noticeListData[0].barText || noticeListData[0].title }}</text>
 				</view>
 
-				<!-- 图片导航 -->
-		<view class="image-nav rlp20" v-if="imageNavs.length">
-			<view class="image-nav__row" :class="Math.min(imageNavs.length, 3) === 1 ? 'is-single' : ''">
+				<!-- 活动 / 投诉入口卡片 -->
+		<view class="image-nav rlp20" v-if="navCards.length">
+			<view class="image-nav__row">
 				<view
-					v-for="item in imageNavs.slice(0, 3)"
-					:key="item.id"
+					v-for="(item, index) in navCards"
+					:key="item.id || index"
 					class="image-nav__item"
-					@click="openImageNav(item)"
+					@click="openNavCard(item)"
 				>
 					<view class="image-nav__img-wrap">
-						<image class="image-nav__img" :src="item.image_url" mode="aspectFill"></image>
+						<image v-if="item.image" class="image-nav__img" :src="item.image" mode="aspectFill"></image>
+						<template v-else>
+							<text class="image-nav__card-title">{{ item.cardTitle }}</text>
+							<text class="image-nav__card-sub">{{ item.cardSub }}</text>
+						</template>
 					</view>
-					<text class="image-nav__text">{{ item.name || item.title || '' }}</text>
+					<text class="image-nav__text">{{ item.label }}</text>
 				</view>
 			</view>
 		</view>
 
-		<!-- 下单攻略 + 快捷功能入口 -->
+		<!-- 快捷功能入口 -->
 		<view class="quick-section rlp20">
-			<view class="strategy-bar">
-				<view class="strategy-tag">
-					<text class="strategy-tag-text">下单攻略</text>
-				</view>
-			</view>
 			<view class="quick-grid">
 				<view class="quick-item" @click="gotoQuick('process')">
 					<view class="quick-icon">
@@ -474,6 +469,26 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	const noticeListData = ref([])
 	const showNotice = ref(false)
 	const imageNavs = ref([])
+	// 活动/投诉入口默认卡片（后台无「图片导航」数据时兜底显示）
+	const defaultNavCards = [
+		{ id: 'd_activity', label: '老板消费活动入口', cardTitle: '老板消费活动', cardSub: '(超多福利等你)', action: 'activity' },
+		{ id: 'd_tousu_cs', label: '投诉客服/打手入口', cardTitle: '投诉客服/打手', cardSub: '(官方投诉入口)', action: 'tousu' },
+		{ id: 'd_tousu_boss', label: '向董事长投诉问题', cardTitle: '向董事长投诉问题', cardSub: '(投诉客服和打手问题)', action: 'tousu' }
+	]
+	// 优先使用后台配置的图片导航（需带图片）；无配置时使用默认三项
+	const navCards = computed(() => {
+		const list = (imageNavs.value || []).filter(i => i.image_url).slice(0, 3)
+		if (list.length) {
+			return list.map(i => ({
+				id: i.id,
+				image: i.image_url,
+				link_url: i.link_url,
+				title: i.name || i.title || '',
+				label: i.name || i.title || ''
+			}))
+		}
+		return defaultNavCards
+	})
 
 	// 首页背景音乐
 	const bgmEnabled = ref(false)
@@ -1030,6 +1045,21 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		uni.navigateTo({ url: path })
 	}
 
+	// 活动/投诉入口卡片点击：后台配置走链接，默认卡片走内置跳转
+	const openNavCard = (item) => {
+		if (item.action === 'tousu') {
+			const token = uni.getStorageSync('token')
+			if (!token) { router.navigateTo({ url: 'pages/login/login' }); return }
+			router.navigateTo({ url: 'pagesA/mine/tousu' })
+			return
+		}
+		if (item.action === 'activity') {
+			if (craftMode.value === 'craft') { openCraft() } else { openLottery() }
+			return
+		}
+		openImageNav(item)
+	}
+
 	const changePlayerCategory = (index) => {
 		playerCategoryCurrent.value = index
 		playerCurrentCategoryId.value = playerCategoryList.value[index]?.id || 0
@@ -1121,34 +1151,13 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		background: transparent;
 	}
 
-	/* 下单攻略 + 快捷功能入口 */
+	/* 快捷功能入口 */
 	.quick-section {
 		margin-top: 24rpx;
 		background: #fff;
 		border-radius: 24rpx;
-		padding: 24rpx 20rpx 28rpx;
+		padding: 28rpx 20rpx;
 		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-	}
-
-	.strategy-bar {
-		margin-bottom: 28rpx;
-	}
-
-	.strategy-tag {
-		display: inline-flex;
-		align-items: center;
-		background: linear-gradient(135deg, #FF7A45 0%, #D94A18 100%);
-		padding: 14rpx 36rpx 14rpx 28rpx;
-		border-radius: 14rpx 100rpx 100rpx 14rpx;
-		position: relative;
-		box-shadow: 0 4rpx 12rpx rgba(217, 74, 24, 0.2);
-	}
-
-	.strategy-tag-text {
-		font-size: 28rpx;
-		font-weight: 700;
-		color: #fff;
-		letter-spacing: 2rpx;
 	}
 
 	.quick-grid {
@@ -1167,12 +1176,12 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	.quick-icon {
 		width: 104rpx;
 		height: 104rpx;
-		border-radius: 28rpx;
-		background: linear-gradient(135deg, #FF8A5C 0%, #D94A18 100%);
+		border-radius: 30rpx;
+		background: linear-gradient(160deg, #C4622F 0%, #9C3D16 55%, #7C2C0E 100%);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		box-shadow: 0 8rpx 20rpx rgba(217, 74, 24, 0.28);
+		box-shadow: 0 8rpx 18rpx rgba(124, 44, 14, 0.32), inset 0 2rpx 6rpx rgba(255, 255, 255, 0.28);
 	}
 
 	.quick-svg {
@@ -1271,7 +1280,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		left: 0;
 		right: 0;
 		height: 760rpx;
-		background: linear-gradient(180deg, #FF7A45 0%, #FFFFFF 100%);
+		background: linear-gradient(180deg, #FFF6F0 0%, #FFFFFF 100%);
 		z-index: 0;
 		pointer-events: none;
 	}
@@ -1306,81 +1315,70 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		padding: 0 20rpx;
 	}
 
-	/* 固定在顶部的容器 */
+	/* 顶部：搜索栏 + 俱乐部Logo */
 	.header-content {
 		position: relative;
 		z-index: 10;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 24rpx;
+		gap: 20rpx;
+		padding: 16rpx 24rpx 20rpx;
 		/* #ifdef MP-WEIXIN */
-		padding-top: calc(var(--status-bar-height, 20px) + 24rpx);
+		padding-top: calc(var(--status-bar-height, 20px) + 16rpx);
 		/* #endif */
 	}
 
-	/* 左侧标题 */
-	.header-title {
+	.index-search {
+		flex: 1;
+		min-width: 0;
+		height: 76rpx;
 		display: flex;
 		align-items: center;
-		gap: 12rpx;
-		background: transparent;
-		padding: 0;
-		box-sizing: border-box;
+		gap: 14rpx;
+		padding: 0 28rpx;
+		background: #ffffff;
+		border-radius: 999rpx;
+		box-shadow: 0 4rpx 16rpx rgba(217, 74, 24, 0.12);
 	}
 
-	.header-title-icon {
-		width: 72rpx;
-		height: 72rpx;
-		border-radius: 16rpx;
+	.index-search__icon {
+		width: 34rpx;
+		height: 34rpx;
+		flex-shrink: 0;
+		opacity: 0.55;
 	}
 
-	/* 标题文字 */
-	.header-title-text {
-		font-size: 32rpx;
-		font-weight: 400;
-		color: #ffffff;
-		letter-spacing: 2rpx;
-		line-height: 1;
+	.index-search__ph {
+		font-size: 26rpx;
+		color: #b7b7b7;
 	}
 
-	/* 头部图标 */
-	.header-icons {
+	.club-brand {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 16rpx;
+		flex-shrink: 0;
+		width: 108rpx;
 	}
 
-	/* 搜索球 */
-	.search-ball {
-		width: 96rpx;
-		height: 96rpx;
-		background: transparent;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
+	.club-brand__logo {
+		width: 64rpx;
+		height: 64rpx;
+		border-radius: 50%;
+		background: #ffffff;
+		box-shadow: 0 4rpx 12rpx rgba(217, 74, 24, 0.18);
 	}
 
-	.search-ball-icon {
-		width: 40rpx;
-		height: 40rpx;
-	}
-
-	/* 客服按钮 */
-	.service-btn {
-		width: 96rpx;
-		height: 96rpx;
-		background: transparent;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-	}
-
-	.service-btn .service-icon {
-		width: 40rpx;
-		height: 40rpx;
+	.club-brand__name {
+		margin-top: 6rpx;
+		font-size: 20rpx;
+		color: #333333;
+		max-width: 108rpx;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		text-align: center;
 	}
 
 	/* 搜索弹窗 */
@@ -1672,17 +1670,13 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	}
 
 	/* 图片导航 */
-	.image-nav { margin-top: 32rpx; padding: 0 20rpx; margin-bottom: 4rpx; }
+	.image-nav { margin-top: 24rpx; padding: 0 20rpx; margin-bottom: 4rpx; }
 
 	.image-nav__row {
 		display: flex !important;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 28rpx;
-	}
-
-	.image-nav__row.is-single {
-		justify-content: center;
+		gap: 18rpx;
 	}
 
 	.image-nav__item {
@@ -1690,35 +1684,24 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		flex-direction: column;
 		align-items: center;
 		padding: 0;
-		width: calc((100% - 56rpx) / 3);
-		flex: 0 0 calc((100% - 56rpx) / 3);
-	}
-
-	.image-nav__row.is-single .image-nav__item {
-		width: calc((100% - 56rpx) / 3);
-		flex-basis: calc((100% - 56rpx) / 3);
+		width: calc((100% - 36rpx) / 3);
+		flex: 0 0 calc((100% - 36rpx) / 3);
 	}
 
 	/* 卡片容器 */
 	.image-nav__img-wrap {
 		position: relative;
 		width: 100%;
-		height: 116rpx;
-		border-radius: 8rpx;
+		height: 172rpx;
+		border-radius: 20rpx;
 		overflow: hidden;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		background: transparent;
+		background: linear-gradient(160deg, #FFE07A 0%, #FFC93C 100%);
+		box-shadow: 0 6rpx 16rpx rgba(255, 180, 40, 0.28);
 		transition: transform 0.2s ease;
-	}
-
-	.image-nav__img-wrap::after {
-		display: none;
-	}
-
-	.image-nav__img-wrap::before {
-		display: none;
 	}
 
 	.image-nav__img-wrap:active {
@@ -1728,14 +1711,29 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	.image-nav__img {
 		width: 100%;
 		height: 100%;
-		border-radius: 8rpx;
-		opacity: 1;
 		display: block;
 	}
 
-	.image-nav__text {
+	.image-nav__card-title {
+		font-size: 26rpx;
+		font-weight: 800;
+		color: #4A2B00;
+		line-height: 1.25;
+		text-align: center;
+		padding: 0 10rpx;
+	}
+
+	.image-nav__card-sub {
 		margin-top: 10rpx;
-		font-size: 22rpx;
+		font-size: 18rpx;
+		color: #8A5A12;
+		text-align: center;
+		padding: 0 8rpx;
+	}
+
+	.image-nav__text {
+		margin-top: 12rpx;
+		font-size: 24rpx;
 		color: #333333;
 		text-align: center;
 		line-height: 1.2;
