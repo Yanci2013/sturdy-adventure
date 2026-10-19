@@ -8,8 +8,8 @@ import {
 
 /*无需token的url请求*/
 const unToken = ['']
-// ===== 临时预览开关：true 时禁用 401 登录跳转，方便预览打手端/客服端；正式发布前改回 false =====
-const PREVIEW_MODE = true
+// ===== 预览开关：true 时禁用 401 登录跳转（仅本地预览用），正式发布为 false =====
+const PREVIEW_MODE = false
 
 let unauthorizedShowing = false
 

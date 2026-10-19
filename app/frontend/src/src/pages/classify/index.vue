@@ -29,7 +29,7 @@
 			
 			<view class="clf-content">
 				<view class="clf-sidebar">
-					<view v-if="sidebarList.length === 0" class="skeleton-sidebar">
+					<view v-if="!categoryLoaded" class="skeleton-sidebar">
 						<view v-for="i in 8" :key="i" class="skeleton-sidebar-item"></view>
 					</view>
 					<view 
@@ -43,7 +43,7 @@
 				
 				<view class="clf-main">
 					<view v-if="activeTab === 0">
-						<view v-if="currentGoodsList.length === 0 && !sidebarList.length" class="skeleton-list">
+						<view v-if="!categoryLoaded || (goodsLoading && currentGoodsList.length === 0)" class="skeleton-list">
 							<view v-for="i in 5" :key="i" class="skeleton-card">
 								<view class="skeleton-thumb"></view>
 								<view class="skeleton-info">
@@ -55,6 +55,9 @@
 									</view>
 								</view>
 							</view>
+						</view>
+						<view v-else-if="currentGoodsList.length === 0" class="clf-empty">
+							<text class="clf-empty-text">该分类暂无商品</text>
 						</view>
 						<view class="clf-sort-bar">
 							<view 
@@ -137,6 +140,8 @@
 	const goodsList = ref([])
 	const isLoading = ref(false)
 	const goodsLoaded = ref(false)
+	const categoryLoaded = ref(false)
+	const goodsLoading = ref(false)
 	const sortType = ref('default') // default, price_asc, price_desc, sales
 
 	onMounted(() => { 
@@ -158,34 +163,45 @@
 	const loadCategory = async () => {
 		try {
 			const res = await category()
-			categoryList.value = res.data
-			// 只显示当前选中的一级分类下的二级分类
+			categoryList.value = res.data || []
 			if (categoryList.value.length > 0) {
 				const firstCategory = categoryList.value[0]
+				// 优先使用二级分类；若后端只返回一级分类（无 children），则回退用一级分类本身
 				if (firstCategory.children && firstCategory.children.length) {
 					sidebarList.value = firstCategory.children
 					currentCategoryId.value = firstCategory.children[0].id
-					await loadCategoryGoods(firstCategory.children[0].id)
+				} else {
+					sidebarList.value = categoryList.value
+					currentCategoryId.value = firstCategory.id
 				}
+				activeCategory.value = 0
+				await loadCategoryGoods(currentCategoryId.value)
 			}
 		} catch (e) {
 			console.error('分类数据加载失败:', e)
+		} finally {
+			categoryLoaded.value = true
 		}
 	}
 
 	const loadCategoryGoods = async (catId, sort = '') => {
+		goodsLoading.value = true
 		try {
 			const res = await goodsApi({
 				page: 1,
 				limit: 30,
+				// 同时传一级/二级分类，兼容只有一级分类的后端与有二级分类的后端
+				one_category: catId,
 				two_category: catId,
 				sort
 			})
 			const key = catId + '_' + sort
-			goodsMap.value[key] = res.data.data || []
+			goodsMap.value[key] = (res.data && res.data.data) || []
 		} catch (e) {
 			const key = catId + '_' + sort
 			goodsMap.value[key] = []
+		} finally {
+			goodsLoading.value = false
 		}
 	}
 
@@ -220,30 +236,40 @@
 		return goodsMap.value[cacheKey] || []
 	})
 
+	const ensureGoods = (catId) => {
+		const sortVal = sortParams[sortType.value] || ''
+		const cacheKey = catId + '_' + sortVal
+		if (!goodsMap.value[cacheKey]) {
+			loadCategoryGoods(catId, sortVal)
+		}
+	}
+
 	const switchMainCategory = (index) => {
 		currentCategoryIndex.value = index
-		const category = categoryList.value[index]
-		if (category && category.children && category.children.length) {
-			sidebarList.value = category.children
-			const firstChild = category.children[0]
+		const cat = categoryList.value[index]
+		if (!cat) return
+		if (cat.children && cat.children.length) {
+			sidebarList.value = cat.children
+			const firstChild = cat.children[0]
 			currentCategoryId.value = firstChild.id
 			activeCategory.value = 0
-			const sortVal = sortParams[sortType.value] || ''
-			const cacheKey = firstChild.id + '_' + sortVal
-			if (!goodsMap.value[cacheKey]) {
-				loadCategoryGoods(firstChild.id, sortVal)
-			}
+			ensureGoods(firstChild.id)
+		} else {
+			// 无二级分类：侧边栏沿用一级分类列表，选中当前项
+			sidebarList.value = categoryList.value
+			currentCategoryId.value = cat.id
+			activeCategory.value = index
+			ensureGoods(cat.id)
 		}
 	}
 
 	const switchCategory = (idx, cat) => {
 		activeCategory.value = idx
 		currentCategoryId.value = cat.id
-		const sortVal = sortParams[sortType.value] || ''
-		const cacheKey = cat.id + '_' + sortVal
-		if (!goodsMap.value[cacheKey]) {
-			loadCategoryGoods(cat.id, sortVal)
-		}
+		// 同步顶部一级分类的高亮
+		const mainIdx = categoryList.value.findIndex(c => String(c.id) === String(cat.id))
+		if (mainIdx > -1) currentCategoryIndex.value = mainIdx
+		ensureGoods(cat.id)
 	}
 
 	const loadGoods = async () => {
@@ -553,6 +579,18 @@
 		overflow-x: hidden; // 禁止横向滚动
 		width: 100%;
 		box-sizing: border-box;
+	}
+
+	.clf-empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 120rpx 0;
+	}
+
+	.clf-empty-text {
+		font-size: 26rpx;
+		color: #999;
 	}
 	
 	.rank-list {
