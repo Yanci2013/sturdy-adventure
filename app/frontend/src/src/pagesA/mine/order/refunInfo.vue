@@ -1,5 +1,6 @@
 <template>
 	<view class="">
+		<common-navbar title="售后详情"></common-navbar>
 		<view class="mt-3 mx-3 bg-white rounded-lg p-3">
 			<view class="text-main font font-weight-bolder">投诉类型</view>
 			<view class="mt-3 flex align-center">
@@ -95,6 +96,7 @@
 	import {
 		complaintMsg
 	} from '../../../request/api';
+	import commonNavbar from '../../../compontents/common-navbar.vue';
 	const id = ref('')
 	const dataInfo = ref({})
 	const typeList = ['订单投诉', '请求退款', '投诉打手']

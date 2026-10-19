@@ -1,5 +1,6 @@
 <template>
 	<view class="p-3 bg-white">
+		<common-navbar title="公告详情"></common-navbar>
 		<view class="text-main font-md font-weight-bold ">{{dataInfo.title}}</view>
 		<view class="mt-3 font-sm text-light9">{{dataInfo.createtime}}</view>
 		<view class="mt-3 font-sm text-light9">
@@ -18,6 +19,7 @@
 	import {
 		noticeMsg
 	} from '../../../request/api';
+	import commonNavbar from '../../../compontents/common-navbar.vue';
 	import {
 		ref
 	} from 'vue';

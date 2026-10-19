@@ -318,6 +318,17 @@
 			]
 		},
 		{
+			"root": "pages/lottery",
+			"pages": [
+				{
+					"path": "detail",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				}
+			]
+		},
+		{
 			"root": "pages/playerMain",
 			"pages": [
 				{

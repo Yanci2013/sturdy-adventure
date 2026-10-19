@@ -2008,18 +2008,23 @@ function uploadCraftBg() {
 }
 
 PAGES.decoration = async () => {
-  const r = await biz('decoration')
-  decoCfg = r.data || { name: '纯白简约', colors: THEME_PRESETS[0].colors, bg_image: '' }
+  let r = {}
+  try { r = await biz('decoration') } catch (e) { r = {} }
+  decoCfg = (r && r.data) || { name: '纯白简约', colors: THEME_PRESETS[0].colors, bg_image: '' }
   decoCfg.colors = fillDecoDefaults(decoCfg.colors || {})
   decoCfg.page_bg_type = decoCfg.page_bg_type || 'solid'
   decoCfg.page_bg_from = decoCfg.page_bg_from || decoCfg.colors.page_bg || '#FFFFFF'
   decoCfg.page_bg_to = decoCfg.page_bg_to || decoCfg.colors.page_bg || '#FFFFFF'
   decoCfg.page_bg_deg = decoCfg.page_bg_deg || 180
   decoDirty = false
-  const rr = await biz('realname/config')
-  rnEnabled = !!(rr.data && rr.data.enabled)
-  const cr = await biz('craft')
-  craftCfg = cr.data || {}
+  try {
+    const rr = await biz('realname/config')
+    rnEnabled = !!(rr.data && rr.data.enabled)
+  } catch (e) { rnEnabled = false }
+  try {
+    const cr = await biz('craft')
+    craftCfg = (cr && cr.data) || {}
+  } catch (e) { craftCfg = {} }
   renderDecoration()
 }
 let craftCfg = {}
@@ -2038,6 +2043,7 @@ function renderDecoration() {
         <input type="text" value="${esc(c[k] || '')}" oninput="setColor('${k}', this.value)" onchange="setColor('${k}', this.value)" style="flex:1">
       </div>
     </div>`).join('')
+  const lpRows = buildPrizeRows(craftCfg.lottery_prizes || [])
   $('#content').innerHTML = `
     <div class="deco-layout">
       <div class="deco-left">
@@ -2173,8 +2179,34 @@ function renderDecoration() {
                 </div>
               </div>
               <div class="color-row">
+                <label>活动封面</label>
+                <div style="display:flex;gap:8px;align-items:center;flex:1">
+                  <input type="text" id="lottery_cover" value="${esc(craftCfg.lottery_cover || '')}" placeholder="自定义活动封面（留空则使用横幅）">
+                  <button class="btn btn-ghost btn-sm" onclick="uploadCraft('lottery_cover')">选择图片</button>
+                </div>
+              </div>
+              <div class="color-row" style="align-items:flex-start">
+                <label>抽奖图片</label>
+                <div style="flex:1">
+                  <textarea id="lottery_images" rows="3" style="width:100%" placeholder="多张图片地址，每行一个或用英文逗号分隔">${esc(craftCfg.lottery_images || '')}</textarea>
+                  <div style="margin-top:6px"><button class="btn btn-ghost btn-sm" onclick="uploadCraftAppend('lottery_images')">＋ 上传并追加图片</button>
+                    <span class="muted" style="font-size:12px;margin-left:8px">用于抽奖页展示的武器/奖品图片</span></div>
+                </div>
+              </div>
+              <div class="color-row">
                 <label>点击跳转</label>
                 <input type="text" id="lottery_jump" value="${esc(craftCfg.lottery_jump || '')}" placeholder="/pages/lottery/detail">
+              </div>
+              <div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
+                  <span style="font-size:13px;font-weight:600;color:#374151">抽奖奖励与爆率</span>
+                  <span class="muted" style="font-size:12px">爆率越高中奖概率越大（权重）</span>
+                </div>
+                <table style="width:100%">
+                  <thead><tr><th style="width:34%">奖励名称</th><th style="width:20%">图片</th><th style="width:14%">爆率</th><th style="width:12%">库存</th><th style="width:10%">启用</th><th style="width:10%">操作</th></tr></thead>
+                  <tbody>${lpRows}</tbody>
+                </table>
+                <div style="padding:10px 12px"><button class="btn btn-ghost btn-sm" onclick="lpAddPrize()">＋ 新增奖励</button></div>
               </div>
             </div>
           </div>
@@ -2288,6 +2320,8 @@ async function saveCraft() {
     craft_jump: ($('#craft_jump')||{}).value ? $('#craft_jump').value.trim() : '',
     lottery_banner: ($('#lottery_banner')||{}).value ? $('#lottery_banner').value.trim() : '',
     lottery_jump: ($('#lottery_jump')||{}).value ? $('#lottery_jump').value.trim() : '',
+    lottery_cover: ($('#lottery_cover')||{}).value ? $('#lottery_cover').value.trim() : '',
+    lottery_images: ($('#lottery_images')||{}).value ? $('#lottery_images').value.trim() : '',
   })
   toast(r.msg)
 }
@@ -2309,6 +2343,111 @@ function uploadCraft(fieldId) {
     const j = await r.json().catch(() => ({}))
     if (j.code == 1) { $('#' + fieldId).value = j.data.url || j.data.fullurl || ''; toast('上传成功') }
     else toast(j.msg || '上传失败', false)
+  }
+  inp.click()
+}
+/* 抽奖图片：上传后追加到多图输入框 */
+function uploadCraftAppend(fieldId) {
+  const inp = document.createElement('input')
+  inp.type = 'file'; inp.accept = 'image/*'
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return
+    const fd = new FormData(); fd.append('file', f)
+    const opt = { method: 'POST', body: fd, headers: {} }
+    if (state.uid) opt.headers['AdminUserId'] = state.uid
+    if (state.token) opt.headers['AdminToken'] = state.token
+    const r = await fetch('/api/admin/upload', opt)
+    const j = await r.json().catch(() => ({}))
+    if (j.code == 1) {
+      const el = $('#' + fieldId); if (!el) return
+      const url = j.data.url || j.data.fullurl || ''
+      el.value = el.value.trim() ? (el.value.trim().replace(/[\n,]+$/, '') + ',' + url) : url
+      toast('已追加图片')
+    } else toast(j.msg || '上传失败', false)
+  }
+  inp.click()
+}
+/* ===== 抽奖奖励与爆率编辑 ===== */
+function buildPrizeRows(prizes) {
+  const cls = 'width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:13px'
+  const rows = (prizes || []).map(p => `<tr data-lp-row="${p.id}">
+    <td><input data-lp="name" value="${esc(p.name || '')}" style="${cls}"></td>
+    <td><div style="display:flex;gap:4px;align-items:center">
+      <input data-lp="icon" value="${esc(p.icon || '')}" style="${cls};flex:1">
+      <button class="btn btn-ghost btn-sm" onclick="lpUploadIcon(${p.id})">传</button></div></td>
+    <td><input data-lp="rate" type="number" value="${esc(p.rate || '0')}" style="${cls}"></td>
+    <td><input data-lp="stock" type="number" value="${esc(p.stock || '0')}" style="${cls}"></td>
+    <td>
+      <input data-lp="status" type="hidden" value="${p.status == '1' ? '1' : '0'}">
+      <input type="checkbox" ${p.status == '1' ? 'checked' : ''} onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+    </td>
+    <td>
+      <button class="btn btn-primary btn-sm" onclick="lpSavePrize(${p.id})">保存</button>
+      <button class="btn btn-danger btn-sm" onclick="lpDelPrize(${p.id})">删</button>
+    </td></tr>`).join('')
+  const newRow = `<tr data-lp-row="new" style="background:#f0fdf4">
+    <td><input data-lp="name" placeholder="新奖励名称" style="${cls}"></td>
+    <td><input data-lp="icon" placeholder="图片地址" style="${cls}"></td>
+    <td><input data-lp="rate" type="number" value="10" style="${cls}"></td>
+    <td><input data-lp="stock" type="number" value="0" style="${cls}"></td>
+    <td><input data-lp="status" type="hidden" value="1"><input type="checkbox" checked onchange="this.previousElementSibling.value = this.checked ? '1' : '0'"></td>
+    <td><button class="btn btn-primary btn-sm" onclick="lpAddPrize()">添加</button></td></tr>`
+  return (rows || '') + newRow
+}
+function _lpRowVal(row, k) {
+  const el = row.querySelector(`[data-lp="${k}"]`)
+  return el ? el.value.trim() : ''
+}
+async function refreshCraftCfg() {
+  const cr = await biz('craft')
+  craftCfg = cr.data || {}
+  renderDecoration()
+}
+async function lpSavePrize(id) {
+  const row = document.querySelector(`[data-lp-row="${id}"]`)
+  if (!row) return
+  const r = await biz('resource/save', {
+    res: 'prize_pool', id,
+    name: _lpRowVal(row, 'name'), icon: _lpRowVal(row, 'icon'),
+    rate: _lpRowVal(row, 'rate'), stock: _lpRowVal(row, 'stock'), status: _lpRowVal(row, 'status')
+  })
+  if (r.code == 1) { toast(r.msg || '保存成功'); await refreshCraftCfg() }
+  else toast(r.msg || '保存失败', false)
+}
+async function lpAddPrize() {
+  const row = document.querySelector('[data-lp-row="new"]')
+  if (!row) return
+  if (!_lpRowVal(row, 'name')) { toast('请填写奖励名称', false); return }
+  const r = await biz('resource/save', {
+    res: 'prize_pool',
+    name: _lpRowVal(row, 'name'), icon: _lpRowVal(row, 'icon'),
+    rate: _lpRowVal(row, 'rate'), stock: _lpRowVal(row, 'stock'), status: _lpRowVal(row, 'status')
+  })
+  if (r.code == 1) { toast('新增成功'); await refreshCraftCfg() }
+  else toast(r.msg || '新增失败', false)
+}
+async function lpDelPrize(id) {
+  if (!confirm('确认删除该奖励？')) return
+  const r = await biz('resource/delete', { res: 'prize_pool', id })
+  if (r.code == 1) { toast('已删除'); await refreshCraftCfg() }
+  else toast(r.msg || '删除失败', false)
+}
+function lpUploadIcon(id) {
+  const inp = document.createElement('input')
+  inp.type = 'file'; inp.accept = 'image/*'
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return
+    const fd = new FormData(); fd.append('file', f)
+    const opt = { method: 'POST', body: fd, headers: {} }
+    if (state.uid) opt.headers['AdminUserId'] = state.uid
+    if (state.token) opt.headers['AdminToken'] = state.token
+    const r = await fetch('/api/admin/upload', opt)
+    const j = await r.json().catch(() => ({}))
+    if (j.code == 1) {
+      const row = document.querySelector(`[data-lp-row="${id}"]`)
+      if (row) row.querySelector('[data-lp="icon"]').value = j.data.url || j.data.fullurl || ''
+      toast('上传成功，请点保存')
+    } else toast(j.msg || '上传失败', false)
   }
   inp.click()
 }

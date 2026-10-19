@@ -1,6 +1,7 @@
 <template>
 	<z-paging ref="paging" v-model="dataList" @query="queryList">
 		<template #top>
+			<common-navbar title="售后管理"></common-navbar>
 			<view class="bg-white">
 				<up-tabs :list="tabList" :current="current" :scrollable="false" @change="changeTab"></up-tabs>
 			</view>
@@ -53,6 +54,7 @@
 	import {
 		orderService
 	} from '../../../request/api';
+	import commonNavbar from '../../../compontents/common-navbar.vue';
 
 	const paging = ref(null)
 	const dataList = ref([])

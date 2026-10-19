@@ -1,5 +1,8 @@
 ﻿<template>
 	<z-paging ref="paging" v-model="dataList" @query="queryList">
+		<template #top>
+			<common-navbar title="分销中心"></common-navbar>
+		</template>
 		<template #loadingMoreNoMore>
 			<view></view>
 		</template>
@@ -80,6 +83,7 @@
 		configure
 	} from '../../request/api';
 	import router from '../../utils/router';
+	import commonNavbar from '../../compontents/common-navbar.vue';
 	import {
 		loginUrl
 	} from '../../request/env';

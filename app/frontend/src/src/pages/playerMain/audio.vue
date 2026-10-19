@@ -1,5 +1,6 @@
 <template>
 	<view class="container">
+		<common-navbar title="语音录制"></common-navbar>
 		<button @click="startRecording" :disabled="isRecording">开始录音</button>
 		<button @click="stopRecording" :disabled="!isRecording">停止录音</button>
 		<button @click="uploadAudio">上传录音</button>
@@ -23,6 +24,7 @@
 	import {
 		wechatInfo
 	} from '../../request/api';
+	import commonNavbar from '../../compontents/common-navbar.vue';
 	import {
 		test
 	} from '../../uni_modules/uview-plus';

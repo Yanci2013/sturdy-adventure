@@ -1,5 +1,6 @@
 <template>
 	<view class="">
+		<common-navbar title="推广海报"></common-navbar>
 		<image :src="bg" mode="" class="img" @longpress="saveImageToAlbum"></image>
 	</view>
 	<!-- <view class="position-relative" @longpress="saveImageToAlbum">
@@ -21,6 +22,7 @@
 		configure,
 		getUserInfo
 	} from '../../request/api';
+	import commonNavbar from '../../compontents/common-navbar.vue';
 	import {
 		base_url,
 		loginUrl

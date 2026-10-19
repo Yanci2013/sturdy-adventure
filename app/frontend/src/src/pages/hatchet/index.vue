@@ -1,5 +1,6 @@
 <template>
 	<view>
+		<common-navbar title="订单详情"></common-navbar>
 		<commonTabbar :current="2" :placeholder="false"></commonTabbar>
 		<up-tabs :list="tabList" :current="current" :scrollable="false" @change="changeTab">
 		</up-tabs>
@@ -43,6 +44,7 @@
 	import {
 		throttle
 	} from '../../uni_modules/uview-plus';
+	import commonNavbar from '../../compontents/common-navbar.vue';
 
 
 

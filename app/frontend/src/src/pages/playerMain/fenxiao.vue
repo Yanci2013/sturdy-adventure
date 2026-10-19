@@ -1,5 +1,8 @@
 <template>
 	<z-paging ref="paging" v-model="dataList" @query="queryList">
+		<template #top>
+			<common-navbar title="佣金提现"></common-navbar>
+		</template>
 		<template #loadingMoreNoMore>
 			<view></view>
 		</template>
@@ -75,6 +78,7 @@
 		thugRewardList,
 		thugMsg
 	} from '../../request/api';
+	import commonNavbar from '../../compontents/common-navbar.vue';
 	import router from '../../utils/router';
 	import {
 		onShow

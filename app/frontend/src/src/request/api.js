@@ -55,6 +55,12 @@ export const getUserInfo = (params) => http.get('user/getUserInfo', {
 export const configure = (params) => http.get('index/configure', {
 	params
 })
+//传世武器抽奖 - 活动配置（封面/抽奖图片/奖励爆率）
+export const lotteryConfig = (params) => http.get('lottery/config', {
+	params
+})
+//传世武器抽奖 - 抽奖
+export const lotteryDraw = (data) => http.post('lottery/draw', data)
 //订单列表
 export const orderList = (params) => http.get('goods/orderList', {
 	params

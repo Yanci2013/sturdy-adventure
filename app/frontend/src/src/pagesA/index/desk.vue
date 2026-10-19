@@ -1,5 +1,6 @@
 ﻿<template>
   <view class="page">
+    <common-navbar title="确认支付"></common-navbar>
     <scroll-view scroll-y class="content">
       <view class="content-inner">
         <view class="pay-amount-card card-glass">
@@ -62,6 +63,7 @@ import { ref, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { orderPay } from '../../request/api'
 import payUtil from '../../utils/pay'
+import commonNavbar from '../../compontents/common-navbar.vue'
 
 const price = ref('')
 const id = ref('')

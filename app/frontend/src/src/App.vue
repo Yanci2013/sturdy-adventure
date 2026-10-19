@@ -42,7 +42,7 @@
 			if (!document.getElementById('__exit_panel__')) {
 				const exitStyle = document.createElement('style')
 				exitStyle.textContent = `
-					#__exit_trigger__{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:999998;width:20px;height:52px;border-radius:0 13px 13px 0;background:rgba(17,17,17,0.26);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;line-height:1;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .2s,opacity .2s;}
+					#__exit_trigger__{position:fixed;left:0;top:0;z-index:999998;width:40px;height:40px;border-radius:0 0 13px 0;background:rgba(17,17,17,0.26);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;line-height:1;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .2s,opacity .2s;}
 					#__exit_trigger__:active{background:rgba(17,17,17,0.5);}
 					#__exit_panel__{position:fixed;left:0;top:0;bottom:0;width:150px;z-index:999997;background:rgba(17,17,17,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:0 18px;transform:translateX(-100%);transition:transform .26s ease;box-shadow:4px 0 24px rgba(0,0,0,0.25);}
 					#__exit_panel__.show{transform:translateX(0);}
@@ -59,6 +59,12 @@
 				panel.innerHTML = '<div class="ep-btn ep-exit">退出</div><div class="ep-btn ep-close">收起</div>'
 				document.body.appendChild(trigger)
 				document.body.appendChild(panel)
+
+				// 页面自身已有左上角导航/返回按钮时，隐藏全局退出入口，避免重叠
+				const hasPageNavbar = () => !!document.querySelector('.common-navbar, .u-navbar, .uv-navbar, .navbar, .nav-back, .gd-navbar-btn')
+				const syncTrigger = () => { trigger.style.display = hasPageNavbar() ? 'none' : 'flex' }
+				syncTrigger()
+				setInterval(syncTrigger, 400)
 
 				function openExitPanel() { panel.classList.add('show') }
 				function closeExitPanel() { panel.classList.remove('show') }

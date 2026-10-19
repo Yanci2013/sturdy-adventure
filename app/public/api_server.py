@@ -12,6 +12,8 @@ import re
 import ast
 import html
 import ssl
+import random
+import hashlib
 import sqlite3
 import secrets
 import urllib.request as _urlreq
@@ -49,6 +51,9 @@ RESOURCES = {
     'prize_pool': {'title': '奖池管理', 'search': ['name'], 'columns': ['name', 'rate', 'stock', 'status'], 'fields': [
         _rf('name', '奖品名称'), _rf('icon', '奖品图', 'image'), _rf('rate', '中奖概率(%)', 'number'),
         _rf('stock', '库存数量', 'number'), _rf('status', '是否启用', 'switch')]},
+    'gift': {'title': '礼物管理', 'search': ['name'], 'columns': ['name', 'icon', 'price', 'sort', 'status'], 'fields': [
+        _rf('name', '礼物名称'), _rf('icon', '礼物图标', 'image'), _rf('price', '礼物价格', 'number'),
+        _rf('sort', '排序', 'number'), _rf('status', '是否上架', 'switch')]},
     'banner': {'title': '轮播图管理', 'search': ['title'], 'columns': ['image', 'title', 'link', 'sort', 'status'], 'fields': [
         _rf('title', '标题'), _rf('image', '轮播图片', 'image'), _rf('link', '跳转链接'), _rf('sort', '排序', 'number'), _rf('status', '是否显示', 'switch')]},
     'order_complaint': {'title': '订单投诉', 'search': ['order_no', 'content'], 'columns': ['order_no', 'user_id', 'content', 'status'], 'fields': [
@@ -142,6 +147,8 @@ RESOURCE_SEED = {
               ('原神代肝', '2', '/static/images/header_background.png', '15', '小时', '1', '原神每日委托/深渊代打'),
               ('电竞教学课程', '3', '/static/images/header_background.png', '99', '课时', '1', '职业选手一对一教学')],
     'prize_pool': [('一等奖 iPhone', '', '1', '10', '1'), ('二等奖 现金红包', '', '9', '100', '1'), ('谢谢惠顾', '', '90', '0', '1')],
+    'gift': [('小心心', '/static/eon.png', '1', '1', '1'), ('棒棒糖', '/static/eon.png', '5', '2', '1'),
+             ('鲜花', '/static/eon.png', '10', '3', '1'), ('皇冠', '/static/eon.png', '88', '4', '1')],
     'banner': [('首页横幅', '/static/images/header_background.png', '/pages/classify/index', '1', '1')],
     'craft_prize': [('双截棍', '', 'normal', '1', '', '1', '1'), ('火焰刀', '', 'normal', '1', '', '2', '1'),
                     ('熔岩双刃', '', 'stage', '1', '集齐10个碎片', '3', '1'),
@@ -182,10 +189,11 @@ def init_db():
         group_chat INTEGER DEFAULT 0,
         createtime INTEGER
     )''')
-    try:
-        cur.execute('ALTER TABLE users ADD COLUMN cs_avatar TEXT DEFAULT ""')
-    except sqlite3.OperationalError:
-        pass
+    for _col in ('cs_avatar', 'mobile', 'sex', 'signature'):
+        try:
+            cur.execute('ALTER TABLE users ADD COLUMN %s TEXT DEFAULT ""' % _col)
+        except sqlite3.OperationalError:
+            pass
     # 打手表
     cur.execute('''CREATE TABLE IF NOT EXISTS thug (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,13 +211,14 @@ def init_db():
         realname_reason TEXT DEFAULT '',
         realname_time INTEGER DEFAULT 0
     )''')
-    # 老库补字段（实名认证）
-    for _col in ('real_name', 'id_card', 'realname_front', 'realname_back', 'realname_reason'):
+    # 老库补字段（实名认证 + 打手资料）
+    for _col in ('real_name', 'id_card', 'realname_front', 'realname_back', 'realname_reason',
+                 'avatar', 'mobile', 'sex', 'synopsis', 'images', 'audio', 'game_content', 'grade'):
         try:
             cur.execute('ALTER TABLE thug ADD COLUMN %s TEXT DEFAULT ""' % _col)
         except sqlite3.OperationalError:
             pass
-    for _col in ('realname_status', 'realname_time'):
+    for _col in ('realname_status', 'realname_time', 'audio_time', 'jd_status'):
         try:
             cur.execute('ALTER TABLE thug ADD COLUMN %s INTEGER DEFAULT 0' % _col)
         except sqlite3.OperationalError:
@@ -307,6 +316,19 @@ def init_db():
         ('users.is_deleted', "ALTER TABLE users ADD COLUMN is_deleted INTEGER DEFAULT 0"),
         ('thug.is_deleted', "ALTER TABLE thug ADD COLUMN is_deleted INTEGER DEFAULT 0"),
         ('orders.is_deleted', "ALTER TABLE orders ADD COLUMN is_deleted INTEGER DEFAULT 0"),
+        # 订单业务扩展字段
+        ('orders.goods_id', "ALTER TABLE orders ADD COLUMN goods_id INTEGER DEFAULT 0"),
+        ('orders.wz_id', "ALTER TABLE orders ADD COLUMN wz_id TEXT DEFAULT ''"),
+        ('orders.complaint', "ALTER TABLE orders ADD COLUMN complaint INTEGER DEFAULT 0"),
+        ('orders.award', "ALTER TABLE orders ADD COLUMN award TEXT DEFAULT ''"),
+        ('orders.jackpot_id', "ALTER TABLE orders ADD COLUMN jackpot_id INTEGER DEFAULT 0"),
+        ('orders.is_rated', "ALTER TABLE orders ADD COLUMN is_rated INTEGER DEFAULT 0"),
+        ('orders.rating', "ALTER TABLE orders ADD COLUMN rating INTEGER DEFAULT 0"),
+        ('orders.image', "ALTER TABLE orders ADD COLUMN image TEXT DEFAULT ''"),
+        ('orders.thug_remarks', "ALTER TABLE orders ADD COLUMN thug_remarks TEXT DEFAULT ''"),
+        ('orders.helper', "ALTER TABLE orders ADD COLUMN helper TEXT DEFAULT ''"),
+        ('orders.refund_method', "ALTER TABLE orders ADD COLUMN refund_method TEXT DEFAULT ''"),
+        ('orders.refund_time', "ALTER TABLE orders ADD COLUMN refund_time INTEGER DEFAULT 0"),
         ('notices.is_deleted', "ALTER TABLE notices ADD COLUMN is_deleted INTEGER DEFAULT 0"),
         ('customer_services.is_deleted', "ALTER TABLE customer_services ADD COLUMN is_deleted INTEGER DEFAULT 0"),
         ('invite_codes.is_deleted', "ALTER TABLE invite_codes ADD COLUMN is_deleted INTEGER DEFAULT 0"),
@@ -422,6 +444,26 @@ def init_db():
         prize_name TEXT DEFAULT '', prize_image TEXT DEFAULT '', status TEXT DEFAULT 'bag',
         create_time INTEGER DEFAULT 0)''')
 
+    # 礼物记录（打手礼物墙）
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_gift_record (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, thug_id INTEGER DEFAULT 0,
+        gift_id INTEGER DEFAULT 0, gift_name TEXT DEFAULT '', gift_icon TEXT DEFAULT '',
+        num INTEGER DEFAULT 1, amount TEXT DEFAULT '0', pay_type TEXT DEFAULT 'balance',
+        order_no TEXT DEFAULT '', status INTEGER DEFAULT 1, create_time INTEGER DEFAULT 0)''')
+    cur.execute('CREATE INDEX IF NOT EXISTS idx_gift_rec_thug ON fa_gift_record(thug_id)')
+    # 打赏记录
+    cur.execute('''CREATE TABLE IF NOT EXISTS fa_thug_reward (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, thug_id INTEGER DEFAULT 0,
+        money TEXT DEFAULT '0', pay_type TEXT DEFAULT 'balance', order_no TEXT DEFAULT '',
+        status INTEGER DEFAULT 1, create_time INTEGER DEFAULT 0)''')
+    cur.execute('CREATE INDEX IF NOT EXISTS idx_reward_thug ON fa_thug_reward(thug_id)')
+    # 投诉/售后扩展字段（旧库补列）
+    for _col in ('order_id', 'thug_id', 'type', 'phone', 'images', 'refund_method', 'refund_time', 'handle_remark'):
+        try:
+            cur.execute("ALTER TABLE res_order_complaint ADD COLUMN %s TEXT DEFAULT ''" % _col)
+        except Exception:
+            pass
+
     cur.execute('''CREATE TABLE IF NOT EXISTS fa_aggregate_login_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, channel TEXT DEFAULT '',
         openid TEXT DEFAULT '', nickname TEXT DEFAULT '', login_ip TEXT DEFAULT '',
@@ -527,6 +569,124 @@ def fmt_time(ts):
 
 def gen_token():
     return secrets.token_hex(16)
+
+# 订单状态文案（0待付款 1待接单 2待开始 3服务中 4待结单 5已完成 6售后中 7已退款 8已取消）
+ORDER_STATUS_TEXT = {
+    0: '待付款', 1: '待接单', 2: '待开始', 3: '服务中',
+    4: '待结单', 5: '已完成', 6: '售后中', 7: '已退款', 8: '已取消',
+}
+
+def serialize_order(row):
+    """把订单行序列化为前端需要的结构"""
+    r = dict(row)
+    get = lambda k, d='': (r.get(k) if r.get(k) is not None else d)
+    status = int(get('status', 0) or 0)
+    return {
+        "id": r['id'],
+        "order_no": get('order_no'),
+        "goods_id": get('goods_id', 0),
+        "user_id": get('user_id', 0),
+        "thug_id": get('thug_id', 0),
+        "title": get('title'),
+        "logo": get('logo') or '/static/images/header_background.png',
+        "image": get('logo') or '/static/images/header_background.png',
+        "price": get('price', '0'),
+        "pay_price": get('pay_price', '0'),
+        "number": get('number', 1),
+        "game_id": get('game_id'),
+        "wz_id": get('wz_id'),
+        "game_qf": get('game_qf'),
+        "remarks": get('remarks'),
+        "synopsis": get('synopsis'),
+        "status": status,
+        "status_text": get('status_text') or ORDER_STATUS_TEXT.get(status, ''),
+        "complaint": get('complaint', 0),
+        "award": get('award', ''),
+        "jackpot_id": get('jackpot_id', 0),
+        "Jackpot_id": get('jackpot_id', 0),
+        "is_rated": get('is_rated', 0),
+        "rating": get('rating', 0),
+        "grade": get('rating', 0),
+        "thug_remarks": get('thug_remarks', ''),
+        "helper": get('helper', ''),
+        "refund_method": get('refund_method', ''),
+        "refund_amount": get('pay_price', '0'),
+        "refund_time_text": fmt_time(r.get('refund_time')) if r.get('refund_time') else '',
+        "createtime": fmt_time(r.get('createtime')),
+        "create_time": fmt_time(r.get('createtime')),
+        "paytime": fmt_time(r.get('paytime')) if r.get('paytime') else '',
+        "connecttime": fmt_time(r.get('connecttime')) if r.get('connecttime') else '',
+        "completetime": fmt_time(r.get('completetime')) if r.get('completetime') else '',
+        "place_order": get_config('place_order', ''),
+    }
+
+def order_images(order):
+    """订单服务凭证图片（逗号分隔字符串 -> 列表）"""
+    raw = (order.get('image') or '') if isinstance(order, dict) else ''
+    return [u for u in re.split(r'[,\n]', raw) if u.strip()] if raw else []
+
+def gen_order_no(prefix='D'):
+    """生成订单号：前缀 + 时间戳 + 随机三位"""
+    return '%s%d%03d' % (prefix, now_ts(), random.randint(0, 999))
+
+def get_thug_by_user(uid):
+    """按用户ID查询打手记录"""
+    try:
+        db = get_db()
+        row = db.execute('SELECT * FROM thug WHERE user_id = ? AND is_deleted = 0', (uid,)).fetchone()
+        db.close()
+        return dict(row) if row else None
+    except Exception:
+        return None
+
+def add_balance_log(user_id, amount, before, after, type_, remark):
+    """写入一条余额明细"""
+    try:
+        db = get_db()
+        db.execute(
+            'INSERT INTO res_balance (user_id, amount, before, after, type, remark, createtime, update_time) '
+            'VALUES (?,?,?,?,?,?,?,?)',
+            (str(user_id), str(amount), str(before), str(after), str(type_), remark, now_ts(), now_ts()))
+        db.commit()
+        db.close()
+    except Exception:
+        pass
+
+def pick_prize_weighted():
+    """按爆率权重从奖池中随机抽一个奖品，返回奖品行或 None"""
+    prizes = [p for p in get_prize_pool_list()
+              if str(p['status']) == '1' and float(p['rate'] or 0) > 0]
+    if not prizes:
+        return None
+    total = sum(float(p['rate'] or 0) for p in prizes)
+    pick = random.uniform(0, total)
+    acc = 0.0
+    chosen = prizes[-1]
+    for p in prizes:
+        acc += float(p['rate'] or 0)
+        if pick <= acc:
+            chosen = p
+            break
+    return chosen
+
+def gen_epay_url(epay, out_trade_no, name, money):
+    """生成彩虹易支付 GET 收银台地址"""
+    params = {
+        'pid': epay.get('pid', ''),
+        'type': 'wxpay',
+        'out_trade_no': out_trade_no,
+        'notify_url': epay.get('notify_url', ''),
+        'return_url': epay.get('notify_url', ''),
+        'name': name,
+        'money': '%.2f' % float(money),
+    }
+    raw = '&'.join('%s=%s' % (k, params[k]) for k in sorted(params) if str(params[k]) != '')
+    params['sign'] = hashlib.md5((raw + epay.get('key', '')).encode('utf-8')).hexdigest()
+    params['sign_type'] = 'MD5'
+    base = epay.get('apiurl', '').rstrip('/')
+    return base + '/submit.php?' + urlencode(params)
+
+
 
 def get_user_by_token(token):
     if not token:
@@ -752,7 +912,7 @@ def get_decoration_config():
             merged['craft_banner'] = get_config('craft_banner', '')
             merged['craft_jump'] = get_config('craft_jump', '')
             merged['lottery_banner'] = get_config('lottery_banner', '/uploads/craft_lottery_banner.png')
-            merged['lottery_jump'] = get_config('lottery_jump', '')
+            merged['lottery_jump'] = get_config('lottery_jump', '') or '/pages/lottery/detail'
             return merged
         except Exception:
             pass
@@ -1004,13 +1164,39 @@ def get_music_url(platform, song_id, **kwargs):
 
 def get_craft_entry_config():
     """获取传世武器入口配置（打造与抽奖互斥，craft_mode 决定显示哪一个）"""
+    images_raw = get_config('lottery_images', '')
+    lottery_images = [u for u in re.split(r'[,\n]', images_raw) if u.strip()] if images_raw else []
     return {
         'craft_mode': get_config('craft_mode', 'lottery'),  # craft=打造传世武器, lottery=抽传世武器
         'craft_banner': get_config('craft_banner', ''),
         'craft_jump': get_config('craft_jump', ''),
         'lottery_banner': get_config('lottery_banner', '/uploads/craft_lottery_banner.png'),
-        'lottery_jump': get_config('lottery_jump', ''),
+        'lottery_jump': get_config('lottery_jump', '') or '/pages/lottery/detail',
+        # 抽奖活动：自定义封面 + 抽奖图片（多张）
+        'lottery_cover': get_config('lottery_cover', ''),
+        'lottery_images': images_raw,
+        'lottery_images_list': lottery_images,
+        # 抽奖奖励爆率（读取奖池表）
+        'lottery_prizes': get_prize_pool_list(),
     }
+
+
+def get_prize_pool_list():
+    """获取奖池奖励列表（含爆率 rate 与库存 stock）"""
+    try:
+        conn = get_db()
+        rows = conn.execute(
+            'SELECT id, name, icon, rate, stock, status FROM res_prize_pool '
+            'WHERE is_deleted = 0 ORDER BY CAST(rate AS REAL) DESC, id ASC'
+        ).fetchall()
+        conn.close()
+        return [{
+            'id': r['id'], 'name': r['name'] or '', 'icon': r['icon'] or '',
+            'rate': r['rate'] or '0', 'stock': r['stock'] or '0', 'status': r['status'] or '1'
+        } for r in rows]
+    except Exception:
+        return []
+
 
 def get_auto_settle_config():
     """获取订单自动结算与退款配置"""
@@ -1545,6 +1731,9 @@ class Handler(BaseHTTPRequestHandler):
                     "nickname": u['nickname'],
                     "avatar": u['avatar'],
                     "cs_avatar": u.get('cs_avatar', '') or u['avatar'],
+                    "mobile": u.get('mobile', '') or '',
+                    "sex": u.get('sex', '') or '1',
+                    "signature": u.get('signature', '') or '',
                     "type": str(u['type']),
                     "money": u['money'],
                     "score": u['score'],
@@ -1749,41 +1938,90 @@ class Handler(BaseHTTPRequestHandler):
             if not u:
                 self.send_json({"code": 401, "msg": "未登录"})
                 return
-            page = int(qs.get('page', ['1'])[0])
-            limit = int(qs.get('limit', ['20'])[0])
+            page = int(qs.get('page', ['1'])[0] or 1)
+            limit = int(qs.get('limit', qs.get('limint', ['20']))[0] or 20)
+            status = qs.get('status', [''])[0]
+            order_no = qs.get('order_no', [''])[0]
             db = get_db()
-            total = db.execute(
-                'SELECT COUNT(*) FROM orders WHERE user_id = ?', (u['id'],)
-            ).fetchone()[0]
-            rows = db.execute(
-                'SELECT * FROM orders WHERE user_id = ? ORDER BY createtime DESC LIMIT ? OFFSET ?',
-                (u['id'], limit, (page - 1) * limit)
-            ).fetchall()
+            # 打手端按 thug_id 过滤，用户端按 user_id 过滤
+            is_thug = str(u.get('type')) == '2'
+            if is_thug:
+                trow = db.execute('SELECT id FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+                owner_col, owner_id = 'thug_id', (trow['id'] if trow else -1)
+            else:
+                owner_col, owner_id = 'user_id', u['id']
+            where, args = 'WHERE %s = ? AND is_deleted = 0' % owner_col, [owner_id]
+            if status not in ('', '10', None):
+                where += ' AND status = ?'
+                args.append(int(status))
+            if order_no:
+                where += ' AND order_no LIKE ?'
+                args.append('%' + order_no + '%')
+            total = db.execute('SELECT COUNT(*) FROM orders ' + where, args).fetchone()[0]
+            rows = db.execute('SELECT * FROM orders ' + where + ' ORDER BY createtime DESC LIMIT ? OFFSET ?',
+                              args + [limit, (page - 1) * limit]).fetchall()
             db.close()
-            list_data = [{
-                "id": r['id'],
-                "order_no": r['order_no'],
-                "title": r['title'],
-                "logo": r['logo'],
-                "price": r['price'],
-                "pay_price": r['pay_price'],
-                "number": r['number'],
-                "status": r['status'],
-                "status_text": r['status_text'],
-                "synopsis": r['synopsis'],
-                "create_time": fmt_time(r['createtime']),
-                "createtime": fmt_time(r['createtime'])
-            } for r in rows]
+            list_data = [serialize_order(r) for r in rows]
             self.send_json({
                 "code": 1,
                 "msg": "成功",
                 "data": {
                     "data": list_data,
+                    "list": list_data,
                     "total": total,
                     "current_page": page,
-                    "per_page": limit
+                    "per_page": limit,
+                    "pages": (total + limit - 1) // limit if limit else 1,
+                    "last_page": (total + limit - 1) // limit if limit else 1
                 }
             })
+            return
+
+        # ===== 订单详情 =====
+        if path == '/api/goods/orderMsg':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            oid = qs.get('id', ['0'])[0]
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            data = serialize_order(row)
+            data['image'] = order_images(dict(row))
+            # 下单用户信息
+            if data.get('user_id'):
+                urow = db.execute('SELECT id, nickname, avatar FROM users WHERE id = ?', (data['user_id'],)).fetchone()
+                if urow:
+                    data['nickname'] = urow['nickname'] or ''
+                    data['user_avatar'] = urow['avatar'] or '/static/images/icon.png'
+            # 打手信息
+            if data.get('thug_id'):
+                trow = db.execute('SELECT t.id, t.name, t.user_id, u.avatar FROM thug t LEFT JOIN users u ON u.id = t.user_id WHERE t.id = ?',
+                                  (data['thug_id'],)).fetchone()
+                if trow:
+                    data['thug'] = {"id": trow['id'], "name": trow['name'], "avatar": trow['avatar'] or '/static/images/icon.png'}
+                    data['thug_user_id'] = trow['user_id']
+            # 售后/投诉对象
+            crow = db.execute(
+                'SELECT * FROM res_order_complaint WHERE order_no = ? AND is_deleted = 0 ORDER BY id DESC LIMIT 1',
+                (data.get('order_no'),)).fetchone()
+            if crow:
+                c = dict(crow)
+                data['complaint'] = {
+                    "id": c['id'], "order_no": c['order_no'], "content": c.get('content') or '',
+                    "status": c.get('status'), "type": '1', "createtime": fmt_time(c.get('createtime'))
+                }
+            # 关联奖品信息
+            if data.get('jackpot_id'):
+                prow = db.execute('SELECT id, name, icon FROM res_prize_pool WHERE id = ?', (data['jackpot_id'],)).fetchone()
+                if prow:
+                    data['jackpot'] = {"id": prow['id'], "name": prow['name'], "image": prow['icon']}
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
         # ===== 客服列表 =====
@@ -2020,6 +2258,49 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
+        # ===== 抽传世武器活动：活动配置（封面/抽奖图片/奖励爆率）=====
+        if path == '/api/lottery/config':
+            cfg = get_craft_entry_config()
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "enabled": get_config('craft_enabled', '1'),
+                "title": get_config('lottery_title', '') or '传世武器抽奖',
+                "subtitle": get_config('lottery_subtitle', '') or '极品传世武器等你来抽',
+                "cover": cfg['lottery_cover'] or cfg['lottery_banner'],
+                "banner": cfg['lottery_banner'],
+                "images": cfg['lottery_images_list'],
+                "rules": get_config('lottery_rules', '') or '1. 每次抽奖消耗一次抽奖机会。\n2. 奖品按后台配置的爆率随机产出。\n3. 抽中奖品将发放到账户，请注意查收。',
+                "price": get_config('craft_price', '1'),
+                "prizes": cfg['lottery_prizes'],
+            }})
+            return
+
+        # ===== 抽传世武器活动：抽奖（按后台爆率加权）=====
+        if path == '/api/lottery/draw':
+            prizes = [p for p in get_prize_pool_list() if p['status'] == '1' and float(p['rate'] or 0) > 0]
+            times = int(body.get('times', 1) or 1) if isinstance(body, dict) else 1
+            times = 1 if times < 1 else (10 if times > 10 else times)
+            if not prizes:
+                self.send_json({"code": 0, "msg": "奖池暂未配置，请稍后再试"})
+                return
+            total = sum(float(p['rate'] or 0) for p in prizes)
+            import random as _random
+            results = []
+            for _ in range(times):
+                pick = _random.uniform(0, total)
+                acc = 0.0
+                chosen = prizes[-1]
+                for p in prizes:
+                    acc += float(p['rate'] or 0)
+                    if pick <= acc:
+                        chosen = p
+                        break
+                results.append({
+                    "id": chosen['id'], "name": chosen['name'],
+                    "icon": chosen['icon'], "rate": chosen['rate']
+                })
+            self.send_json({"code": 1, "msg": "抽奖成功", "data": {"results": results, "times": times}})
+            return
+
         # ===== 商品列表 =====
         if path == '/api/goods/goodsList':
             kw = qs.get('name', [''])[0].strip()
@@ -2085,12 +2366,24 @@ class Handler(BaseHTTPRequestHandler):
                 "logo": row['logo'] or '/static/images/header_background.png',
                 "image": row['logo'] or '/static/images/header_background.png',
                 "price": row['price'] or '0',
+                "com_price": str(round(float(row['price'] or 0) * 1.3, 2)),
                 "line_price": str(round(float(row['price'] or 0) * 1.3, 2)),
                 "unit": row['unit'] or '局',
+                "sales": 0,
                 "synopsis": row['remark'] or '',
                 "remark": row['remark'] or '',
+                "content": row['remark'] or '',
                 "images": [row['logo'] or '/static/images/header_background.png']
             }
+            # 赠送转盘：在后台配置了商品ID时，下单可赠送1次转盘抽奖
+            award_ids = [x.strip() for x in str(get_config('goods_award_ids', '')).split(',') if x.strip()]
+            if str(row['id']) in award_ids:
+                data['award'] = 1
+                data['prizeList'] = [{"id": p['id'], "name": p['name'], "image": p['icon'] or '/static/ym/1.png'}
+                                     for p in get_prize_pool_list() if str(p['status']) == '1']
+            else:
+                data['award'] = 0
+                data['prizeList'] = []
             self.send_json({"code": 1, "msg": "成功", "data": data})
             return
 
@@ -2207,22 +2500,42 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"code": 0, "msg": "打手信息不存在"})
                 return
             t = dict(trow)
+            # 关联用户头像/昵称
+            urow = db.execute('SELECT id, nickname, avatar FROM users WHERE id = ?', (t.get('user_id'),)).fetchone()
+            # 已完成订单数与平均评分
+            stat = db.execute(
+                'SELECT COUNT(*) AS c, IFNULL(AVG(CAST(rating AS REAL)),0) AS g FROM orders '
+                'WHERE thug_id = ? AND is_deleted = 0 AND status = 5', (t['id'],)).fetchone()
             db.close()
+            images = [x for x in re.split(r'[,\n]', (t.get('images') or '')) if x.strip()]
+            grade = t.get('grade') or ('%.1f' % float(stat['g'] or 0) if stat and stat['g'] else '5.0')
             self.send_json({
                 "code": 1, "msg": "成功",
                 "data": {
                     "id": t['id'],
                     "user_id": t['user_id'],
-                    "name": t['name'],
+                    "name": t['name'] or (urow['nickname'] if urow else '打手'),
+                    "avatar": t.get('avatar') or (urow['avatar'] if urow else '/static/images/icon.png'),
+                    "avatar_frame": None,
+                    "sex": t.get('sex') or '1',
+                    "grade": grade,
+                    "type": 3,
+                    "synopsis": t.get('synopsis') or '',
+                    "game_content": t.get('game_content') or '',
+                    "images": images,
+                    "audio": t.get('audio') or '',
+                    "audio_time": t.get('audio_time') or 0,
+                    "order_count": stat['c'] if stat else 0,
                     "status": t['status'],
                     "sh_status": t['sh_status'],
                     "is_customer_service": t['is_customer_service'],
-                    "jd_status": "1",
+                    "jd_status": str(t.get('jd_status') or ('1' if t['sh_status'] == 1 else '0')),
                     "frozen_money": "0.00",
                     "available_money": "0.00",
                     "total_money": "0.00",
                     "bond": "0.00",
                     "level": 1,
+                    "level_name": get_config('level_name_1', '') or '',
                     "createtime": t['createtime']
                 }
             })
@@ -2235,23 +2548,21 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"code": 401, "msg": "未登录"})
                 return
             status = qs.get('status', [''])[0]
-            page = int(qs.get('page', ['1'])[0])
-            limit = int(qs.get('limit', ['20'])[0])
+            page = int(qs.get('page', ['1'])[0] or 1)
+            limit = int(qs.get('limit', ['20'])[0] or 20)
             db = get_db()
-            if status:
-                total = db.execute('SELECT COUNT(*) FROM orders WHERE thug_id = ? AND status = ?', (u['id'], int(status))).fetchone()[0]
-                rows = db.execute('SELECT * FROM orders WHERE thug_id = ? AND status = ? ORDER BY createtime DESC LIMIT ? OFFSET ?', (u['id'], int(status), limit, (page - 1) * limit)).fetchall()
-            else:
-                total = db.execute('SELECT COUNT(*) FROM orders WHERE thug_id = ?', (u['id'],)).fetchone()[0]
-                rows = db.execute('SELECT * FROM orders WHERE thug_id = ? ORDER BY createtime DESC LIMIT ? OFFSET ?', (u['id'], limit, (page - 1) * limit)).fetchall()
+            trow = db.execute('SELECT id FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            tid = trow['id'] if trow else -1
+            where, args = 'WHERE thug_id = ?', [tid]
+            if status not in ('', '10', None):
+                where += ' AND status = ?'
+                args.append(int(status))
+            total = db.execute('SELECT COUNT(*) FROM orders ' + where, args).fetchone()[0]
+            rows = db.execute('SELECT * FROM orders ' + where + ' ORDER BY createtime DESC LIMIT ? OFFSET ?',
+                              args + [limit, (page - 1) * limit]).fetchall()
             db.close()
-            list_data = [{
-                "id": r['id'], "order_no": r['order_no'], "title": r['title'],
-                "amount": r['amount'], "status": r['status'],
-                "game_id": r.get('game_id', ''), "wz_id": r.get('wz_id', ''),
-                "createtime": r['createtime']
-            } for r in rows]
-            self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "total": total}})
+            list_data = [serialize_order(r) for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "list": list_data, "total": total}})
             return
 
         # ===== 可接单列表 =====
@@ -2261,15 +2572,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"code": 401, "msg": "未登录"})
                 return
             db = get_db()
-            rows = db.execute('SELECT * FROM orders WHERE status = 1 ORDER BY createtime DESC LIMIT 20').fetchall()
+            rows = db.execute('SELECT * FROM orders WHERE status = 1 AND is_deleted = 0 ORDER BY createtime DESC LIMIT 20').fetchall()
             db.close()
-            list_data = [{
-                "id": r['id'], "order_no": r['order_no'], "title": r['title'],
-                "amount": r['amount'], "status": r['status'],
-                "game_id": r.get('game_id', ''), "wz_id": r.get('wz_id', ''),
-                "createtime": r['createtime']
-            } for r in rows]
-            self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "total": len(list_data)}})
+            list_data = [serialize_order(r) for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": list_data, "list": list_data, "total": len(list_data)}})
             return
 
         # ===== 打手权限 =====
@@ -2287,6 +2593,23 @@ class Handler(BaseHTTPRequestHandler):
             if not u:
                 self.send_json({"code": 401, "msg": "未登录"})
                 return
+            thug_id = str(body.get('thug_id') or '').strip()
+            db = get_db()
+            if thug_id:
+                trow = db.execute('SELECT * FROM thug WHERE id = ?', (thug_id,)).fetchone()
+            else:
+                trow = db.execute('SELECT * FROM thug WHERE user_id = ?', (u['id'],)).fetchone()
+            if not trow:
+                db.close()
+                self.send_json({"code": 0, "msg": "打手信息不存在"})
+                return
+            allowed = ('name', 'avatar', 'mobile', 'sex', 'synopsis', 'images', 'audio', 'jd_status', 'game_content')
+            fields = {k: str(body.get(k)) for k in allowed if k in body and body.get(k) is not None}
+            if fields:
+                sets = ', '.join('%s = ?' % k for k in fields)
+                db.execute('UPDATE thug SET %s WHERE id = ?' % sets, tuple(fields.values()) + (trow['id'],))
+                db.commit()
+            db.close()
             self.send_json({"code": 1, "msg": "保存成功"})
             return
 
@@ -2414,6 +2737,1095 @@ class Handler(BaseHTTPRequestHandler):
         # ===== 后台管理 API（自定义后台 UI 使用，与 H5 共用同一数据源）=====
         if path.startswith('/api/admin/'):
             self.handle_admin_api(path, qs, method, body, files)
+            return
+
+        # ===== 用户下单 =====
+        if path == '/api/goods/orderAdd':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            gid = body.get('id')
+            number = int(body.get('number', 1) or 1)
+            game_id = (body.get('game_id') or '').strip()
+            wz_id = (body.get('wz_id') or '').strip()
+            game_qf = body.get('game_qf') or '手机端'
+            remarks = body.get('remarks') or ''
+            thug_id = int(body.get('thug_id', 0) or 0)
+            if not game_id or not wz_id:
+                self.send_json({"code": 0, "msg": "请填写游戏昵称和ID账号"})
+                return
+            if number < 1:
+                number = 1
+            db = get_db()
+            grow = db.execute('SELECT * FROM res_goods WHERE id = ? AND is_deleted = 0', (gid,)).fetchone()
+            if not grow:
+                db.close()
+                self.send_json({"code": 0, "msg": "商品不存在或已下架"})
+                return
+            price = float(grow['price'] or 0)
+            if game_qf == '电脑端':
+                price = round(price * 1.3, 2)
+            pay_price = round(price * number, 2)
+            award_ids = [x.strip() for x in str(get_config('goods_award_ids', '')).split(',') if x.strip()]
+            award = '1' if str(grow['id']) in award_ids else ''
+            ono = gen_order_no('D')
+            now = now_ts()
+            cur = db.execute(
+                'INSERT INTO orders (order_no, user_id, thug_id, goods_id, title, logo, price, pay_price, number, '
+                'game_id, wz_id, game_qf, remarks, synopsis, status, status_text, award, createtime) '
+                'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                (ono, u['id'], thug_id, grow['id'], grow['name'], grow['logo'], price, pay_price, number,
+                 game_id, wz_id, game_qf, remarks, grow['remark'], 0, ORDER_STATUS_TEXT[0], award, now))
+            order_id = cur.lastrowid
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "下单成功",
+                            "data": {"order_id": order_id, "order_no": ono, "award": award}})
+            return
+
+        # ===== 订单支付（余额 / 在线支付）=====
+        if path == '/api/goods/orderPay':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            oid = body.get('id')
+            pay_type = body.get('pay_type') or 'balance'
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            o = dict(row)
+            if int(o.get('user_id') or 0) != int(u['id']):
+                db.close()
+                self.send_json({"code": 0, "msg": "无权操作该订单"})
+                return
+            if int(o.get('status') or 0) != 0:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单状态不支持支付"})
+                return
+            amount = float(o.get('pay_price') or 0)
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < amount:
+                    db.close()
+                    self.send_json({"code": 0, "msg": "余额不足，请先充值"})
+                    return
+                after = round(bal - amount, 2)
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute('UPDATE orders SET status = 1, status_text = ?, paytime = ? WHERE id = ?',
+                           (ORDER_STATUS_TEXT[1], now_ts(), oid))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], -amount, bal, after, 2, '订单支付（%s）' % o.get('order_no'))
+                self.send_json({"code": 1, "msg": "支付成功",
+                                "data": {"out_trade_no": o.get('order_no'), "paid": True}})
+                return
+            # 在线支付（彩虹易支付）
+            epay = get_epay_config()
+            db.close()
+            if epay.get('apiurl') and epay.get('pid') and epay.get('key'):
+                pay_url = gen_epay_url(epay, o.get('order_no'), o.get('title') or '陪玩服务', amount)
+                self.send_json({"code": 1, "msg": "请前往支付",
+                                "data": {"out_trade_no": o.get('order_no'), "url": pay_url, "paid": False}})
+                return
+            self.send_json({"code": 0, "msg": "在线支付暂未开通，请使用余额支付"})
+            return
+
+        # ===== 用户取消订单（含已支付退款到余额）=====
+        if path == '/api/goods/orderCancel':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            oid = body.get('id')
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            o = dict(row)
+            if int(o.get('user_id') or 0) != int(u['id']):
+                db.close()
+                self.send_json({"code": 0, "msg": "无权操作该订单"})
+                return
+            st = int(o.get('status') or 0)
+            if st not in (0, 1, 2):
+                db.close()
+                self.send_json({"code": 0, "msg": "当前状态不可取消"})
+                return
+            if st >= 1:
+                amount = float(o.get('pay_price') or 0)
+                bal = float(u.get('money') or 0)
+                after = round(bal + amount, 2)
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute('UPDATE orders SET status = 7, status_text = ?, refund_method = ?, refund_time = ? WHERE id = ?',
+                           (ORDER_STATUS_TEXT[7], 'balance', now_ts(), oid))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], amount, bal, after, 1, '订单退款（%s）' % o.get('order_no'))
+            else:
+                db.execute('UPDATE orders SET status = 8, status_text = ? WHERE id = ?', (ORDER_STATUS_TEXT[8], oid))
+                db.commit()
+                db.close()
+            self.send_json({"code": 1, "msg": "已取消订单"})
+            return
+
+        # ===== 用户确认结单（带评分）=====
+        if path == '/api/goods/orderConfirm':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            oid = body.get('id')
+            grade = int(body.get('grade', 0) or 0)
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            o = dict(row)
+            if int(o.get('user_id') or 0) != int(u['id']):
+                db.close()
+                self.send_json({"code": 0, "msg": "无权操作该订单"})
+                return
+            if int(o.get('status') or 0) != 4:
+                db.close()
+                self.send_json({"code": 0, "msg": "当前状态不可结单"})
+                return
+            db.execute('UPDATE orders SET status = 5, status_text = ?, completetime = COALESCE(completetime, ?), '
+                       'is_rated = 1, rating = ? WHERE id = ?',
+                       (ORDER_STATUS_TEXT[5], now_ts(), grade, oid))
+            # 打手佣金结算（按后台佣金比例，默认 80%）
+            if o.get('thug_id') and float(o.get('pay_price') or 0) > 0:
+                rate = float(get_config('commission_rate', '0.8'))
+                income = round(float(o.get('pay_price') or 0) * rate, 2)
+                trow = db.execute('SELECT user_id FROM thug WHERE id = ?', (o['thug_id'],)).fetchone()
+                if trow and trow['user_id']:
+                    turow = db.execute('SELECT money FROM users WHERE id = ?', (trow['user_id'],)).fetchone()
+                    tb = float(turow['money'] or 0) if turow else 0.0
+                    ta = round(tb + income, 2)
+                    db.execute('UPDATE users SET money = ? WHERE id = ?', (ta, trow['user_id']))
+                    add_balance_log(trow['user_id'], income, tb, ta, 1, '订单收益（%s）' % o.get('order_no'))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已确认结单"})
+            return
+
+        # ===== 打手接单 =====
+        if path == '/api/thug/orderConnect':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            t = get_thug_by_user(u['id'])
+            if not t:
+                self.send_json({"code": 0, "msg": "请先入驻成为打手"})
+                return
+            oid = body.get('id')
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            o = dict(row)
+            if int(o.get('status') or 0) != 1:
+                db.close()
+                self.send_json({"code": 0, "msg": "该订单已被接单"})
+                return
+            db.execute('UPDATE orders SET thug_id = ?, status = 2, status_text = ?, connecttime = ? WHERE id = ?',
+                       (t['id'], ORDER_STATUS_TEXT[2], now_ts(), oid))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "接单成功"})
+            return
+
+        # ===== 打手开始服务 =====
+        if path == '/api/thug/orderStart':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            oid = body.get('id')
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            if int(row['status'] or 0) != 2:
+                db.close()
+                self.send_json({"code": 0, "msg": "当前状态不可开始服务"})
+                return
+            db.execute('UPDATE orders SET status = 3, status_text = ? WHERE id = ?', (ORDER_STATUS_TEXT[3], oid))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已开始服务"})
+            return
+
+        # ===== 打手上传凭证并结单 =====
+        if path == '/api/thug/orderFinish':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            oid = body.get('id')
+            images = body.get('image') or body.get('images') or ''
+            if isinstance(images, list):
+                images = ','.join([str(x) for x in images])
+            remark = body.get('thug_remarks') or body.get('remarks') or ''
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            if int(row['status'] or 0) != 3:
+                db.close()
+                self.send_json({"code": 0, "msg": "当前状态不可结单"})
+                return
+            db.execute('UPDATE orders SET status = 4, status_text = ?, image = ?, thug_remarks = ?, completetime = ? WHERE id = ?',
+                       (ORDER_STATUS_TEXT[4], images, remark, now_ts(), oid))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已提交，等待用户确认"})
+            return
+
+        # ===== 打手取消订单 =====
+        if path == '/api/thug/orderCancel':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            oid = body.get('id')
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            if int(row['status'] or 0) not in (1, 2):
+                db.close()
+                self.send_json({"code": 0, "msg": "当前状态不可取消"})
+                return
+            db.execute('UPDATE orders SET thug_id = 0, status = 1, status_text = ?, connecttime = 0 WHERE id = ?',
+                       (ORDER_STATUS_TEXT[1], oid))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已释放订单"})
+            return
+
+        # ===== 订单转盘：奖池列表 =====
+        if path == '/api/goods/jackpotList':
+            data = [{"id": p['id'], "name": p['name'], "image": p['icon'] or '/static/ym/1.png'}
+                    for p in get_prize_pool_list() if str(p['status']) == '1']
+            self.send_json({"code": 1, "msg": "成功", "data": data})
+            return
+
+        # ===== 订单转盘：抽奖（按后台爆率加权）=====
+        if path == '/api/goods/orderSmoke':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            oid = body.get('id')
+            db = get_db()
+            row = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            if int(row['jackpot_id'] or 0) > 0:
+                db.close()
+                self.send_json({"code": 0, "msg": "该订单已抽过奖"})
+                return
+            prize = pick_prize_weighted()
+            if not prize:
+                db.close()
+                self.send_json({"code": 0, "msg": "奖池暂未配置，请稍后再试"})
+                return
+            db.execute('UPDATE orders SET jackpot_id = ?, award = ? WHERE id = ?', (prize['id'], '1', oid))
+            if str(prize.get('stock') or '0').isdigit() and int(prize['stock'] or 0) > 0:
+                db.execute('UPDATE res_prize_pool SET stock = CAST(stock AS INTEGER) - 1 WHERE id = ?', (prize['id'],))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "抽奖成功", "data": prize['id']})
+            return
+
+        # ===== 指定打手列表（用户下单页选择）=====
+        if path == '/api/goods/thugAppoint':
+            page = max(1, int(qs.get('pages', qs.get('page', ['1']))[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            db = get_db()
+            rows = db.execute(
+                'SELECT t.id, t.name, u.avatar FROM thug t LEFT JOIN users u ON u.id = t.user_id '
+                'WHERE t.is_deleted = 0 ORDER BY t.id DESC').fetchall()
+            db.close()
+            all_thugs = [{"id": r['id'], "name": r['name'] or '打手',
+                          "avatar": r['avatar'] or '/static/images/icon.png'} for r in rows]
+            start = (page - 1) * limit
+            self.send_json({"code": 1, "msg": "成功",
+                            "data": {"data": all_thugs[start:start + limit], "total": len(all_thugs)}})
+            return
+
+        # ===== 打手端：指定打手列表 =====
+        if path == '/api/thug/thugAppoint':
+            db = get_db()
+            rows = db.execute(
+                'SELECT t.id, t.name, u.avatar FROM thug t LEFT JOIN users u ON u.id = t.user_id '
+                'WHERE t.is_deleted = 0 ORDER BY t.id DESC').fetchall()
+            db.close()
+            all_thugs = [{"id": r['id'], "name": r['name'] or '打手',
+                          "avatar": r['avatar'] or '/static/images/icon.png'} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": all_thugs, "total": len(all_thugs)}})
+            return
+
+        # ===== 余额明细 =====
+        if path == '/api/user/balanceLog':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            page = max(1, int(qs.get('page', qs.get('pages', ['1']))[0] or 1))
+            limit = max(1, int(qs.get('limit', ['15'])[0] or 15))
+            db = get_db()
+            total = db.execute('SELECT COUNT(*) FROM res_balance WHERE user_id = ? AND is_deleted = 0',
+                               (str(u['id']),)).fetchone()[0]
+            rows = db.execute('SELECT * FROM res_balance WHERE user_id = ? AND is_deleted = 0 '
+                              'ORDER BY id DESC LIMIT ? OFFSET ?',
+                              (str(u['id']), limit, (page - 1) * limit)).fetchall()
+            db.close()
+            lst = [{"id": r['id'], "memo": r['remark'] or '余额变动', "remark": r['remark'] or '',
+                    "balance": r['amount'], "before": r['before'], "after": r['after'],
+                    "type": r['type'], "createtime_text": fmt_time(r['createtime'])} for r in rows]
+            self.send_json({"code": 1, "msg": "成功",
+                            "data": {"data": lst, "list": lst, "total": total,
+                                     "last_page": (total + limit - 1) // limit if limit else 1}})
+            return
+
+        # ===== 余额记录（通用）=====
+        if path == '/api/goods/moneyList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['15'])[0] or 15))
+            db = get_db()
+            rows = db.execute('SELECT * FROM res_balance WHERE user_id = ? AND is_deleted = 0 '
+                              'ORDER BY id DESC LIMIT ? OFFSET ?',
+                              (str(u['id']), limit, (page - 1) * limit)).fetchall()
+            db.close()
+            lst = [{"id": r['id'], "memo": r['remark'] or '余额变动', "balance": r['amount'],
+                    "createtime_text": fmt_time(r['createtime'])} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": lst, "list": lst, "total": len(lst)}})
+            return
+
+        # ===== 提现记录 =====
+        if path == '/api/goods/withdrawalList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            db = get_db()
+            t = get_thug_by_user(u['id'])
+            if t:
+                rows = db.execute('SELECT * FROM fa_thug_withdraw WHERE thug_id = ? AND is_deleted = 0 '
+                                  'ORDER BY id DESC LIMIT 50', (t['id'],)).fetchall()
+                db.close()
+                lst = [{"id": r['id'], "money": r['amount'], "amount": r['amount'],
+                        "real_amount": r['real_amount'], "account": r['account'],
+                        "status": r['status'], "status_text": {0: '待审核', 1: '审核中', 2: '已驳回', 3: '已到账'}.get(r['status'], '待审核'),
+                        "createtime_text": fmt_time(r['create_time'])} for r in rows]
+            else:
+                rows = db.execute('SELECT * FROM res_withdraw WHERE user_id = ? AND is_deleted = 0 '
+                                  'ORDER BY id DESC LIMIT 50', (str(u['id']),)).fetchall()
+                db.close()
+                lst = [{"id": r['id'], "money": r['amount'], "amount": r['amount'],
+                        "account": r['account'], "status": r['status'],
+                        "status_text": {'0': '待审核', '1': '已打款', '2': '已驳回'}.get(str(r['status']), '待审核'),
+                        "createtime_text": fmt_time(r['createtime'])} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": lst, "list": lst, "total": len(lst)}})
+            return
+
+        # ===== 用户申请提现 =====
+        if path == '/api/user/userApply':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            wcfg = get_withdraw_config()
+            if wcfg['withdraw_enabled'] != '1':
+                self.send_json({"code": 0, "msg": "提现功能未开启"})
+                return
+            try:
+                amount = float(body.get('money') or 0)
+            except Exception:
+                amount = 0
+            if amount <= 0:
+                self.send_json({"code": 0, "msg": "请输入正确的提现金额"})
+                return
+            if amount < float(wcfg['withdraw_min'] or 0):
+                self.send_json({"code": 0, "msg": "最低提现金额为 ¥%s" % wcfg['withdraw_min']})
+                return
+            bal = float(u.get('money') or 0)
+            if amount > bal:
+                self.send_json({"code": 0, "msg": "可提现余额不足"})
+                return
+            account = (body.get('account') or '').strip()
+            if not account:
+                self.send_json({"code": 0, "msg": "请先设置提现收款信息"})
+                return
+            fee = round(amount * float(wcfg['withdraw_fee_rate'] or 0) + float(wcfg['withdraw_fee_fixed'] or 0), 2)
+            after = round(bal - amount, 2)
+            db = get_db()
+            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+            db.execute('INSERT INTO res_withdraw (user_id, amount, account, status, remark, createtime, update_time) '
+                       'VALUES (?,?,?,?,?,?,?)',
+                       (str(u['id']), str(amount), account, '0',
+                        '通道:%s 姓名:%s 手续费:%.2f' % (body.get('channel') or '', body.get('name') or '', fee),
+                        now_ts(), now_ts()))
+            db.commit()
+            db.close()
+            add_balance_log(u['id'], -amount, bal, after, 2, '申请提现')
+            self.send_json({"code": 1, "msg": "提现申请已提交，请等待审核"})
+            return
+
+        # ===== 打手申请提现 =====
+        if path == '/api/thug/thugApply':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            t = get_thug_by_user(u['id'])
+            if not t:
+                self.send_json({"code": 0, "msg": "请先入驻成为打手"})
+                return
+            wcfg = get_withdraw_config()
+            if wcfg['withdraw_enabled'] != '1':
+                self.send_json({"code": 0, "msg": "提现功能未开启"})
+                return
+            try:
+                amount = float(body.get('money') or 0)
+            except Exception:
+                amount = 0
+            if amount <= 0:
+                self.send_json({"code": 0, "msg": "请输入正确的提现金额"})
+                return
+            bal = float(u.get('money') or 0)
+            if amount > bal:
+                self.send_json({"code": 0, "msg": "可提现余额不足"})
+                return
+            account = (body.get('account') or '').strip()
+            if not account:
+                self.send_json({"code": 0, "msg": "请先设置提现收款信息"})
+                return
+            fee = round(amount * float(wcfg['withdraw_fee_rate'] or 0) + float(wcfg['withdraw_fee_fixed'] or 0), 2)
+            real = round(amount - fee, 2)
+            after = round(bal - amount, 2)
+            db = get_db()
+            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+            db.execute('INSERT INTO fa_thug_withdraw (thug_id, thug_name, withdraw_no, amount, fee, real_amount, '
+                       'account_type, account, apply_time, status, remark, create_time, update_time) '
+                       'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                       (t['id'], t['name'], gen_order_no('W'), str(amount), str(fee), str(real),
+                        body.get('channel') or '', account, now_ts(), 0,
+                        '姓名:%s' % (body.get('name') or ''), now_ts(), now_ts()))
+            db.commit()
+            db.close()
+            add_balance_log(u['id'], -amount, bal, after, 2, '申请提现')
+            self.send_json({"code": 1, "msg": "提现申请已提交，请等待审核"})
+            return
+
+        # ===== 余额充值 =====
+        if path == '/api/user/balanceRecharge':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            try:
+                amount = float(body.get('money') or body.get('amount') or 0)
+            except Exception:
+                amount = 0
+            if amount <= 0:
+                self.send_json({"code": 0, "msg": "请输入正确的充值金额"})
+                return
+            db = get_db()
+            ono = gen_order_no('R')
+            db.execute('INSERT INTO res_recharge_order (order_no, user_id, amount, method, status, createtime, update_time) '
+                       'VALUES (?,?,?,?,?,?,?)',
+                       (ono, str(u['id']), str(amount), body.get('pay_type') or 'balance', '0', now_ts(), now_ts()))
+            db.commit()
+            db.close()
+            epay = get_epay_config()
+            if epay.get('apiurl') and epay.get('pid') and epay.get('key'):
+                url = gen_epay_url(epay, ono, '账户充值', amount)
+                self.send_json({"code": 1, "msg": "请前往支付", "data": {"out_trade_no": ono, "url": url}})
+                return
+            # 未配置在线支付：直接入账，便于测试
+            db = get_db()
+            bal = float(u.get('money') or 0)
+            after = round(bal + amount, 2)
+            db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+            db.execute("UPDATE res_recharge_order SET status = '1', update_time = ? WHERE order_no = ?", (now_ts(), ono))
+            db.commit()
+            db.close()
+            add_balance_log(u['id'], amount, bal, after, 1, '账户充值')
+            self.send_json({"code": 1, "msg": "充值成功", "data": {"out_trade_no": ono, "paid": True}})
+            return
+
+        # ===== 易支付：同步待支付订单 =====
+        if path == '/api/payment/sync':
+            out_trade_no = str(body.get('out_trade_no') or '')
+            paid = False
+            if out_trade_no:
+                db = get_db()
+                row = db.execute('SELECT status FROM orders WHERE order_no = ? AND is_deleted = 0', (out_trade_no,)).fetchone()
+                if not row:
+                    row = db.execute('SELECT status FROM res_recharge_order WHERE order_no = ?', (out_trade_no,)).fetchone()
+                db.close()
+                if row and str(row['status']) not in ('0', ''):
+                    paid = True
+            self.send_json({"code": 1, "msg": "成功", "data": {"paid": paid}})
+            return
+
+        # ===== 我的团队 =====
+        if path == '/api/user/userShare':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            db = get_db()
+            total = db.execute('SELECT COUNT(*) FROM users WHERE pid = ? AND is_deleted = 0', (u['id'],)).fetchone()[0]
+            today = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+            today_cnt = db.execute('SELECT COUNT(*) FROM users WHERE pid = ? AND is_deleted = 0 AND createtime >= ?',
+                                   (u['id'], today)).fetchone()[0]
+            rows = db.execute('SELECT id, nickname, avatar, createtime FROM users WHERE pid = ? AND is_deleted = 0 '
+                              'ORDER BY id DESC LIMIT 50', (u['id'],)).fetchall()
+            db.close()
+            lst = [{"id": r['id'], "nickname": r['nickname'] or '用户', "avatar": r['avatar'] or '/static/eon.png',
+                    "createtime_text": fmt_time(r['createtime'])} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "total": total, "today": today_cnt, "invite_count": total,
+                "list": lst, "data": lst,
+                "invite_code": str(u['id'])
+            }})
+            return
+
+        # ===== 用户消费排行榜 =====
+        if path == '/api/user/userRanking':
+            period = qs.get('type', ['1'])[0]
+            db = get_db()
+            rows = db.execute(
+                'SELECT u.id, u.nickname, u.avatar, IFNULL(SUM(CAST(o.pay_price AS REAL)),0) AS total '
+                'FROM users u LEFT JOIN orders o ON o.user_id = u.id AND o.is_deleted = 0 AND o.status >= 1 '
+                'GROUP BY u.id ORDER BY total DESC LIMIT 50').fetchall()
+            db.close()
+            lst = [{"id": r['id'], "nickname": r['nickname'] or '用户',
+                    "avatar": r['avatar'] or '/static/eon.png', "total": round(r['total'] or 0, 2),
+                    "rank": i + 1} for i, r in enumerate(rows)]
+            self.send_json({"code": 1, "msg": "成功", "data": {"list": lst, "data": lst}})
+            return
+
+        # ===== 接单/流水排行 =====
+        if path == '/api/thug/thugStream':
+            db = get_db()
+            rows = db.execute(
+                'SELECT t.id, t.name, u.avatar, COUNT(o.id) AS cnt, IFNULL(SUM(CAST(o.pay_price AS REAL)),0) AS total '
+                'FROM thug t LEFT JOIN users u ON u.id = t.user_id '
+                'LEFT JOIN orders o ON o.thug_id = t.id AND o.is_deleted = 0 AND o.status >= 4 '
+                'WHERE t.is_deleted = 0 GROUP BY t.id ORDER BY total DESC LIMIT 50').fetchall()
+            db.close()
+            lst = [{"id": r['id'], "name": r['name'] or '打手', "avatar": r['avatar'] or '/static/eon.png',
+                    "count": r['cnt'] or 0, "total": round(r['total'] or 0, 2), "rank": i + 1}
+                   for i, r in enumerate(rows)]
+            self.send_json({"code": 1, "msg": "成功", "data": {"list": lst, "data": lst}})
+            return
+
+        # ===== 商品评论列表 =====
+        if path == '/api/goods/commentList':
+            gid = qs.get('goods_id', [''])[0]
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            db = get_db()
+            where = 'WHERE o.is_rated = 1 AND o.is_deleted = 0'
+            args = []
+            if gid:
+                where += ' AND o.goods_id = ?'
+                args.append(gid)
+            total = db.execute('SELECT COUNT(*) FROM orders o ' + where, args).fetchone()[0]
+            avg_row = db.execute('SELECT AVG(rating) FROM orders o ' + where, args).fetchone()[0]
+            rows = db.execute(
+                'SELECT o.id, o.rating, o.thug_remarks, o.createtime, u.nickname, u.avatar '
+                'FROM orders o LEFT JOIN users u ON u.id = o.user_id ' + where +
+                ' ORDER BY o.id DESC LIMIT ? OFFSET ?', args + [limit, (page - 1) * limit]).fetchall()
+            db.close()
+            lst = [{"id": r['id'], "rating": r['rating'] or 5, "content": r['thug_remarks'] or '服务很好，赞！',
+                    "nickname": r['nickname'] or '匿名用户', "avatar": r['avatar'] or '/static/icon/default_avatar.png',
+                    "images": [], "time": fmt_time(r['createtime'])} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "total": total, "avg_rating": round(avg_row or 0, 1), "list": lst,
+                "current_page": page, "last_page": (total + limit - 1) // limit if limit else 1}})
+            return
+
+        # ===== 会员等级列表 =====
+        if path == '/api/user/getLevelList':
+            identity = qs.get('identity', ['user'])[0]
+            db = get_db()
+            rows = db.execute('SELECT * FROM res_level WHERE is_deleted = 0 ORDER BY CAST(need_score AS INTEGER) ASC').fetchall()
+            db.close()
+            lst = [{"id": r['id'], "name": r['name'] or '', "icon": r['icon'] or '',
+                    "need_score": r['need_score'], "discount": r['discount'], "remark": r['remark'] or '',
+                    "price": get_config('thug_level_price_%s' % r['id'], '0') if identity == 'thug' else '0',
+                    "days": 30} for r in rows]
+            self.send_json({"code": 1, "msg": "成功", "data": lst})
+            return
+
+        # ===== 用户成长值与下一等级 =====
+        if path == '/api/user/scoreLevel':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            db = get_db()
+            rows = db.execute('SELECT * FROM res_level WHERE is_deleted = 0 ORDER BY CAST(need_score AS INTEGER) ASC').fetchall()
+            db.close()
+            score = int(u.get('score') or 0)
+            q_level = None
+            h_level = None
+            for r in rows:
+                if score >= int(r['need_score'] or 0):
+                    q_level = dict(r)
+                elif h_level is None:
+                    h_level = dict(r)
+            def _lv(x):
+                return None if not x else {"id": x['id'], "name": x['name'], "score": x['need_score'], "discount": x['discount']}
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "score": score, "q_level": _lv(q_level), "h_level": _lv(h_level)}})
+            return
+
+        # ===== 会员等级购买下单 =====
+        if path == '/api/user/levelOrder':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            lid = body.get('level_id')
+            db = get_db()
+            row = db.execute('SELECT * FROM res_level WHERE id = ? AND is_deleted = 0', (lid,)).fetchone()
+            db.close()
+            if not row:
+                self.send_json({"code": 0, "msg": "等级不存在"})
+                return
+            price = float(get_config('thug_level_price_%s' % row['id'], '0') or 0)
+            epay = get_epay_config()
+            if epay.get('apiurl') and epay.get('pid') and epay.get('key') and price > 0:
+                url = gen_epay_url(epay, gen_order_no('L'), '开通会员-%s' % row['name'], price)
+                self.send_json({"code": 1, "msg": "请前往支付", "data": {"url": url}})
+                return
+            # 无在线支付：直接开通（记录等级）
+            db = get_db()
+            db.execute('UPDATE users SET level = ? WHERE id = ?', (row['id'], u['id']))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "开通成功", "data": {"url": ""}})
+            return
+
+        # ===== 会员等级申请 =====
+        if path == '/api/user/levelApply':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录"})
+                return
+            self.send_json({"code": 1, "msg": "申请已提交，请等待审核"})
+            return
+
+        # ===== 个人信息修改（用户端） =====
+        if path == '/api/user/userEdit':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            allowed = ('nickname', 'avatar', 'cs_avatar', 'mobile', 'sex', 'signature')
+            fields = {k: str(body.get(k)) for k in allowed if k in body and body.get(k) is not None}
+            if fields:
+                db = get_db()
+                sets = ', '.join('%s = ?' % k for k in fields)
+                db.execute('UPDATE users SET %s WHERE id = ?' % sets, tuple(fields.values()) + (u['id'],))
+                db.commit()
+                db.close()
+            self.send_json({"code": 1, "msg": "修改成功"})
+            return
+
+        def _online_pay(prefix, name, amount):
+            """在线支付：已配置易支付则返回收银台地址，否则给出提示"""
+            epay = get_epay_config()
+            ono = gen_order_no(prefix)
+            if epay.get('apiurl') and epay.get('pid') and epay.get('key'):
+                return {"code": 1, "msg": "请前往支付",
+                        "data": {"out_trade_no": ono, "url": gen_epay_url(epay, ono, name, amount), "paid": False}}
+            return {"code": 0, "msg": "在线支付暂未开通，请使用余额支付"}
+
+        # ===== 打手保证金充值 =====
+        if path == '/api/thug/bond':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            money = float(body.get('money', 0) or 0)
+            pay_type = body.get('pay_type') or 'balance'
+            if money <= 0:
+                self.send_json({"code": 0, "msg": "请输入充值金额"})
+                return
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < money:
+                    self.send_json({"code": 0, "msg": "余额不足，请先充值"})
+                    return
+                after = round(bal - money, 2)
+                db = get_db()
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute('INSERT INTO res_deposit (user_id, amount, status, remark, createtime) VALUES (?,?,?,?,?)',
+                           (str(u['id']), str(money), '0', '保证金缴纳', now_ts()))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], -money, bal, after, 2, '保证金缴纳')
+                self.send_json({"code": 1, "msg": "保证金充值成功"})
+                return
+            self.send_json(_online_pay('B', '保证金充值', money))
+            return
+
+        # ===== 罚款 =====
+        if path == '/api/fine/fineList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            st = qs.get('status', ['-1'])[0]
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            db = get_db()
+            where = "is_deleted = 0 AND user_id = ?"
+            args = [str(u['id'])]
+            if st not in ('-1', '', 'None'):
+                where += " AND status = ?"
+                args.append(str(st))
+            rows = db.execute('SELECT * FROM res_fine WHERE %s ORDER BY id DESC' % where, tuple(args)).fetchall()
+            unpaid = db.execute("SELECT IFNULL(SUM(CAST(amount AS REAL)),0) FROM res_fine "
+                                "WHERE is_deleted = 0 AND user_id = ? AND status = '0'", (str(u['id']),)).fetchone()[0]
+            db.close()
+            data = [{"id": r['id'], "name": r['name'], "amount": r['amount'], "reason": r['reason'],
+                     "status": int(r['status'] or 0), "createtime": fmt_time(r['createtime'])} for r in rows]
+            total = len(data)
+            start = (page - 1) * limit
+            self.send_json({"code": 1, "msg": "成功",
+                            "data": {"unpaid_total": float(unpaid or 0), "list": {"data": data[start:start + limit], "total": total}}})
+            return
+
+        if path == '/api/fine/fineCheck':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            db = get_db()
+            row = db.execute("SELECT COUNT(*) AS c, IFNULL(SUM(CAST(amount AS REAL)),0) AS s FROM res_fine "
+                             "WHERE is_deleted = 0 AND user_id = ? AND status = '0'", (str(u['id']),)).fetchone()
+            db.close()
+            cnt = int(row['c'] or 0)
+            self.send_json({"code": 1, "msg": "成功",
+                            "data": {"has_unpaid": cnt > 0, "count": cnt, "amount": float(row['s'] or 0)}})
+            return
+
+        if path == '/api/fine/finePay':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            fid = body.get('id')
+            pay_type = body.get('pay_type') or 'balance'
+            db = get_db()
+            row = db.execute('SELECT * FROM res_fine WHERE id = ? AND is_deleted = 0', (fid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "罚单不存在"})
+                return
+            amount = float(row['amount'] or 0)
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < amount:
+                    db.close()
+                    self.send_json({"code": 0, "msg": "余额不足，请先充值"})
+                    return
+                after = round(bal - amount, 2)
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute("UPDATE res_fine SET status = '1', update_time = ? WHERE id = ?", (now_ts(), fid))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], -amount, bal, after, 2, '缴纳罚款')
+                self.send_json({"code": 1, "msg": "缴纳成功"})
+                return
+            db.close()
+            self.send_json(_online_pay('F', '罚款缴纳', amount))
+            return
+
+        if path == '/api/fine/fineCreate':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            uid = str(body.get('user_id') or u['id'])
+            db = get_db()
+            db.execute('INSERT INTO res_fine (user_id, name, amount, reason, status, createtime) VALUES (?,?,?,?,?,?)',
+                       (uid, str(body.get('name') or '违规罚款'), str(body.get('amount') or '0'),
+                        str(body.get('reason') or ''), '0', now_ts()))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "罚单已创建"})
+            return
+
+        if path == '/api/fine/fineRevoke':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            db = get_db()
+            db.execute("UPDATE res_fine SET status = '2', update_time = ? WHERE id = ?", (now_ts(), body.get('id')))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已撤销"})
+            return
+
+        # ===== 礼物墙 =====
+        if path == '/api/giftwall/getThugGifts':
+            db = get_db()
+            rows = db.execute("SELECT id, name, icon, price FROM res_gift WHERE is_deleted = 0 AND status = '1' "
+                              "ORDER BY CAST(sort AS INTEGER) ASC, id ASC").fetchall()
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": [
+                {"id": r['id'], "name": r['name'], "icon": r['icon'] or '/static/eon.png', "price": float(r['price'] or 0)}
+                for r in rows]})
+            return
+
+        if path == '/api/giftwall/getThugGiftStats':
+            tid = qs.get('thug_id', [None])[0]
+            db = get_db()
+            rows = db.execute('SELECT gift_id, gift_name, gift_icon, SUM(num) AS cnt FROM fa_gift_record '
+                              'WHERE thug_id = ? AND status = 1 GROUP BY gift_id ORDER BY cnt DESC', (tid,)).fetchall()
+            wall = []
+            for r in rows:
+                f = db.execute('SELECT u.nickname, u.avatar FROM fa_gift_record g LEFT JOIN users u ON u.id = g.user_id '
+                               'WHERE g.thug_id = ? AND g.gift_id = ? ORDER BY g.id ASC LIMIT 1',
+                               (tid, r['gift_id'])).fetchone()
+                wall.append({"gift_id": r['gift_id'], "gift_name": r['gift_name'],
+                             "gift_icon": r['gift_icon'] or '/static/eon.png', "count": int(r['cnt'] or 0),
+                             "first_sender_name": (f['nickname'] if f else '') or '匿名',
+                             "first_sender_avatar": (f['avatar'] if f else '') or '/static/images/default.png'})
+            db.close()
+            self.send_json({"code": 1, "msg": "成功",
+                            "data": {"gift_wall": wall, "total_gifts": sum(x['count'] for x in wall)}})
+            return
+
+        if path == '/api/giftwall/getThugGiftRecords':
+            tid = qs.get('thug_id', [None])[0]
+            db = get_db()
+            rows = db.execute('SELECT * FROM fa_gift_record WHERE thug_id = ? AND status = 1 ORDER BY id DESC LIMIT 50',
+                              (tid,)).fetchall()
+            db.close()
+            self.send_json({"code": 1, "msg": "成功", "data": {"list": [
+                {"id": r['id'], "user_id": r['user_id'], "gift_id": r['gift_id'], "gift_name": r['gift_name'],
+                 "gift_icon": r['gift_icon'], "num": r['num'], "amount": r['amount'], "createtime": fmt_time(r['create_time'])}
+                for r in rows], "total": len(rows)}})
+            return
+
+        if path == '/api/giftwall/sendGift':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            tid = int(body.get('thug_id', 0) or 0)
+            gid = body.get('gift_id')
+            num = max(1, int(body.get('num', 1) or 1))
+            pay_type = body.get('pay_type') or 'balance'
+            db = get_db()
+            gift = db.execute('SELECT * FROM res_gift WHERE id = ? AND is_deleted = 0', (gid,)).fetchone()
+            if not gift:
+                db.close()
+                self.send_json({"code": 0, "msg": "礼物不存在或已下架"})
+                return
+            amount = round(float(gift['price'] or 0) * num, 2)
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < amount:
+                    db.close()
+                    self.send_json({"code": 0, "msg": "余额不足，请选择在线支付"})
+                    return
+                after = round(bal - amount, 2)
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute('INSERT INTO fa_gift_record (user_id, thug_id, gift_id, gift_name, gift_icon, num, amount, '
+                           'pay_type, status, create_time) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                           (u['id'], tid, gift['id'], gift['name'], gift['icon'], num, str(amount), 'balance', 1, now_ts()))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], -amount, bal, after, 2, '赠送礼物（%s）' % gift['name'])
+                self.send_json({"code": 1, "msg": "赠送成功",
+                                "data": {"gift_icon": gift['icon'], "num": num, "amount": amount}})
+                return
+            db.close()
+            self.send_json(_online_pay('G', '赠送礼物', amount))
+            return
+
+        # ===== 打赏 =====
+        if path in ('/api/thug/thugReward', '/api/thug/thugPay'):
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            tid = int(body.get('thug_id', 0) or 0)
+            money = float(body.get('money', 0) or 0)
+            pay_type = body.get('pay_type') or 'balance'
+            if money <= 0:
+                self.send_json({"code": 0, "msg": "请输入打赏金额"})
+                return
+            if pay_type == 'balance':
+                bal = float(u.get('money') or 0)
+                if bal < money:
+                    self.send_json({"code": 0, "msg": "余额不足，请选择在线支付"})
+                    return
+                after = round(bal - money, 2)
+                db = get_db()
+                db.execute('UPDATE users SET money = ? WHERE id = ?', (after, u['id']))
+                db.execute('INSERT INTO fa_thug_reward (user_id, thug_id, money, pay_type, status, create_time) '
+                           'VALUES (?,?,?,?,?,?)', (u['id'], tid, str(money), 'balance', 1, now_ts()))
+                db.commit()
+                db.close()
+                add_balance_log(u['id'], -money, bal, after, 2, '打赏打手')
+                self.send_json({"code": 1, "msg": "打赏成功"})
+                return
+            self.send_json(_online_pay('R', '打赏打手', money))
+            return
+
+        if path == '/api/thug/thugRewardList':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            t = get_thug_by_user(u['id'])
+            tid = t['id'] if t else 0
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limint', ['10'])[0] or 10))
+            db = get_db()
+            rows = db.execute('SELECT r.*, us.nickname AS uname, us.avatar AS uavatar FROM fa_thug_reward r '
+                              'LEFT JOIN users us ON us.id = r.user_id WHERE r.thug_id = ? ORDER BY r.id DESC',
+                              (tid,)).fetchall()
+            db.close()
+            data = [{"id": r['id'], "user_id": r['user_id'], "nickname": r['uname'] or '',
+                     "avatar": r['uavatar'] or '', "money": r['money'], "pay_type": r['pay_type'],
+                     "createtime": fmt_time(r['create_time'])} for r in rows]
+            total = len(data)
+            start = (page - 1) * limit
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": data[start:start + limit], "total": total}})
+            return
+
+        # ===== 订单投诉 / 售后 =====
+        if path == '/api/goods/orderComplaint':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            oid = body.get('id')
+            ctype = str(body.get('type') or '1')
+            db = get_db()
+            orow = db.execute('SELECT * FROM orders WHERE id = ? AND is_deleted = 0', (oid,)).fetchone()
+            if not orow:
+                db.close()
+                self.send_json({"code": 0, "msg": "订单不存在"})
+                return
+            db.execute('INSERT INTO res_order_complaint (order_no, order_id, user_id, thug_id, type, phone, content, '
+                       'images, status, createtime) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                       (orow['order_no'], str(oid), str(u['id']), str(orow['thug_id'] or 0), ctype,
+                        str(body.get('phone') or ''), str(body.get('content') or ''),
+                        str(body.get('images') or ''), '0', now_ts()))
+            db.execute('UPDATE orders SET complaint = 1 WHERE id = ?', (oid,))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "提交成功"})
+            return
+
+        if path == '/api/goods/complaintMsg':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            cid = qs.get('id', [None])[0]
+            db = get_db()
+            row = db.execute('SELECT * FROM res_order_complaint WHERE id = ? AND is_deleted = 0', (cid,)).fetchone()
+            db.close()
+            if not row:
+                self.send_json({"code": 0, "msg": "记录不存在"})
+                return
+            c = dict(row)
+            imgs = [x for x in re.split(r'[,\n]', (c.get('images') or '')) if x.strip()]
+            self.send_json({"code": 1, "msg": "成功", "data": {
+                "id": c['id'], "order_no": c['order_no'], "type": c.get('type') or '1',
+                "phone": c.get('phone') or '', "content": c.get('content') or '', "images": imgs,
+                "status": int(c.get('status') or 0), "refund_method": c.get('refund_method') or '',
+                "refund_time_text": fmt_time(c.get('refund_time')) if c.get('refund_time') else '',
+                "createtime": fmt_time(c.get('createtime'))}})
+            return
+
+        if path == '/api/goods/orderService':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            st = qs.get('status', ['0'])[0]
+            page = max(1, int(qs.get('page', ['1'])[0] or 1))
+            limit = max(1, int(qs.get('limit', ['10'])[0] or 10))
+            db = get_db()
+            st_clause = "AND c.status = '0'" if st == '0' else "AND c.status != '0'"
+            rows = db.execute(
+                'SELECT c.*, o.title, o.logo, o.game_id, o.game_qf, o.remarks, o.pay_price, o.status AS order_status '
+                'FROM res_order_complaint c LEFT JOIN orders o ON o.id = c.order_id '
+                'WHERE c.is_deleted = 0 AND c.user_id = ? ' + st_clause + ' ORDER BY c.id DESC',
+                (str(u['id']),)).fetchall()
+            db.close()
+            data = [{"id": r['id'], "type": r['type'] if 'type' in r.keys() else '0',
+                     "title": r['title'] or '售后订单', "logo": r['logo'] or '/static/images/header_background.png',
+                     "image": r['logo'] or '/static/images/header_background.png',
+                     "game_id": r['game_id'] or '', "game_qf": r['game_qf'] or '', "remarks": r['remarks'] or '',
+                     "pay_price": r['pay_price'] or '0', "status": int(r['status'] or 0),
+                     "refund_method": (r['refund_method'] if 'refund_method' in r.keys() else '') or '',
+                     "order_id": r['order_id'], "order_no": r['order_no'],
+                     "createtime": fmt_time(r['createtime'])} for r in rows]
+            total = len(data)
+            start = (page - 1) * limit
+            self.send_json({"code": 1, "msg": "成功", "data": {"data": data[start:start + limit], "total": total}})
+            return
+
+        if path == '/api/goods/orderRevoke':
+            u = get_user_by_token(token)
+            if not u:
+                self.send_json({"code": 401, "msg": "未登录或登录已过期"})
+                return
+            cid = body.get('id')
+            db = get_db()
+            row = db.execute('SELECT * FROM res_order_complaint WHERE id = ? AND is_deleted = 0', (cid,)).fetchone()
+            if not row:
+                db.close()
+                self.send_json({"code": 0, "msg": "记录不存在"})
+                return
+            db.execute("UPDATE res_order_complaint SET status = '3', update_time = ? WHERE id = ?", (now_ts(), cid))
+            if row['order_id']:
+                db.execute('UPDATE orders SET complaint = 0 WHERE id = ?', (row['order_id'],))
+            db.commit()
+            db.close()
+            self.send_json({"code": 1, "msg": "已撤销"})
             return
 
         # ===== 兜底：其他接口返回空数据，避免前端报错 =====
@@ -2874,6 +4286,14 @@ class Handler(BaseHTTPRequestHandler):
                 set_config('craft_jump', str(body.get('craft_jump', '')))
                 set_config('lottery_banner', str(body.get('lottery_banner', '')))
                 set_config('lottery_jump', str(body.get('lottery_jump', '')))
+                # 抽奖活动：自定义封面 + 抽奖图片（多张，逗号分隔）
+                if 'lottery_cover' in body:
+                    set_config('lottery_cover', str(body.get('lottery_cover', '')))
+                if 'lottery_images' in body:
+                    imgs = body.get('lottery_images', '')
+                    if isinstance(imgs, list):
+                        imgs = ','.join([str(x).strip() for x in imgs if str(x).strip()])
+                    set_config('lottery_images', str(imgs))
                 ok(None, '传世武器入口配置已保存')
                 return
 
