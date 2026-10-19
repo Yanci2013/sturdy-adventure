@@ -2271,6 +2271,7 @@ class Handler(BaseHTTPRequestHandler):
                 "name": r['name'],
                 "user_id": r['user_id'],
                 "type": r['type'],
+                "cs_mode": (r['cs_mode'] if 'cs_mode' in r.keys() else 'built_in'),
                 "avatar": r['avatar'],
                 "online": r['online']
             } for r in rows]

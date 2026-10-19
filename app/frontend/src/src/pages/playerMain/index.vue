@@ -34,47 +34,6 @@
 		</view>
 		
 		<view class="page">
-		<!-- 接单大厅 -->
-		<view class="section servant-orders-section">
-			<view class="section-head">
-				<text class="section-title">接单大厅</text>
-			</view>
-			<view class="order-list">
-				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'2'}})">
-					<text class="stat-num">{{ servantData.pending || 0 }}</text>
-					<text class="stat-txt">待开始</text>
-				</view>
-				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'3'}})">
-					<text class="stat-num">{{ servantData.serving || 0 }}</text>
-					<text class="stat-txt">服务中</text>
-				</view>
-				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'4'}})">
-					<text class="stat-num">{{ servantData.waitFinish || 0 }}</text>
-					<text class="stat-txt">待结单</text>
-				</view>
-				<view class="order-stat-item">
-					<text class="stat-num">{{ servantData.newMsg || 0 }}</text>
-					<text class="stat-txt">新消息</text>
-				</view>
-				<view class="order-stat-item" @click="gotoPage({url:'pages/playerOrder/index', data:{status:'5'}})">
-					<text class="stat-num">{{ servantData.finished || 0 }}</text>
-					<text class="stat-txt">已结单</text>
-				</view>
-			</view>
-			<view class="order-line"></view>
-			<view class="game-list">
-				<view class="game-item" v-for="(game, index) in gameList" :key="index" @click="gotoPlayerHome(game)">
-					<view class="game-left">
-						<view class="game-icon-box"><image :src="game.cover || game.image" mode="aspectFill"></image></view>
-						<text>{{ game.name }}</text>
-					</view>
-					<view class="game-right">
-						<text class="game-pending">{{ game.pendingCount || 0 }}单</text>
-						<image src="/static/images/right.png" mode="aspectFit"></image>
-					</view>
-				</view>
-			</view>
-		</view>
 		<!-- 常用功能 -->
 		<view class="section quick-section">
 			<text class="section-title">常用功能</text>
@@ -98,6 +57,14 @@
 				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/center'})">
 					<view class="quick-icon-wrap center-icon"><uv-icon name="account" size="32" color="#FF7A45"></uv-icon></view>
 					<text class="quick-label">打手中心</text>
+				</view>
+				<view class="quick-item" @click="gotoPage({url:'pages/playerMain/fine'})">
+					<view class="quick-icon-wrap fine-icon"><uv-icon name="file-text" size="32" color="#FF7A45"></uv-icon></view>
+					<text class="quick-label">罚款缴纳</text>
+				</view>
+				<view class="quick-item" @click="gotoPage({url:'pagesA/mine/balanceLog'})">
+					<view class="quick-icon-wrap withdraw-icon"><uv-icon name="rmb-circle" size="32" color="#FF7A45"></uv-icon></view>
+					<text class="quick-label">提现</text>
 				</view>
 			</view>
 		</view>
@@ -170,8 +137,8 @@
 import { ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import router from '../../utils/router';
-import { thugMsg, thugEdit, category, customerServiceList as getCustomerServiceList, getUserInfo, getThugPermissions, receivingOrders, thugorderList } from '../../request/api';
-import { openCustomerServiceChat } from '../../utils/customer-service';
+import { thugMsg, thugEdit, getUserInfo } from '../../request/api';
+import { openCustomerServiceChat, resolveCustomerService } from '../../utils/customer-service';
 
 const paging = ref(null)
 const dataList = ref([])
@@ -180,8 +147,6 @@ const jsStatus = ref(false)
 const availableMoney = ref(0)
 const frozenMoney = ref(0)
 const levelNum = ref(1)
-const gameList = ref([])
-const servantData = ref({ pending: 0, serving: 0, waitFinish: 0, newMsg: 0, finished: 0 })
 const showIdentityPopup = ref(false)
 const currentIdentity = ref(1)
 const customerServiceModal = ref(null)
@@ -214,15 +179,11 @@ const moreList = [
 onShow(() => { 
 	clubName.value = uni.getStorageSync('club_name') || '创世网络'
 	loadData()
-	loadGameList()
 })
 
 const queryList = (pageNo, pageSize) => {
 	Promise.all([
-		loadData(),
-		loadGameList(),
-		loadPendingOrders(),
-		loadOrderCounts()
+		loadData()
 	]).then(() => {
 		paging.value.complete([])
 	}).catch(() => {
@@ -243,93 +204,11 @@ const loadData = async () => {
 		const levelName = (userRes.data.user_current_level_info && userRes.data.user_current_level_info.name) || userRes.data.level_name || ''
 		const match = levelName.match(/\d+/)
 		levelNum.value = match ? match[0] : 1
-
-		loadOrderCounts()
 	} catch (e) {
 		console.log('加载数据失败', e)
 	}
 }
 
-const loadOrderCounts = async () => {
-	try {
-		const pendingRes = await thugorderList({ status: '2', page: 1, limit: 1 })
-		const pendingCount = pendingRes.data?.total || pendingRes.data?.data?.length || 0
-
-		const servingRes = await thugorderList({ status: '3', page: 1, limit: 1 })
-		const servingCount = servingRes.data?.total || servingRes.data?.data?.length || 0
-
-		const waitFinishRes = await thugorderList({ status: '4', page: 1, limit: 1 })
-		const waitFinishCount = waitFinishRes.data?.total || waitFinishRes.data?.data?.length || 0
-
-		const finishedRes = await thugorderList({ status: '5', page: 1, limit: 1 })
-		const finishedCount = finishedRes.data?.total || finishedRes.data?.data?.length || 0
-
-		servantData.value = {
-			pending: pendingCount,
-			serving: servingCount,
-			waitFinish: waitFinishCount,
-			newMsg: 0,
-			finished: finishedCount
-		}
-	} catch (e) {
-		console.log('获取订单数量失败', e)
-	}
-}
-
-const loadPendingOrders = async () => {
-	try {
-		for (const game of gameList.value) {
-			try {
-				const res = await receivingOrders({ type: game.id, category_name: game.name })
-				const listData = res.data?.data || res.data || []
-				game.pendingCount = listData.length || 0
-			} catch (e) {
-				console.log(`获取分类 ${game.name} 的待接单数失败`, e)
-				game.pendingCount = 0
-			}
-		}
-	} catch (e) {
-		console.log('加载待接单数失败', e)
-	}
-}
-
-const loadGameList = async () => {
-	try {
-		const categoryRes = await category()
-		const allCategories = categoryRes.data || []
-
-		const permissionsRes = await getThugPermissions()
-		const permissions = permissionsRes.data || []
-
-		const allowedGameNames = []
-		permissions.forEach(p => {
-			const gameName = p.split('-')[0]
-			if (gameName && !allowedGameNames.includes(gameName)) {
-				allowedGameNames.push(gameName)
-			}
-		})
-
-		if (allowedGameNames.length > 0) {
-			gameList.value = allCategories.filter(cat => allowedGameNames.includes(cat.name))
-		} else {
-			gameList.value = allCategories
-		}
-
-		gameList.value.forEach(game => {
-			game.pendingCount = 0
-		})
-
-		loadPendingOrders()
-	} catch (e) {
-		console.log('加载游戏列表失败', e)
-		category().then(res => {
-			gameList.value = res.data || []
-			gameList.value.forEach(game => {
-				game.pendingCount = 0
-			})
-		})
-	}
-}
 
 const toggleWorkStatus = () => {
 	const newStatus = !jsStatus.value
@@ -340,7 +219,6 @@ const toggleWorkStatus = () => {
 }
 
 const gotoPage = (item) => { if (item.url) router.navigateTo({ url: item.url, data: item.data || {} }) }
-const gotoPlayerHome = (game) => { router.navigateTo({ url: 'pages/playerHome/index', data: { category_id: game.id, category_name: game.name } }) }
 const openIdentityPopup = () => { showIdentityPopup.value = true }
 const closeIdentityPopup = () => { showIdentityPopup.value = false }
 const selectIdentity = (item) => {
@@ -373,12 +251,18 @@ const selectIdentity = (item) => {
 	closeIdentityPopup()
 }
 const openCustomerService = async () => {
-	customerServiceModal.value.open()
+	let r = { direct: null, list: [] }
 	try {
 		uni.showLoading({ mask: true, title: '加载中' })
-		const res = await getCustomerServiceList()
-		cslist.value = res.data || []
-	} catch (e) { cslist.value = [] } finally { uni.hideLoading() }
+		r = await resolveCustomerService()
+	} catch (e) {
+		r = { direct: null, list: [] }
+	} finally {
+		uni.hideLoading()
+	}
+	if (r.direct) { openCustomerServiceChat(r.direct); return }
+	cslist.value = r.list
+	customerServiceModal.value.open()
 }
 const closeCustomerService = () => { customerServiceModal.value.close() }
 const goCustomerService = (item) => {

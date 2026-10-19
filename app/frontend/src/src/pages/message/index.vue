@@ -92,8 +92,8 @@
 <script setup>
 	import { ref, computed, onMounted } from 'vue';
 	import { onShow } from '@dcloudio/uni-app';
-	import { noticeList, orderList, customerServiceList as getCustomerServiceList } from '../../request/api';
-	import { openCustomerServiceChat } from '../../utils/customer-service';
+	import { noticeList, orderList } from '../../request/api';
+	import { openCustomerServiceChat, resolveCustomerService } from '../../utils/customer-service';
 	import { getCsSessions, checkTimeoutSessions, markCsSessionRead } from '../../utils/cs-session';
 	import router from '../../utils/router';
 
@@ -269,30 +269,33 @@
 			router.navigateTo({ url: 'pages/login/login' })
 			return
 		}
+		let r = { direct: null, list: [] }
 		try {
 			uni.showLoading({ title: '加载客服...', mask: true })
-			const res = await getCustomerServiceList()
-			uni.hideLoading()
-			const list = res.data || []
-			if (list.length === 0) {
-				uni.showToast({ title: '暂无客服在线', icon: 'none' })
-				return
-			}
-			const csItem = list.find(i => i.type === 'im' && i.user_id) || list[0]
-			if (csItem) {
-				// 跳到聊天详情页
-				router.navigateTo({
-					url: 'pages/message/chat',
-					data: {
-						cs_id: csItem.id,
-						cs_name: csItem.name,
-						cs_avatar: csItem.avatar
-					}
-				})
-			}
+			r = await resolveCustomerService()
 		} catch (e) {
+			r = { direct: null, list: [] }
+		} finally {
 			uni.hideLoading()
-			uni.showToast({ title: '获取客服失败', icon: 'none' })
+		}
+		// 有内置客服则直接进入内置客服会话
+		if (r.direct) { openCustomerServiceChat(r.direct); return }
+		const list = r.list || []
+		if (list.length === 0) {
+			uni.showToast({ title: '暂无客服在线', icon: 'none' })
+			return
+		}
+		const csItem = list.find(i => i.type === 'im' && i.user_id) || list[0]
+		if (csItem) {
+			// 跳到聊天详情页
+			router.navigateTo({
+				url: 'pages/message/chat',
+				data: {
+					cs_id: csItem.id,
+					cs_name: csItem.name,
+					cs_avatar: csItem.avatar
+				}
+			})
 		}
 	}
 

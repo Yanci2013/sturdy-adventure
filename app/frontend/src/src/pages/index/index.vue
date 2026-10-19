@@ -430,7 +430,7 @@
 		computed
 	} from 'vue';
 import router from '../../utils/router';
-import { openCustomerServiceChat } from '../../utils/customer-service';
+import { openCustomerServiceChat, resolveCustomerService } from '../../utils/customer-service';
 	import {
 		lunbo,
 		imageNavList,
@@ -439,7 +439,6 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 		goods,
 		noticeList,
 		noticeMsg,
-		customerServiceList as getCustomerServiceList,
 		thug,
 		configure,
 		orderBroadcast,
@@ -987,16 +986,18 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	}
 
 	const toSeivice = async () => {
-		customerServiceModal.value.open()
+		let r = { direct: null, list: [] }
 		try {
 			uni.showLoading({ mask: true, title: '加载中' })
-			const res = await getCustomerServiceList()
-			cslist.value = res.data || []
+			r = await resolveCustomerService()
 		} catch (e) {
-			cslist.value = []
+			r = { direct: null, list: [] }
 		} finally {
 			uni.hideLoading()
 		}
+		if (r.direct) { openCustomerServiceChat(r.direct); return }
+		cslist.value = r.list
+		customerServiceModal.value.open()
 	}
 
 	const closeCustomerService = () => {

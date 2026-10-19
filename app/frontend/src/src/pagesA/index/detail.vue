@@ -176,9 +176,9 @@
 <script setup>
 	import { ref, computed } from 'vue';
 	import { onLoad } from '@dcloudio/uni-app';
-	import { goodsMsg, getUserInfo, userEdit, customerServiceList as getCustomerServiceList, commentList } from '../../request/api';
+	import { goodsMsg, getUserInfo, userEdit, commentList } from '../../request/api';
 	import router from '../../utils/router';
-import { openCustomerServiceChat } from '../../utils/customer-service';
+import { openCustomerServiceChat, resolveCustomerService } from '../../utils/customer-service';
 	import { test } from '../../uni_modules/uview-plus';
 
 	const id = ref('')
@@ -243,16 +243,19 @@ import { openCustomerServiceChat } from '../../utils/customer-service';
 	}
 
 	const toKefu = async () => {
-		customerServiceModal.value.open()
+		let r = { direct: null, list: [] }
 		try {
 			uni.showLoading({ mask: true, title: '加载中' })
-			const res = await getCustomerServiceList()
-			cslist.value = res.data || []
+			r = await resolveCustomerService()
 		} catch (e) {
-			cslist.value = []
+			r = { direct: null, list: [] }
 		} finally {
 			uni.hideLoading()
 		}
+		// 有内置客服则直接进入内置客服会话
+		if (r.direct) { openCustomerServiceChat(r.direct); return }
+		cslist.value = r.list
+		customerServiceModal.value.open()
 	}
 
 	const closeCustomerService = () => {

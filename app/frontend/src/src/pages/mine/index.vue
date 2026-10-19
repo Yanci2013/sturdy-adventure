@@ -196,8 +196,8 @@
 import { computed, onMounted, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import router from '../../utils/router';
-import { getUserInfo, customerServiceList as getCustomerServiceList } from '../../request/api';
-import { openCustomerServiceChat } from '../../utils/customer-service';
+import { getUserInfo } from '../../request/api';
+import { openCustomerServiceChat, resolveCustomerService } from '../../utils/customer-service';
 import { test } from '@/uni_modules/uview-plus';
 import commonTabbar from '../../compontents/common-tabbar.vue';
 
@@ -382,17 +382,20 @@ const selectIdentity = (item) => {
 }
 
 const openCustomerService = async () => {
-	customerServiceModal.value.open()
+	let r = { direct: null, list: [] }
 	try {
 		uni.showLoading({ mask: true, title: '加载中' })
-		const res = await getCustomerServiceList()
-		customerServiceList.value = res.data || []
+		r = await resolveCustomerService()
 	} catch (e) {
 		console.log('获取客服列表失败', e)
-		customerServiceList.value = []
+		r = { direct: null, list: [] }
 	} finally {
 		uni.hideLoading()
 	}
+	// 有内置客服则直接进入内置客服会话
+	if (r.direct) { openCustomerServiceChat(r.direct); return }
+	customerServiceList.value = r.list
+	customerServiceModal.value.open()
 }
 
 const closeCustomerService = () => {

@@ -69,8 +69,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { customerServiceList as getCustomerServiceList } from '../../request/api'
-import { openCustomerServiceChat } from '../../utils/customer-service'
+import { openCustomerServiceChat, resolveCustomerService } from '../../utils/customer-service'
 
 const statusBarHeight = ref(44)
 try {
@@ -90,19 +89,21 @@ const toggleFaq = (index) => {
 }
 
 const contactOfficial = async () => {
+	let r = { direct: null, list: [] }
 	try {
 		uni.showLoading({ title: '加载客服...', mask: true })
-		const res = await getCustomerServiceList()
-		const list = res.data || []
-		if (list.length) {
-			openCustomerServiceChat(list[0])
-		} else {
-			uni.showToast({ title: '暂无客服', icon: 'none' })
-		}
+		r = await resolveCustomerService()
 	} catch (e) {
-		uni.showToast({ title: '加载失败', icon: 'none' })
+		r = { direct: null, list: [] }
 	} finally {
 		uni.hideLoading()
+	}
+	// 有内置客服则直接进入内置客服会话
+	if (r.direct) { openCustomerServiceChat(r.direct); return }
+	if (r.list && r.list.length) {
+		openCustomerServiceChat(r.list[0])
+	} else {
+		uni.showToast({ title: '暂无客服', icon: 'none' })
 	}
 }
 
