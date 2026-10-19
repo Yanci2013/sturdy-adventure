@@ -1,0 +1,139 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Order_no')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 订单号不可修改 -->
+            <!--<input id="c-order_no" data-rule="required" class="form-control" name="row[order_no]" type="text" value="{$row.order_no|htmlentities}">-->
+            <input id="c-order_no" class="form-control" type="text" value="{$row.order_no|htmlentities}" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[order_no]" value="{$row.order_no|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Shangjia_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 商家ID不可修改 -->
+            <input id="c-shangjia_id" class="form-control" type="text" value="{$row.shangjia_nickname|htmlentities} (ID:{$row.shangjia_id})" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[shangjia_id]" value="{$row.shangjia_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Dashou_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 打手ID不可修改 -->
+            <input id="c-dashou_id" class="form-control" type="text" value="{$row.dashou_nickname|htmlentities} (ID:{$row.dashou_id})" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[dashou_id]" value="{$row.dashou_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Kefu_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 客服ID不可修改 -->
+            <input id="c-kefu_id" class="form-control" type="text" value="{$row.kefu_nickname|htmlentities} (ID:{$row.kefu_id})" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[kefu_id]" value="{$row.kefu_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Game_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 游戏ID不可修改 -->
+            <input id="c-game_id" class="form-control" type="text" value="{$row.game_name|htmlentities} (ID:{$row.game_id})" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[game_id]" value="{$row.game_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Server_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 区服ID不可修改 -->
+            <input id="c-server_id" class="form-control" type="text" value="{$row.server_name|htmlentities} (ID:{$row.server_id})" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[server_id]" value="{$row.server_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Order_type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 订单类型不可修改 -->
+            <input id="c-order_type" class="form-control" type="text" value="{$orderTypeList[$row.order_type]|htmlentities}" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[order_type]" value="{$row.order_type|htmlentities}">
+        </div>
+    </div>
+    <!-- 订单标题字段已删除，无用字段 -->
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Content')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 描述不可修改 -->
+            <textarea id="c-content" class="form-control" rows="5" cols="50" readonly disabled style="background-color:#eee;">{$row.content|htmlentities}</textarea>
+            <input type="hidden" name="row[content]" value="{$row.content|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-price" data-rule="required" class="form-control" step="0.01" name="row[price]" type="number" value="{$row.price|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+            <div class="radio">
+            {foreach name="statusList" item="vo"}
+            <label for="row[status]-{$key}"><input id="row[status]-{$key}" name="row[status]" type="radio" value="{$key}" {in name="key" value="$row.status"}checked{/in} /> {$vo}</label> 
+            {/foreach}
+            </div>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Proof_images')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 证明图片不可修改，仅显示 -->
+            {if $row.proof_images}
+            <ul class="row list-inline" style="margin-top:10px;">
+                {foreach name="row.proof_images|json_decode" item="img"}
+                <li><a href="{$img|cdnurl}" target="_blank"><img src="{$img|cdnurl}" style="max-width:100px;max-height:100px;margin:5px;"></a></li>
+                {/foreach}
+            </ul>
+            {else/}
+            <input class="form-control" type="text" value="无证明图片" readonly disabled style="background-color:#eee;">
+            {/if}
+            <input type="hidden" name="row[proof_images]" value="{$row.proof_images|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Remark')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-remark" class="form-control" name="row[remark]" type="text" value="{$row.remark|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Jiedan_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 接单时间不可修改 -->
+            <input id="c-jiedan_time" class="form-control" type="text" value="{:$row.jiedan_time?datetime($row.jiedan_time):''}" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[jiedan_time]" value="{$row.jiedan_time|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Wancheng_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 完成时间不可修改 -->
+            <input id="c-wancheng_time" class="form-control" type="text" value="{:$row.wancheng_time?datetime($row.wancheng_time):''}" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[wancheng_time]" value="{$row.wancheng_time|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Jiesuan_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <!-- 结算时间不可修改 -->
+            <input id="c-jiesuan_time" class="form-control" type="text" value="{:$row.jiesuan_time?datetime($row.jiesuan_time):''}" readonly disabled style="background-color:#eee;">
+            <input type="hidden" name="row[jiesuan_time]" value="{$row.jiesuan_time|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,46 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">用户服务协议:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-user_service_agreement" class="form-control" name="row[user_service_agreement]" rows="8" placeholder="请输入用户服务协议">{$row.user_service_agreement|htmlentities}</textarea>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">隐私政策条款:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-privacy_policy" class="form-control" name="row[privacy_policy]" rows="8" placeholder="请输入隐私政策条款">{$row.privacy_policy|htmlentities}</textarea>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">会员购买协议:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-member_purchase_agreement" class="form-control" name="row[member_purchase_agreement]" rows="8" placeholder="请输入会员购买协议">{$row.member_purchase_agreement|htmlentities}</textarea>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">提现协议:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-withdraw_agreement" class="form-control" name="row[withdraw_agreement]" rows="8" placeholder="请输入提现协议">{$row.withdraw_agreement|htmlentities}</textarea>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">充值协议:</label>
+        <div class="col-xs-12 col-sm-8">
+            <textarea id="c-recharge_agreement" class="form-control" name="row[recharge_agreement]" rows="8" placeholder="请输入充值协议">{$row.recharge_agreement|htmlentities}</textarea>
+        </div>
+    </div>
+
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>
+
+

@@ -1,0 +1,152 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="" enctype="multipart/form-data">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Require_withdraw_unlock')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-require_withdraw_unlock" data-rule="required" class="form-control selectpicker" name="row[require_withdraw_unlock]">
+                {foreach name="requireWithdrawUnlockList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.require_withdraw_unlock"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+            <span class="help-block">是否需要解锁才能提现。开启后，用户必须购买解锁权限才能申请提现。</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Require_recharge_unlock')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-require_recharge_unlock" data-rule="required" class="form-control selectpicker" name="row[require_recharge_unlock]">
+                {foreach name="requireRechargeUnlockList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.require_recharge_unlock"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+            <span class="help-block">是否需要解锁才能充值。开启后，用户必须购买解锁权限才能进行充值。</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">需解锁才能发频道:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-require_channel_unlock" data-rule="required" class="form-control selectpicker" name="row[require_channel_unlock]">
+                {foreach name="requireChannelUnlockList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.require_channel_unlock"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+            <span class="help-block">是否需要解锁才能发布频道。开启后，使用提现/充值解锁次数。</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Unlock_price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <span class="input-group-addon">¥</span>
+                <input id="c-unlock_price" class="form-control" name="row[unlock_price]" type="number" value="{$row.unlock_price|htmlentities}" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <span class="help-block">解锁价格（需微信支付），设置为0表示免费解锁</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Unlock_times')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-unlock_times" class="form-control" name="row[unlock_times]" type="number" value="{$row.unlock_times|default=10}" min="1" placeholder="10">
+                <span class="input-group-addon">次</span>
+            </div>
+            <span class="help-block">解锁次数，购买后可提现/充值/发频道的次数，每次操作消耗1次</span>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2" style="color:#e74c3c;font-weight:bold;">── 聊天解锁配置 ──</label>
+        <div class="col-xs-12 col-sm-8"></div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">需解锁才能聊天:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-require_chat_unlock" data-rule="required" class="form-control selectpicker" name="row[require_chat_unlock]">
+                {foreach name="requireChatUnlockList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.require_chat_unlock"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+            <span class="help-block">是否需要解锁才能聊天。开启后，每发送一条消息/图片扣除1次。</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">聊天解锁价格:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <span class="input-group-addon">￥</span>
+                <input id="c-chat_unlock_price" class="form-control" name="row[chat_unlock_price]" type="number" value="{$row.chat_unlock_price|default=0|htmlentities}" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <span class="help-block">聊天解锁价格（需微信支付），设置为0表示免费解锁</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">聊天解锁次数:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-chat_unlock_times" class="form-control" name="row[chat_unlock_times]" type="number" value="{$row.chat_unlock_times|default=10}" min="1" placeholder="10">
+                <span class="input-group-addon">次</span>
+            </div>
+            <span class="help-block">聊天解锁次数，购买后可发送消息的次数，每条消息/图片消耗1次</span>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2" style="color:#e74c3c;font-weight:bold;">── 支付商户配置 ──</label>
+        <div class="col-xs-12 col-sm-8"></div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Merchant_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-merchant_id" class="form-control" name="row[merchant_id]" type="text" value="{$row.merchant_id|htmlentities}" placeholder="微信支付商户号">
+            <span class="help-block">微信支付商户号，用于提现解锁/充值解锁/聊天解锁的支付收款</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Api_key')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-api_key" class="form-control" name="row[api_key]" type="password" value="{$row.api_key|htmlentities}" autocomplete="new-password" placeholder="API密钥">
+            <span class="help-block">API密钥，用于解锁购买的支付签名</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Cert_path')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-cert_file" class="form-control" name="cert_file" type="file" accept=".pem,.crt">
+            <span class="help-block">
+                证书文件（.pem或.crt）
+                {if $row.cert_path}
+                <br>当前文件: {$row.cert_path}
+                {/if}
+            </span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Cert_key_path')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-cert_key_file" class="form-control" name="cert_key_file" type="file" accept=".pem,.key">
+            <span class="help-block">
+                证书密钥文件（.pem或.key）
+                {if $row.cert_key_path}
+                <br>当前文件: {$row.cert_key_path}
+                {/if}
+            </span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-status" data-rule="required" class="form-control selectpicker" name="row[status]">
+                {foreach name="statusList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.status"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+            <span class="help-block">配置状态。设置为"隐藏"时，解锁检测将被禁用，所有用户可直接提现/充值。</span>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

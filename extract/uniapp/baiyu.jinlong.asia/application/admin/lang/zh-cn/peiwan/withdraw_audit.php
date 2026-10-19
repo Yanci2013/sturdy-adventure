@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'Id'                       => 'ID',
+    'User_id'                  => '用户ID',
+    'Amount'                   => '提现金额',
+    'Account_type'             => '账户类型',
+    'Account_type wechat'      => '微信',
+    'Account_type alipay'      => '支付宝',
+    'Account_type bank'        => '银行卡',
+    'Account_type qrcode'      => '二维码',
+    'Account'                  => '账户信息',
+    'Account_name'             => '账户姓名',
+    'Real_name'                => '真实姓名',
+    'Qrcode_image'             => '收款二维码',
+    'Withdraw_type'            => '提现类型',
+    'Withdraw_type auto'       => '自动到账',
+    'Withdraw_type audit'      => '审核提现',
+    'Status'                   => '状态',
+    'Status pending'           => '待处理',
+    'Status processing'        => '处理中',
+    'Status audit_pending'     => '待审核',
+    'Status success'           => '成功',
+    'Status failed'            => '失败',
+    'Status rejected'          => '已拒绝',
+    'Remark'                   => '备注',
+    'Audit_time'               => '审核时间',
+    'Audit_admin_id'           => '审核管理员',
+    'Createtime'               => '创建时间',
+    'Updatetime'               => '更新时间'
+];

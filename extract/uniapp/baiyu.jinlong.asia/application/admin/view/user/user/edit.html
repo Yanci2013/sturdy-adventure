@@ -1,0 +1,111 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+    {:token()}
+    <input type="hidden" name="row[id]" value="{$row.id|htmlentities}">
+    <div class="form-group">
+        <label for="c-nickname" class="control-label col-xs-12 col-sm-2">{:__('Nickname')}:</label>
+        <div class="col-xs-12 col-sm-4">
+            <input id="c-nickname" data-rule="required" class="form-control" name="row[nickname]" type="text" value="{$row.nickname|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="c-mobile" class="control-label col-xs-12 col-sm-2">{:__('Mobile')}:</label>
+        <div class="col-xs-12 col-sm-4">
+            <!-- 手机号不可修改 -->
+            <!--<input id="c-mobile" data-rule="mobile" class="form-control" name="row[mobile]" type="text" value="{$row.mobile|htmlentities}">-->
+            <input id="c-mobile" class="form-control" type="text" value="{$row.mobile|htmlentities}" readonly disabled style="background-color:#eee;">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="c-avatar" class="control-label col-xs-12 col-sm-2">{:__('Avatar')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-avatar" data-rule="" class="form-control" size="50" name="row[avatar]" type="text" value="{$row.avatar|htmlentities}">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-avatar" class="btn btn-danger faupload" data-input-id="c-avatar" data-mimetype="image/gif,image/jpeg,image/png,image/jpg,image/bmp" data-multiple="false" data-preview-id="p-avatar"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-avatar" class="btn btn-primary fachoose" data-input-id="c-avatar" data-mimetype="image/*" data-multiple="false"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-avatar"></span>
+            </div>
+            <ul class="row list-inline faupload-preview" id="p-avatar"></ul>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="c-money" class="control-label col-xs-12 col-sm-2">{:__('Money')}:</label>
+        <div class="col-xs-12 col-sm-4">
+            <input id="c-money" data-rule="required" class="form-control" name="row[money]" type="number" step="0.01" value="{$row.money|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="c-quota" class="control-label col-xs-12 col-sm-2">商家额度:</label>
+        <div class="col-xs-12 col-sm-4">
+            <input id="c-quota" data-rule="" class="form-control" name="row[quota]" type="number" step="0.01" value="{$row.quota|htmlentities}">
+            <span class="help-block">商家发单时优先扣除的额度（元）</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            {:build_radios('row[status]', ['normal'=>__('Normal'), 'hidden'=>__('Hidden')], $row['status'])}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">角色类型:</label>
+        <div class="col-xs-12 col-sm-8">
+            {php}
+                $allRoles = [
+                    'weironzheng' => '未认证',
+                    'user' => '用户',
+                    'dashou' => '打手',
+                    'jindashou' => '金牌打手',
+                    'guanshi' => '管事',
+                    'zuzhang' => '组长',
+                    'zongguan' => '总管',
+                    'jinshangjia' => '金牌商家',
+                    'shangjia' => '商家',
+                    'kefu' => '客服',
+                    'shouhou' => '售后'
+                ];
+                
+                // 过滤出当前管理员允许管理的角色
+                $filteredRoles = [];
+                foreach ($allowed_roles as $roleKey) {
+                    if (isset($allRoles[$roleKey])) {
+                        $filteredRoles[$roleKey] = $allRoles[$roleKey];
+                    }
+                }
+            {/php}
+            {:build_radios('row[role_type]', $filteredRoles, isset($row['role_type']) ? $row['role_type'] : 'dashou')}
+            {if count($filteredRoles) == 0}
+            <span class="text-danger">您没有管理任何角色的权限</span>
+            {/if}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">上级推荐人:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-parent_id" data-source="user/user/index" data-field="nickname" data-primary-key="id" class="form-control selectpage" name="row[parent_id]" type="text" value="{$row.parent_id|htmlentities}" placeholder="请选择上级推荐人">
+            <span class="help-block">用户的直接上级（通过身份邀请码绑定）</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">推广上级:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-promote_parent_id" data-source="user/user/index" data-field="nickname" data-primary-key="id" class="form-control selectpage" name="row[promote_parent_id]" type="text" value="{$row.promote_parent_id|htmlentities}" placeholder="请选择推广上级">
+            <span class="help-block">用户的推广上级（订单分佣关联）</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">用户标签:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-tag_ids" data-source="peiwan/tag/index" data-field="name" data-primary-key="id" class="form-control selectpage" name="row[tag_ids]" type="text" value="{$tag_ids|htmlentities}" data-multiple="true" placeholder="请选择标签（可多选）">
+            <span class="help-block">可以为用户添加多个标签，标签会在小程序中显示</span>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+            <button type="reset" class="btn btn-default btn-embossed">{:__('Reset')}</button>
+        </div>
+    </div>
+</form>

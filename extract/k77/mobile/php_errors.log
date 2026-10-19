@@ -1,0 +1,241 @@
+[19-Jan-2026 02:23:07 PRC] 插入合作伙伴参与者 - target_id: 1009, 类型: user
+[19-Jan-2026 02:23:07 PRC] 无法获取对方用户信息，会话: chat_696d250b2ab7a4.98098211
+[19-Jan-2026 02:23:10 PRC] 开始处理订单数据 - 订单ID: 2
+[19-Jan-2026 02:23:10 PRC] 找到订单 - ID: 2, 订单数据: Array
+(
+    [id] => 2
+    [order_no] => 20260119021855941
+    [product_id] => 5
+    [category_id] => 5
+    [category_name] => 香肠派对
+    [product_name] => 测试发单1
+    [price] => 1.00
+    [user_id] => 0
+    [game_region] => 手机端
+    [hunter_option] => system
+    [hunter_id] => 0
+    [payment_type] => alipay
+    [payment_amount] => 1.00
+    [payment_status] => paid
+    [payment_time] => 2026-01-19 02:18:55
+    [trade_no] => 20260119021855941
+    [payment_ip] => 
+    [input_fields] => {"数字ID":"你想你想你","中文ID":"你想你那些","备注":"基督教党建"}
+    [digital_id] => 你想你想你
+    [chinese_id] => 你想你那些
+    [create_time] => 2026-01-19 02:18:55
+    [update_time] => 2026-01-19 02:23:01
+    [order_status] => 2
+    [hunter_user_id] => 1009
+    [accept_time] => 2026-01-19 02:23:01
+    [service_time] => 
+    [complete_time] => 
+    [submit_time] => 
+    [review_time] => 
+    [submit_images] => 
+    [submit_notes] => 
+    [close_time] => 
+    [cancel_time] => 
+    [fadan_id] => 0
+    [fadan_name] => 测试商家
+    [cancel_reason] => 
+    [cancel_images] => 
+    [cancel_by] => 
+    [cancel_review_status] => pending
+    [cancel_review_by] => 
+    [cancel_review_time] => 
+    [cancel_reply] => 
+    [cancel_reply_images] => 
+    [cancel_reply_by] => 
+    [cancel_reply_time] => 
+    [subcategory_id] => 
+    [subcategory_name] => 
+    [user_idu] => 
+    [user_nickname] => 
+    [has_lottery] => 0
+    [lottery_time] => 
+    [lottery_prize] => 
+    [lottery_ip] => 
+)
+
+[19-Jan-2026 02:23:10 PRC] 处理合作伙伴类型目标 - target_type: partner
+[19-Jan-2026 02:23:10 PRC] 完整订单数据: Array
+(
+    [id] => 2
+    [order_no] => 20260119021855941
+    [product_id] => 5
+    [category_id] => 5
+    [category_name] => 香肠派对
+    [product_name] => 测试发单1
+    [price] => 1.00
+    [user_id] => 0
+    [game_region] => 手机端
+    [hunter_option] => system
+    [hunter_id] => 0
+    [payment_type] => alipay
+    [payment_amount] => 1.00
+    [payment_status] => paid
+    [payment_time] => 2026-01-19 02:18:55
+    [trade_no] => 20260119021855941
+    [payment_ip] => 
+    [input_fields] => {"数字ID":"你想你想你","中文ID":"你想你那些","备注":"基督教党建"}
+    [digital_id] => 你想你想你
+    [chinese_id] => 你想你那些
+    [create_time] => 2026-01-19 02:18:55
+    [update_time] => 2026-01-19 02:23:01
+    [order_status] => 2
+    [hunter_user_id] => 1009
+    [accept_time] => 2026-01-19 02:23:01
+    [service_time] => 
+    [complete_time] => 
+    [submit_time] => 
+    [review_time] => 
+    [submit_images] => 
+    [submit_notes] => 
+    [close_time] => 
+    [cancel_time] => 
+    [fadan_id] => 0
+    [fadan_name] => 测试商家
+    [cancel_reason] => 
+    [cancel_images] => 
+    [cancel_by] => 
+    [cancel_review_status] => pending
+    [cancel_review_by] => 
+    [cancel_review_time] => 
+    [cancel_reply] => 
+    [cancel_reply_images] => 
+    [cancel_reply_by] => 
+    [cancel_reply_time] => 
+    [subcategory_id] => 
+    [subcategory_name] => 
+    [user_idu] => 
+    [user_nickname] => 
+    [has_lottery] => 0
+    [lottery_time] => 
+    [lottery_prize] => 
+    [lottery_ip] => 
+)
+
+[19-Jan-2026 02:23:10 PRC] 订单ID: 2 包含的字段: id, order_no, product_id, category_id, category_name, product_name, price, user_id, game_region, hunter_option, hunter_id, payment_type, payment_amount, payment_status, payment_time, trade_no, payment_ip, input_fields, digital_id, chinese_id, create_time, update_time, order_status, hunter_user_id, accept_time, service_time, complete_time, submit_time, review_time, submit_images, submit_notes, close_time, cancel_time, fadan_id, fadan_name, cancel_reason, cancel_images, cancel_by, cancel_review_status, cancel_review_by, cancel_review_time, cancel_reply, cancel_reply_images, cancel_reply_by, cancel_reply_time, subcategory_id, subcategory_name, user_idu, user_nickname, has_lottery, lottery_time, lottery_prize, lottery_ip
+[19-Jan-2026 02:23:10 PRC] 订单ID: 2 的fadan_id值: 0 (类型: string)
+[19-Jan-2026 02:23:10 PRC] 转换后的fadan_id整数: 0 (原始值: 0)
+[19-Jan-2026 02:23:10 PRC] 订单ID: 2 包含无效fadan_id: 0 (整数转换: 0)
+[19-Jan-2026 02:24:56 PRC] 插入合作伙伴参与者 - target_id: 2, 类型: system
+[19-Jan-2026 02:24:59 PRC] 插入合作伙伴参与者 - target_id: 2, 类型: system
+[28-Jan-2026 21:28:21 PRC] 插入合作伙伴参与者 - target_id: 2, 类型: system
+[30-Jan-2026 10:06:24 PRC] 插入合作伙伴参与者 - target_id: 1015, 类型: user
+[30-Jan-2026 10:06:24 PRC] 无法获取对方用户信息，会话: chat_697c1220d9db77.84268908
+[30-Jan-2026 10:42:37 PRC] 插入合作伙伴参与者 - target_id: 39, 类型: h5user
+[30-Jan-2026 10:44:13 PRC] 插入合作伙伴参与者 - target_id: 1, 类型: partner
+[31-Jan-2026 09:49:29 PRC] 无法获取对方用户信息，会话: chat_697c1220d9db77.84268908
+[31-Jan-2026 16:44:12 PRC] 插入合作伙伴参与者 - target_id: 1012, 类型: user
+[31-Jan-2026 16:44:12 PRC] 无法获取对方用户信息，会话: chat_697dc0dca8d373.79279758
+[31-Jan-2026 16:44:25 PRC] 插入合作伙伴参与者 - target_id: 1, 类型: partner
+[03-Feb-2026 11:42:01 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 11:42:01 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 11:42:01 PRC] 插入合作伙伴参与者 - target_id: 1023, 类型: user
+[03-Feb-2026 11:42:01 PRC] 无法获取对方用户信息，会话: chat_69816e89808d80.12922823
+[03-Feb-2026 11:42:04 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 11:42:04 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 11:42:04 PRC] 插入合作伙伴参与者 - target_id: 1, 类型: partner
+[03-Feb-2026 13:43:03 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 13:43:03 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 13:43:04 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 13:43:04 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 13:43:05 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 13:43:05 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 13:43:07 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 13:43:07 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 13:43:07 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 13:43:07 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 19:28:15 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 19:28:15 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 19:28:16 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 19:28:16 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 19:28:17 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 19:28:17 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 19:28:17 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 19:28:17 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[03-Feb-2026 19:28:20 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[03-Feb-2026 19:28:20 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 14:03:03 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 14:03:03 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 14:53:50 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 14:53:50 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 14:53:50 PRC] 插入合作伙伴参与者 - target_id: 61, 类型: h5user
+[04-Feb-2026 15:07:45 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:07:45 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:08:19 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:08:19 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:12:58 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:12:58 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:13:06 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:13:06 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:13:18 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:13:18 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:13:33 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:13:33 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:14:57 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:14:57 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 15:15:02 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 15:15:02 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:09:47 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:09:47 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:19:33 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:19:33 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:19:33 PRC] 插入合作伙伴参与者 - target_id: 1033, 类型: user
+[04-Feb-2026 21:19:33 PRC] 无法获取对方用户信息，会话: chat_6983476541a313.73895176
+[04-Feb-2026 21:20:36 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:20:36 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:20:36 PRC] 插入合作伙伴参与者 - target_id: 95, 类型: h5user
+[04-Feb-2026 21:21:43 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:21:43 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:21:43 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:21:44 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:24:29 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:24:29 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:24:29 PRC] 插入合作伙伴参与者 - target_id: 1, 类型: partner
+[04-Feb-2026 21:24:31 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:24:31 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:25:27 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:25:27 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:25:33 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:25:33 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[04-Feb-2026 21:25:37 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[04-Feb-2026 21:25:37 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:47:02 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:47:02 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:47:02 PRC] 插入合作伙伴参与者 - target_id: 1008, 类型: user
+[05-Feb-2026 21:47:02 PRC] 无法获取对方用户信息，会话: chat_69849f56accb78.57911204
+[05-Feb-2026 21:48:29 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:48:29 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:48:29 PRC] 插入合作伙伴参与者 - target_id: 1, 类型: partner
+[05-Feb-2026 21:48:36 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:48:36 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:48:40 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:48:40 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:48:46 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:48:46 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:51:28 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:51:28 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:51:28 PRC] 无法获取对方用户信息，会话: chat_69849f56accb78.57911204
+[05-Feb-2026 21:51:30 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:51:30 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:51:31 PRC] 无法获取对方用户信息，会话: chat_69849f56accb78.57911204
+[05-Feb-2026 21:51:37 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[05-Feb-2026 21:51:37 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[05-Feb-2026 21:51:37 PRC] 无法获取对方用户信息，会话: chat_69849f56accb78.57911204
+[06-Feb-2026 13:06:24 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[06-Feb-2026 13:06:24 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[06-Feb-2026 13:06:24 PRC] 插入合作伙伴参与者 - target_id: 14, 类型: h5user
+[06-Feb-2026 13:06:51 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[06-Feb-2026 13:06:51 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[06-Feb-2026 14:00:54 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[06-Feb-2026 14:00:54 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[06-Feb-2026 14:00:55 PRC] 插入合作伙伴参与者 - target_id: 1, 类型: h5user
+[06-Feb-2026 16:58:21 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[06-Feb-2026 16:58:21 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[06-Feb-2026 17:06:47 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[06-Feb-2026 17:06:47 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1
+[07-Feb-2026 11:43:25 PRC] 自动修复系统通知配置表结构错误: SQLSTATE[HY000]: General error: 1364 Field 'create_time' doesn't have a default value
+[07-Feb-2026 11:43:25 PRC] 自动修复临时订单表结构错误: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IGNORE TABLE order_temp ADD UNIQUE KEY (order_no)' at line 1

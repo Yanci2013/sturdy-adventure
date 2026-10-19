@@ -1,0 +1,95 @@
+<div class="panel panel-default panel-intro">
+    <div class="panel-heading">
+        <h4>提现详情</h4>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">ID</th>
+                        <td>{$row.id}</td>
+                    </tr>
+                    <tr>
+                        <th>用户</th>
+                        <td>
+                            {if $row.user}
+                            <img src="{$row.user.avatar|default='/assets/img/avatar.png'}" style="width:30px;height:30px;border-radius:50%;">
+                            {$row.user.nickname}
+                            {else}
+                            -
+                            {/if}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>提现金额</th>
+                        <td><span style="color:#f00;font-size:18px;">¥{$row.amount}</span></td>
+                    </tr>
+                    <tr>
+                        <th>真实姓名</th>
+                        <td>{$row.real_name|default='-'}</td>
+                    </tr>
+                    <tr>
+                        <th>提现类型</th>
+                        <td>{$row.withdraw_type_text}</td>
+                    </tr>
+                    <tr>
+                        <th>状态</th>
+                        <td>
+                            {if $row.status == 'audit_pending'}
+                            <span class="label label-warning">{$row.status_text}</span>
+                            {elseif $row.status == 'success'}
+                            <span class="label label-success">{$row.status_text}</span>
+                            {elseif $row.status == 'rejected' || $row.status == 'failed'}
+                            <span class="label label-danger">{$row.status_text}</span>
+                            {else}
+                            <span class="label label-info">{$row.status_text}</span>
+                            {/if}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>备注</th>
+                        <td>{$row.remark|default='-'}</td>
+                    </tr>
+                    <tr>
+                        <th>申请时间</th>
+                        <td>{$row.createtime|date="Y-m-d H:i:s",###}</td>
+                    </tr>
+                    <tr>
+                        <th>审核时间</th>
+                        <td>{$row.audit_time_text}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">收款二维码</div>
+                    <div class="panel-body text-center">
+                        {if $row.qrcode_image}
+                        <img src="{$row.qrcode_image}" style="max-width:300px;max-height:300px;cursor:pointer;" onclick="window.open(this.src)">
+                        <p style="margin-top:10px;color:#999;">点击图片查看大图</p>
+                        {else}
+                        <p class="text-muted">无收款二维码</p>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {if $row.status == 'audit_pending'}
+        <div class="row" style="margin-top:20px;">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <strong>提示：</strong>请确认收款信息后，选择审核通过或拒绝。审核通过后请手动转账给用户；审核拒绝后将自动退回用户余额。
+                </div>
+                <button type="button" class="btn btn-success btn-lg btn-approve" data-id="{$row.id}">
+                    <i class="fa fa-check"></i> 审核通过
+                </button>
+                <button type="button" class="btn btn-danger btn-lg btn-reject" data-id="{$row.id}" style="margin-left:20px;">
+                    <i class="fa fa-times"></i> 审核拒绝
+                </button>
+            </div>
+        </div>
+        {/if}
+    </div>
+</div>

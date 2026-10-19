@@ -1,0 +1,355 @@
+<div class="panel panel-default panel-intro" style="padding:15px;">
+    <h4 style="border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:20px;">
+        <i class="fa fa-gavel"></i> 售后订单详情 - {$row.order_no}
+    </h4>
+    
+    <!-- 基本信息 -->
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-info-circle"></i> 基本信息</h5>
+        </div>
+        <div class="panel-body">
+            <table class="table table-bordered table-striped">
+                <tr>
+                    <th width="15%">订单号</th>
+                    <td width="35%">{$row.order_no}</td>
+                    <th width="15%">订单类型</th>
+                    <td width="35%">
+                        <span class="label label-{$row.order_type=='standard'?'primary':'warning'}">{$row.order_type_text}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>订单状态</th>
+                    <td>
+                        <span class="label label-{switch name="row.status"}
+                            {case value="daijiedan"}info{/case}
+                            {case value="daifuwu"}warning{/case}
+                            {case value="daijiesuan"}primary{/case}
+                            {case value="yiwancheng"}success{/case}
+                            {case value="guanbizhong"}danger{/case}
+                            {case value="kefujieru"}danger{/case}
+                            {case value="yichexiao"}default{/case}
+                            {default/}default
+                        {/switch}">{$row.status_text}</span>
+                    </td>
+                    <th>订单价格</th>
+                    <td><span class="text-danger" style="font-size:18px;font-weight:bold;">¥{$row.price}</span></td>
+                </tr>
+                <tr>
+                    <th>游戏</th>
+                    <td>{$row.game.name|default='-'}</td>
+                    <th>区服</th>
+                    <td>{$row.server.server_name|default='-'}</td>
+                </tr>
+                <tr>
+                    <th>老板联系方式</th>
+                    <td>{$row.boss_contact|default='-'}</td>
+                    <th>订单描述</th>
+                    <td>{$row.content|default='-'}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 用户信息 -->
+    <div class="panel panel-success">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-users"></i> 相关用户</h5>
+        </div>
+        <div class="panel-body">
+            <table class="table table-bordered table-striped">
+                <tr>
+                    <th width="15%">发单人</th>
+                    <td width="35%">
+                        {if $row.shangjia}
+                        <div style="display:flex;align-items:center;">
+                            <img src="{$row.shangjia.avatar|cdnurl|default='/assets/img/avatar.png'}" style="width:30px;height:30px;border-radius:50%;margin-right:10px;">
+                            <span>{$row.shangjia.nickname}</span>
+                            <span class="text-muted" style="margin-left:5px;">(ID:{$row.shangjia.id})</span>
+                            <span class="label label-info" style="margin-left:5px;">{$roleTypeMap[$row.shangjia.role_type]|default=$row.shangjia.role_type}</span>
+                        </div>
+                        {else/}
+                        <span class="text-muted">-</span>
+                        {/if}
+                    </td>
+                    <th width="15%">发单时间</th>
+                    <td width="35%">{$row.createtime_text|default='-'}</td>
+                </tr>
+                <tr>
+                    <th>接单人</th>
+                    <td>
+                        {if $row.dashou}
+                        <div style="display:flex;align-items:center;">
+                            <img src="{$row.dashou.avatar|cdnurl|default='/assets/img/avatar.png'}" style="width:30px;height:30px;border-radius:50%;margin-right:10px;">
+                            <span>{$row.dashou.nickname}</span>
+                            <span class="text-muted" style="margin-left:5px;">(ID:{$row.dashou.id})</span>
+                            <span class="label label-primary" style="margin-left:5px;">{$roleTypeMap[$row.dashou.role_type]|default=$row.dashou.role_type}</span>
+                        </div>
+                        {else/}
+                        <span class="text-muted">暂无</span>
+                        {/if}
+                    </td>
+                    <th>接单时间</th>
+                    <td>{$row.jiedan_time_text|default='-'}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 时间节点 -->
+    <div class="panel panel-warning">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-clock-o"></i> 订单时间线</h5>
+        </div>
+        <div class="panel-body">
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-badge bg-info"><i class="fa fa-plus"></i></div>
+                    <div class="timeline-content">
+                        <strong>下单</strong>
+                        <span class="text-muted pull-right">{$row.createtime_text|default='-'}</span>
+                        <p>订单创建成功</p>
+                    </div>
+                </div>
+                
+                {if $row.jiedan_time}
+                <div class="timeline-item">
+                    <div class="timeline-badge bg-primary"><i class="fa fa-check"></i></div>
+                    <div class="timeline-content">
+                        <strong>接单</strong>
+                        <span class="text-muted pull-right">{$row.jiedan_time_text}</span>
+                        <p>{if $row.dashou}{$row.dashou.nickname} 接单{else/}已接单{/if}</p>
+                    </div>
+                </div>
+                {/if}
+                
+                {if $row.wancheng_time}
+                <div class="timeline-item">
+                    <div class="timeline-badge bg-success"><i class="fa fa-flag"></i></div>
+                    <div class="timeline-content">
+                        <strong>完成</strong>
+                        <span class="text-muted pull-right">{$row.wancheng_time_text}</span>
+                        <p>打手提交完成证明</p>
+                    </div>
+                </div>
+                {/if}
+                
+                {if $row.arbitration_time}
+                <div class="timeline-item">
+                    <div class="timeline-badge bg-danger"><i class="fa fa-gavel"></i></div>
+                    <div class="timeline-content">
+                        <strong>申请仲裁</strong>
+                        <span class="text-muted pull-right">{$row.arbitration_time_text}</span>
+                        <p>
+                            {if $row.arbitration_user}
+                            {$row.arbitration_user.nickname}
+                            <span class="label label-danger">{$roleTypeMap[$row.arbitration_user.role_type]|default=$row.arbitration_user.role_type}</span>
+                            申请仲裁
+                            {else/}
+                            已申请仲裁
+                            {/if}
+                        </p>
+                    </div>
+                </div>
+                {/if}
+                
+                {if $row.jiesuan_time}
+                <div class="timeline-item">
+                    <div class="timeline-badge bg-warning"><i class="fa fa-money"></i></div>
+                    <div class="timeline-content">
+                        <strong>结算</strong>
+                        <span class="text-muted pull-right">{$row.jiesuan_time_text}</span>
+                        <p>订单已结算</p>
+                    </div>
+                </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 完成证明 -->
+    {if $row.proof_images}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-image"></i> 完成证明</h5>
+        </div>
+        <div class="panel-body">
+            {if condition="isset($row['proof_text']) && $row['proof_text']"}
+            <div class="alert alert-info" style="margin-bottom:15px;">
+                <strong>文字说明：</strong>{$row.proof_text}
+            </div>
+            {/if}
+            <div class="row">
+                {foreach name="row.proof_images|json_decode" item="img"}
+                <div class="col-xs-6 col-sm-3 col-md-2" style="margin-bottom:10px;">
+                    <a href="{$img|cdnurl}" target="_blank" data-lightbox="proof">
+                        <img src="{$img|cdnurl}" class="img-responsive img-thumbnail" style="max-height:150px;">
+                    </a>
+                </div>
+                {/foreach}
+            </div>
+        </div>
+    </div>
+    {/if}
+    
+    <!-- 举证记录 -->
+    {if $row.evidence_list}
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-file-text-o"></i> 售后举证记录</h5>
+        </div>
+        <div class="panel-body">
+            {foreach name="row.evidence_list" item="evidence"}
+            <div class="media" style="padding:15px;background:#f9f9f9;border-radius:5px;margin-bottom:10px;">
+                <div class="media-left">
+                    <img src="{$evidence.avatar|cdnurl|default='/assets/img/avatar.png'}" class="media-object" style="width:50px;height:50px;border-radius:50%;">
+                </div>
+                <div class="media-body">
+                    <h5 class="media-heading">
+                        {$evidence.nickname}
+                        <span class="label label-{$evidence.user_role=='shangjia' || $evidence.user_role=='jinshangjia'?'info':'primary'}">{$roleTypeMap[$evidence.user_role]|default=$evidence.user_role}</span>
+                        <small class="text-muted pull-right">{:date('Y-m-d H:i:s', $evidence['createtime'])}</small>
+                    </h5>
+                    <p style="margin-top:10px;">{$evidence.content|default='（无文字说明）'}</p>
+                    {if condition="!empty($evidence['images_arr'])"}
+                    <div class="row" style="margin-top:10px;">
+                        {foreach name="evidence.images_arr" item="img"}
+                        <div class="col-xs-6 col-sm-3 col-md-2" style="margin-bottom:5px;">
+                            <a href="{$img|cdnurl}" target="_blank" data-lightbox="evidence-{$evidence.id}">
+                                <img src="{$img|cdnurl}" class="img-responsive img-thumbnail" style="max-height:100px;">
+                            </a>
+                        </div>
+                        {/foreach}
+                    </div>
+                    {/if}
+                </div>
+            </div>
+            {/foreach}
+        </div>
+    </div>
+    {/if}
+    
+    <!-- 售后处理记录 -->
+    {if $row.intervene_list}
+    <div class="panel panel-danger">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-gavel"></i> 售后处理记录 <span class="badge">{:count($row['intervene_list'])}</span></h5>
+        </div>
+        <div class="panel-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th width="5%">#</th>
+                        <th width="15%">处理人</th>
+                        <th width="15%">处理类型</th>
+                        <th width="10%">金额</th>
+                        <th width="35%">备注</th>
+                        <th width="20%">处理时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {foreach name="row.intervene_list" key="idx" item="intervene"}
+                    <tr>
+                        <td>{$idx+1}</td>
+                        <td>
+                            <div style="display:flex;align-items:center;">
+                                <img src="{$intervene.handler_avatar|cdnurl|default='/assets/img/avatar.png'}" style="width:25px;height:25px;border-radius:50%;margin-right:8px;">
+                                <span>{$intervene.handler_name|default='未知'}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="label label-{switch name="intervene.type"}
+                                {case value="cancel_order"}default{/case}
+                                {case value="complete_order"}success{/case}
+                                {case value="return_hall"}info{/case}
+                                {case value="tip_player"}warning{/case}
+                                {case value="fine_player"}danger{/case}
+                                {default/}default
+                            {/switch}">{$intervene.type_text}</span>
+                        </td>
+                        <td>
+                            {if $intervene.amount > 0}
+                            <span class="text-danger">¥{$intervene.amount}</span>
+                            {else/}
+                            -
+                            {/if}
+                        </td>
+                        <td>{$intervene.remark|default='-'}</td>
+                        <td>{$intervene.createtime_text}</td>
+                    </tr>
+                    {/foreach}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {else/}
+    <div class="panel panel-danger">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-gavel"></i> 售后处理记录</h5>
+        </div>
+        <div class="panel-body">
+            <div class="text-center text-muted" style="padding:30px;">
+                <i class="fa fa-inbox fa-3x"></i>
+                <p style="margin-top:15px;">暂无售后处理记录</p>
+            </div>
+        </div>
+    </div>
+    {/if}
+    
+    <!-- 备注 -->
+    {if $row.remark}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h5 class="panel-title"><i class="fa fa-sticky-note"></i> 订单备注</h5>
+        </div>
+        <div class="panel-body">
+            {$row.remark}
+        </div>
+    </div>
+    {/if}
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0 20px;
+    list-style: none;
+}
+.timeline:before {
+    content: " ";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 20px;
+    width: 3px;
+    background-color: #eee;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 60px;
+}
+.timeline-badge {
+    position: absolute;
+    left: 6px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    color: #fff;
+}
+.timeline-badge i {
+    font-size: 14px;
+}
+.timeline-content {
+    padding: 10px 15px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+.bg-info { background-color: #5bc0de; }
+.bg-primary { background-color: #337ab7; }
+.bg-success { background-color: #5cb85c; }
+.bg-warning { background-color: #f0ad4e; }
+.bg-danger { background-color: #d9534f; }
+</style>

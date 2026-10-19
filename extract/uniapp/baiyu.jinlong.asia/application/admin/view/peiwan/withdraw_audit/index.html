@@ -1,0 +1,21 @@
+<div class="panel panel-default panel-intro">
+    {:build_heading()}
+
+    <div class="panel-body">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade active in" id="one">
+                <div class="widget-body no-padding">
+                    <div id="toolbar" class="toolbar">
+                        <a href="javascript:;" class="btn btn-success btn-refresh" title="{:__('Refresh')}" ><i class="fa fa-refresh"></i> </a>
+                        <a href="javascript:;" class="btn btn-success btn-approve btn-disabled disabled" title="审核通过"><i class="fa fa-check"></i> 审核通过</a>
+                        <a href="javascript:;" class="btn btn-danger btn-reject btn-disabled disabled" title="审核拒绝"><i class="fa fa-times"></i> 审核拒绝</a>
+                    </div>
+                    <table id="table" class="table table-striped table-bordered table-hover table-nowrap"
+                           data-operate-detail="{:$auth->check('peiwan/withdraw_audit/detail')}"
+                           width="100%">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

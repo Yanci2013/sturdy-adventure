@@ -1,0 +1,376 @@
+/* 轮播图管理页面样式 */
+.carousel-management {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.carousel-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+}
+
+.carousel-count {
+    font-size: 14px;
+    color: #666;
+    margin-left: 10px;
+}
+
+.carousel-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.carousel-item {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.carousel-item:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+}
+
+.carousel-image-container {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.carousel-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.carousel-item:hover .carousel-image {
+    transform: scale(1.03);
+}
+
+.carousel-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.carousel-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.carousel-action-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+.carousel-details {
+    padding: 15px;
+}
+
+.carousel-link {
+    display: block;
+    margin-bottom: 10px;
+    color: #333;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.carousel-link:hover {
+    color: #1890ff;
+}
+
+.carousel-sort {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.carousel-sort-label {
+    margin-right: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.carousel-sort-input {
+    width: 60px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.add-carousel-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-carousel-btn:hover {
+    background: #40a9ff;
+}
+
+.add-carousel-btn:disabled {
+    background: #d9d9d9;
+    cursor: not-allowed;
+}
+
+.add-carousel-btn .icon {
+    margin-right: 8px;
+}
+
+/* 添加/编辑轮播图模态框样式 */
+.carousel-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.carousel-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.carousel-modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+}
+
+.carousel-modal.active .carousel-modal-content {
+    transform: translateY(0);
+}
+
+.carousel-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.carousel-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.carousel-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+}
+
+.carousel-modal-body {
+    padding: 20px;
+}
+
+.carousel-form-group {
+    margin-bottom: 20px;
+}
+
+.carousel-form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.carousel-form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.carousel-form-input:focus {
+    border-color: #1890ff;
+    outline: none;
+}
+
+.carousel-image-upload {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.carousel-image-upload:hover {
+    border-color: #1890ff;
+}
+
+.carousel-image-upload-icon {
+    font-size: 40px;
+    color: #999;
+    margin-bottom: 10px;
+}
+
+.carousel-image-upload-text {
+    font-size: 14px;
+    color: #666;
+}
+
+.carousel-image-upload-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.carousel-image-preview {
+    width: 100%;
+    height: 150px;
+    border-radius: 4px;
+    overflow: hidden;
+    display: none;
+}
+
+.carousel-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.carousel-modal-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.carousel-modal-btn.cancel {
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid #d9d9d9;
+}
+
+.carousel-modal-btn.cancel:hover {
+    background: #e6e6e6;
+}
+
+.carousel-modal-btn.submit {
+    background: #1890ff;
+    color: white;
+    border: none;
+}
+
+.carousel-modal-btn.submit:hover {
+    background: #40a9ff;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .carousel-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .carousel-modal-content {
+        width: 90%;
+    }
+}
+
+/* 空状态样式 */
+.carousel-empty {
+    text-align: center;
+    padding: 50px 20px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px dashed #ddd;
+}
+
+.carousel-empty-icon {
+    font-size: 50px;
+    color: #d9d9d9;
+    margin-bottom: 20px;
+}
+
+.carousel-empty-text {
+    font-size: 16px;
+    color: #999;
+    margin-bottom: 20px;
+}
+
+/* 错误提示样式 */
+.carousel-error {
+    color: #f5222d;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.carousel-form-group.error .carousel-error {
+    display: block;
+}
+
+.carousel-form-group.error .carousel-form-input,
+.carousel-form-group.error .carousel-image-upload {
+    border-color: #f5222d;
+}

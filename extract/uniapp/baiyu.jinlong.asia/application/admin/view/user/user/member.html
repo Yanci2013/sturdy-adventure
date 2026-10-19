@@ -1,0 +1,146 @@
+<form id="member-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="{:url('user/user/member', ['ids' => $row.id])}">
+    {:token()}
+    <input type="hidden" name="row[user_id]" value="{$row.id|htmlentities}">
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">用户信息:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="form-control-static">
+                <strong>ID:</strong> {$row.id} &nbsp;&nbsp;
+                <strong>昵称:</strong> {$row.nickname|htmlentities} &nbsp;&nbsp;
+                <strong>手机:</strong> {$row.mobile|htmlentities}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">现有会员:</label>
+        <div class="col-xs-12 col-sm-8">
+            {if condition="!empty($currentMembers)"}
+            <table class="table table-bordered table-condensed" style="margin-bottom: 0;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th style="width: 25%;">游戏</th>
+                        <th style="width: 20%;">会员类型</th>
+                        <th style="width: 30%;">到期时间</th>
+                        <th style="width: 25%;">状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {foreach name="currentMembers" item="member"}
+                    <tr>
+                        <td>{$member.game_name|default='未知游戏'}</td>
+                        <td>
+                            {if condition="$member.package_type == 'trial'"}
+                            <span class="label label-success">体验会员</span>
+                            {else/}
+                            <span class="label label-warning">正式会员</span>
+                            {/if}
+                        </td>
+                        <td>{$member.end_time_text}</td>
+                        <td>
+                            {if condition="$member.is_expired"}
+                            <span class="label label-danger">已过期</span>
+                            {elseif condition="$member.status != 'normal'"/}
+                            <span class="label label-default">已禁用</span>
+                            {else/}
+                            <span class="label label-primary">正常</span>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/foreach}
+                </tbody>
+            </table>
+            {else/}
+            <div class="form-control-static text-muted">暂无会员</div>
+            {/if}
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">会员套餐:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="member-package-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
+                {foreach name="gamePackages" item="game"}
+                <div class="game-group" data-game-id="{$game.game_id}" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+                    <h5 style="margin-top: 0; margin-bottom: 10px; color: #333;">
+                        <i class="fa fa-gamepad"></i> {$game.game_name}
+                    </h5>
+                    <div class="package-options" style="margin-left: 20px;">
+                        {foreach name="game.packages" item="package"}
+                        <div class="package-item" style="margin-bottom: 10px;">
+                            <label class="checkbox-inline" style="font-weight: normal;">
+                                <input type="checkbox" 
+                                       class="package-checkbox" 
+                                       name="member_package_ids[]" 
+                                       value="{$package.id}_trial" 
+                                       data-game-id="{$game.game_id}"
+                                       data-package-type="trial"
+                                       {if condition="$package.selected_trial"}checked{/if}>
+                                <span style="color: #5cb85c;">体验会员</span>
+                                <small style="color: #999;">(套餐ID: {$package.id}, {$package.trial_days}天)</small>
+                            </label>
+                        </div>
+                        <div class="package-item" style="margin-bottom: 10px;">
+                            <label class="checkbox-inline" style="font-weight: normal;">
+                                <input type="checkbox" 
+                                       class="package-checkbox" 
+                                       name="member_package_ids[]" 
+                                       value="{$package.id}_formal" 
+                                       data-game-id="{$game.game_id}"
+                                       data-package-type="formal"
+                                       {if condition="$package.selected_formal"}checked{/if}>
+                                <span style="color: #f0ad4e;">正式会员</span>
+                                <small style="color: #999;">(套餐ID: {$package.id}, {$package.valid_days}天)</small>
+                            </label>
+                        </div>
+                        {/foreach}
+                    </div>
+                </div>
+                {/foreach}
+                {if condition="empty($gamePackages)"}
+                <div class="text-center text-muted" style="padding: 20px;">
+                    暂无会员套餐
+                </div>
+                {/if}
+            </div>
+            <span class="help-block">每个游戏只能选择体验会员或正式会员中的一种</span>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+            <button type="reset" class="btn btn-default btn-embossed">{:__('Reset')}</button>
+        </div>
+    </div>
+</form>
+
+<script>
+(function() {
+    // 等待 jQuery 加载
+    function initCheckboxLogic() {
+        if (typeof jQuery === 'undefined') {
+            setTimeout(initCheckboxLogic, 100);
+            return;
+        }
+        
+        var $ = jQuery;
+        // 确保同一游戏只能选择一个类型
+        $(document).on('change', '.package-checkbox', function() {
+            var $this = $(this);
+            var gameId = $this.data('game-id');
+            
+            if ($this.is(':checked')) {
+                // 取消同一游戏下其他类型的选中
+                $('.package-checkbox[data-game-id="' + gameId + '"]').not($this).prop('checked', false);
+            }
+        });
+    }
+    
+    // 页面加载完成后初始化
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCheckboxLogic);
+    } else {
+        initCheckboxLogic();
+    }
+})();
+</script>
+

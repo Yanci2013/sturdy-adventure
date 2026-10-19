@@ -1,0 +1,1 @@
+import"./index-C5Jn6AJH.js";function t(t,i=""){if(!t||""===t)return i||"";if(/^https?:\/\//i.test(t))return t;if(/^data:image\//i.test(t))return t;if(t.includes("://")&&t.indexOf("://")>0)return t;if(t.startsWith("/")){return""+t}return t}export{t as g};

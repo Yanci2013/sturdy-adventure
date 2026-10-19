@@ -1,0 +1,48 @@
+*{margin: 0;padding: 0;border: 0;list-style: none;text-decoration: none;color: inherit;font-weight: normal;font-family: "微软雅黑";box-sizing: border-box;font-style: normal;outline: none;-webkit-tap-highlight-color: transparent;}
+body{width: 100%;overflow-x: hidden;background: #ffffff;}
+img{vertical-align: middle;max-width: 100%;}
+.hide{display: none;}
+.top-bar{width: 100%;height: .88rem;line-height: .88rem;text-align: center;position: relative;font-size: .36rem;color: #333333;}
+.top-bar a{width: .5rem;height: .88rem;position: absolute;top: 0;left: .3rem;background: url(../images/icon-back.png) left center no-repeat;background-size: .22rem auto;z-index: 2;}
+/* 轮播图 */
+.swiper-container{width: 100%;height: 3.34rem;margin-top: .3rem;}
+.swiper-slide{width: 6.48rem!important;height: 3.34rem;background: url(../images/slider-bg.png) center center no-repeat;background-size: 100% 100%;display: flex;justify-content: space-between;align-items: center;color: #ffffff;padding: 0 .6rem 0 .7rem;}
+.swiper-slide .info{display: flex;flex-direction: column;justify-content: center;margin-top: -.5rem;}
+.swiper-slide .info h3{font-size: .48rem;font-weight: bold;padding-bottom: .1rem;display: flex;align-items: center;}
+.swiper-slide .info h3 i{flex-shrink: 0;width: .32rem;height: .32rem;background: url(../images/icon-wh.png) center center no-repeat;background-size: 100%;margin-left: .15rem;}
+.swiper-slide .info span{font-size: .28rem;padding-bottom: .2rem;}
+.swiper-slide .info p{font-size: .28rem;}
+.swiper-slide .jz{flex-shrink: 0;width: 1.75rem;height: 2.3rem;background: url(../images/icon-jz.png) center center no-repeat;background-size: 1.75rem auto;margin-top: -0.2rem;}
+.swiper-slide.swiper-slide-active{flex-shrink: 0;}
+.swiper-slide-active,.swiper-slide-duplicate-active{transform: scale(1);}
+/* 说明 */
+.instruct {width: 100%;height: auto;overflow: hidden;padding: 0 .35rem;}
+.instruct .block{width: 100%;display: flex;margin-top: .5rem;}
+.instruct .block:first-child{margin-top: .4rem;}
+.instruct .block i{flex-shrink: 0;width: .64rem;height: .64rem;background-repeat: no-repeat;background-position: center center;background-size: 100%;margin-right: .22rem;}
+.instruct .block i.hg{background-image: url(../images/icon-hg.png);}
+.instruct .block i.sd{background-image: url(../images/icon-sd.png);}
+.instruct .block .info h5{font-size: .32rem;color: #333333;padding-bottom: .1rem;padding-top: .08rem;}
+.instruct .block .info .desc{font-size: .28rem;color: #999999;line-height: .4rem;}
+.level{width: 100%;padding: 0 1.35rem;margin-top: .5rem;}
+.level button{width: 100%;height: .95rem;background: linear-gradient(to right,#22b4d5,#5286e5);border-radius: .95rem;font-size: .32rem;color: #ffffff;letter-spacing: .02rem;cursor: pointer;}
+/* 导航 */
+.tab-bar-holder{width: 100%;height: 1.15rem;}
+.tab-bar{width: 100%;height: auto;overflow: hidden;position: fixed;bottom: 0;left: 0;z-index: 999;background: #ffffff;border-top: .01rem solid #cac9c9;}
+.tab-bar ul{width: 100%;display: flex;justify-content: space-between;}
+.tab-bar ul li{width: 100%;display: flex;flex-direction: column;justify-content: center;align-items: center;height: 1.15rem;}
+.tab-bar ul li i{flex-shrink: 0;width: .48rem;height: .48rem;background-position: center center;background-repeat: no-repeat;}
+.tab-bar ul li span{font-size: .22rem;color: #76758b;margin-top: .1rem;}
+.tab-bar ul li.find i{background-image: url(../images/tab-bar-fx.png);background-size: .48rem;}
+.tab-bar ul li.trading i{background-image: url(../images/tab-bar-jy.png);background-size: .46rem;}
+.tab-bar ul li.financial i{background-image: url(../images/tab-bar-lc.png);background-size: .44rem;}
+.tab-bar ul li.mine i{background-image: url(../images/tab-bar-wd.png);background-size: .48rem;}
+.tab-bar ul li.find.on i{background-image: url(../images/tab-bar-fx-on.png);background-size: .48rem;}
+.tab-bar ul li.trading.on i{background-image: url(../images/tab-bar-jy-on.png);background-size: .46rem;}
+.tab-bar ul li.financial.on i{background-image: url(../images/tab-bar-lc-on.png);background-size: .44rem;}
+.tab-bar ul li.mine.on i{background-image: url(../images/tab-bar-wd-on.png);background-size: .48rem;}
+.tab-bar ul li.on span{color: #4cc2f4;}
+
+
+
+

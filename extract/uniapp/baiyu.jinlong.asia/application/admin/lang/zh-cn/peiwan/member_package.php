@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'Id'                        => 'ID',
+    'Game_id'                   => '游戏ID',
+    'Trial_price'               => '体验价（元）',
+    'Trial_days'                => '体验天数',
+    'Formal_price'              => '正式价格（元）',
+    'Valid_days'                => '有效天数',
+    'First_commission_guanshi'  => '首次充值管事佣金（元）',
+    'First_commission_zuzhang'  => '首次充值组长佣金（元）',
+    'First_commission_zongguan' => '首次充值总管佣金（元）',
+    'Renew_commission_guanshi'  => '续费管事佣金（元）',
+    'Renew_commission_zuzhang'  => '续费组长佣金（元）',
+    'Renew_commission_zongguan' => '续费总管佣金（元）',
+    'Status'                    => '状态',
+    'Status normal'             => '正常',
+    'Set status to normal'      => '设为正常',
+    'Status hidden'             => '隐藏',
+    'Set status to hidden'      => '设为隐藏',
+    'Createtime'                => '创建时间',
+    'Updatetime'                => '更新时间',
+    'Game.id'                   => 'ID',
+    'Game.name'                 => '游戏名称',
+    'Game.icon'                 => '游戏图标',
+    'Game.sort'                 => '排序',
+    'Game.status'               => '状态',
+    'Game.createtime'           => '创建时间',
+    'Game.updatetime'           => '更新时间'
+];

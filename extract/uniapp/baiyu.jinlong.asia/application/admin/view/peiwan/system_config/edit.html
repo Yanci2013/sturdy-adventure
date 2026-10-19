@@ -1,0 +1,454 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+    <!-- Tab导航 -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#tab-basic" aria-controls="tab-basic" role="tab" data-toggle="tab">基础设置</a></li>
+        <li role="presentation"><a href="#tab-cos" aria-controls="tab-cos" role="tab" data-toggle="tab">云存储配置</a></li>
+        <li role="presentation"><a href="#tab-epay" aria-controls="tab-epay" role="tab" data-toggle="tab">支付配置</a></li>
+        <li role="presentation"><a href="#tab-recharge" aria-controls="tab-recharge" role="tab" data-toggle="tab">充值配置</a></li>
+        <li role="presentation"><a href="#tab-client" aria-controls="tab-client" role="tab" data-toggle="tab">点单端配置</a></li>
+        <li role="presentation"><a href="#tab-login" aria-controls="tab-login" role="tab" data-toggle="tab">登录页配置</a></li>
+    </ul>
+    
+    <!-- Tab内容 -->
+    <div class="tab-content" style="padding-top: 20px;">
+        <!-- 基础设置 -->
+        <div role="tabpanel" class="tab-pane active" id="tab-basic">
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">{:__('Wxappid')}:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <input id="c-wxappid" data-rule="required" class="form-control" name="row[wxappid]" type="text" value="{$row.wxappid|htmlentities}" placeholder="请输入小程序AppID">
+                    <span class="help-block">微信小程序的AppID，用于小程序登录</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">{:__('Wxappsecret')}:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <input id="c-wxappsecret" data-rule="required" class="form-control" name="row[wxappsecret]" type="password" value="{$row.wxappsecret|htmlentities}" autocomplete="new-password">
+                    <span class="help-block">小程序AppSecret（密钥），用于小程序登录</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">{:__('Is_audit')}:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <select id="c-is_audit" data-rule="required" class="form-control selectpicker" name="row[is_audit]">
+                        {foreach name="isAuditList" item="vo"}
+                            <option value="{$key}" {in name="key" value="$row.is_audit"}selected{/in}>{$vo}</option>
+                        {/foreach}
+                    </select>
+                    <span class="help-block">是否处于审核状态，影响小程序功能显示</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">{:__('Is_custom_order')}:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <select id="c-is_custom_order" data-rule="required" class="form-control selectpicker" name="row[is_custom_order]">
+                        {foreach name="isCustomOrderList" item="vo"}
+                            <option value="{$key}" {in name="key" value="$row.is_custom_order"}selected{/in}>{$vo}</option>
+                        {/foreach}
+                    </select>
+                    <span class="help-block">是否允许商家自定义发单价格</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">发单额度:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <input id="c-order_quota" data-rule="number" class="form-control" name="row[order_quota]" type="number" value="{$row.order_quota|htmlentities}" step="0.01" min="0" placeholder="0.00">
+                    <span class="help-block">免费发单额度（元），如果设置大于0，则当商家额度 < 此额度时，如果发单后额度不超过此额度则免费发单（不扣余额）并累积增加商家额度；如果发单后额度会超过此额度，则扣余额且商家额度最多累积到此额度。当商家额度 >= 此额度时，发单扣额度。设置为0表示不使用额度功能，直接扣余额。</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">{:__('Is_auth_enabled')}:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <select id="c-is_auth_enabled" data-rule="required" class="form-control selectpicker" name="row[is_auth_enabled]">
+                        {foreach name="isAuthEnabledList" item="vo"}
+                            <option value="{$key}" {in name="key" value="$row.is_auth_enabled"}selected{/in}>{$vo}</option>
+                        {/foreach}
+                    </select>
+                    <span class="help-block">是否开启认证：开启后，用户登录时需要选择上级推荐人（管事、组长、总管）才能完成注册</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">是否开启音频:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <select id="c-is_audio_enabled" data-rule="required" class="form-control selectpicker" name="row[is_audio_enabled]">
+                        {foreach name="isAudioEnabledList" item="vo"}
+                            <option value="{$key}" {in name="key" value="$row.is_audio_enabled"}selected{/in}>{$vo}</option>
+                        {/foreach}
+                    </select>
+                    <span class="help-block">是否开启音频播放：开启后，首页会显示音频播放器</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">自动结算时间:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <div class="input-group">
+                        <input id="c-auto_settle_hours" class="form-control" name="row[auto_settle_hours]" type="number" value="{$row.auto_settle_hours|default=0}" min="0" step="1" placeholder="0">
+                        <span class="input-group-addon">小时</span>
+                    </div>
+                    <span class="help-block">待结算订单自动结算时间（小时）。订单进入待结算状态后，超过此时间将自动结算为已完成。设置为0表示不自动结算，需商家手动确认。</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">订单分佣比例:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <div class="input-group">
+                        <input id="c-order_commission_rate" class="form-control" name="row[order_commission_rate]" type="number" value="{$row.order_commission_rate|default=0}" min="0" max="100" step="0.01" placeholder="0.00">
+                        <span class="input-group-addon">%</span>
+                    </div>
+                    <span class="help-block">订单结算时，打手的推广上级可获得的分佣比例。例如设置5表示5%，订单100元则推广上级获得5元。设置为0表示不分佣。</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">是否开启审核提现:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <select id="c-is_withdraw_audit" data-rule="required" class="form-control selectpicker" name="row[is_withdraw_audit]">
+                        {foreach name="isWithdrawAuditList" item="vo"}
+                            <option value="{$key}" {in name="key" value="$row.is_withdraw_audit"}selected{/in}>{$vo}</option>
+                        {/foreach}
+                    </select>
+                    <span class="help-block">是否开启审核提现模式：开启后，用户提现需填写收款二维码和姓名，由管理员审核后手动转账；关闭则自动通过商户转账到微信零钱</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">提现上级分成:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <select id="c-is_withdraw_parent_share" class="form-control selectpicker" name="row[is_withdraw_parent_share]">
+                        <option value="0" {if condition="$row.is_withdraw_parent_share neq '1'"}selected{/if}>关闭</option>
+                        <option value="1" {if condition="$row.is_withdraw_parent_share eq '1'"}selected{/if}>开启</option>
+                    </select>
+                    <span class="help-block">开启后，用户提现时需额外支付一定比例给其身份上级（管事/组长/总管）</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">分成比例配置:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <label>管事比例</label>
+                            <div class="input-group">
+                                <input class="form-control" name="row[withdraw_share_rate_guanshi]" type="number" value="{$row.withdraw_share_rate_guanshi|default=0}" min="0" max="100" step="0.01">
+                                <span class="input-group-addon">%</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <label>组长比例</label>
+                            <div class="input-group">
+                                <input class="form-control" name="row[withdraw_share_rate_zuzhang]" type="number" value="{$row.withdraw_share_rate_zuzhang|default=0}" min="0" max="100" step="0.01">
+                                <span class="input-group-addon">%</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <label>总管比例</label>
+                            <div class="input-group">
+                                <input class="form-control" name="row[withdraw_share_rate_zongguan]" type="number" value="{$row.withdraw_share_rate_zongguan|default=0}" min="0" max="100" step="0.01">
+                                <span class="input-group-addon">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="help-block">仅在开启提现上级分成后生效。根据用户的身份上级角色决定分成比例。例如：用户提现100元，上级是管事且比例为10%，则用户需要有110元余额，提现后管事获得10元。</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">提交时间限制:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <div class="input-group">
+                        <input id="c-submit_time_limit" class="form-control" name="row[submit_time_limit]" type="number" value="{$row.submit_time_limit|default=0}" min="0" step="1" placeholder="0">
+                        <span class="input-group-addon">分钟</span>
+                    </div>
+                    <span class="help-block">打手接单后需等待的最小时间（分钟），超过此时间后才能提交订单完成证明。设置为0表示无限制。</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">推广海报图片:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <div class="input-group">
+                        <input id="c-poster_image" class="form-control" name="row[poster_image]" type="text" value="{$row.poster_image|htmlentities}">
+                        <div class="input-group-addon no-border no-padding">
+                            <span><button type="button" id="faupload-poster_image" class="btn btn-danger faupload" data-input-id="c-poster_image" data-mimetype="image/*" data-multiple="false" data-preview-id="p-poster_image"><i class="fa fa-upload"></i> 上传</button></span>
+                        </div>
+                    </div>
+                    <ul class="row list-inline faupload-preview" id="p-poster_image"></ul>
+                    <span class="help-block">推广海报的背景图片，用于生成带二维码的推广海报。建议尺寸：750x1334像素，右下角留出二维码位置。</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-xs-12 col-sm-2">身份海报有效期:</label>
+                <div class="col-xs-12 col-sm-8">
+                    <div class="input-group">
+                        <input id="c-invite_poster_days" class="form-control" name="row[invite_poster_days]" type="number" value="{$row.invite_poster_days|default=7}" min="1" step="1" placeholder="7">
+                        <span class="input-group-addon">天</span>
+                    </div>
+                    <span class="help-block">身份海报的有效期（按天计算）。生成的身份海报在有效期内可被多人使用，过期后需重新生成。密匙不受此限制，始终为一次性。</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 云存储配置 -->
+        <div role="tabpanel" class="tab-pane" id="tab-cos">
+            <div class="panel panel-default">
+                <div class="panel-heading">腾讯云COS配置</div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">启用云存储:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <select class="form-control selectpicker" name="cos[enabled]">
+                                <option value="1" {if condition="$cos.enabled eq '1'"}selected{/if}>启用</option>
+                                <option value="0" {if condition="$cos.enabled neq '1'"}selected{/if}>禁用</option>
+                            </select>
+                            <span class="help-block">启用后，上传的文件将存储到腾讯云COS</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">AppID:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[appId]" type="text" value="{$cos.appId|default=''}" placeholder="请输入AppID">
+                            <span class="help-block">请前往腾讯控制台 > 访问管理 > API密钥</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">SecretId:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[secretId]" type="text" value="{$cos.secretId|default=''}" placeholder="请输入SecretId">
+                            <span class="help-block">请前往腾讯控制台 > 访问管理 > API密钥</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">SecretKey:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[secretKey]" type="password" value="{$cos.secretKey|default=''}" autocomplete="new-password" placeholder="请输入SecretKey">
+                            <span class="help-block">请前往腾讯控制台 > 访问管理 > API密钥</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">存储桶名称:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[bucket]" type="text" value="{$cos.bucket|default=''}" placeholder="例如：yourbucket-1234567890">
+                            <span class="help-block">存储空间名称</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">地域名称:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[region]" type="text" value="{$cos.region|default='ap-guangzhou'}" placeholder="例如：ap-guangzhou">
+                            <span class="help-block">请输入地域简称，请注意使用英文</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">上传接口地址:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[uploadurl]" type="text" value="{$cos.uploadurl|default=''}" placeholder="https://yourbucket-1234567890.cos.ap-guangzhou.myqcloud.com">
+                            <span class="help-block">请输入你的上传接口地址</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">CDN地址:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="cos[cdnurl]" type="text" value="{$cos.cdnurl|default=''}" placeholder="https://yourbucket-1234567890.file.myqcloud.com">
+                            <span class="help-block">请配置你的CDN地址或在存储桶基础配置中获取</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">API接口使用云存储:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <select class="form-control selectpicker" name="cos[apiupload]">
+                                <option value="1" {if condition="isset($cos['apiupload']) && $cos['apiupload'] eq '1'"}selected{/if}>启用</option>
+                                <option value="0" {if condition="!isset($cos['apiupload']) || $cos['apiupload'] neq '1'"}selected{/if}>禁用</option>
+                            </select>
+                            <span class="help-block">启用后，小程序端上传的文件也会存储到云存储（必须启用才能让小程序上传到云存储）</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 支付配置 -->
+        <div role="tabpanel" class="tab-pane" id="tab-epay">
+            <div class="panel panel-default">
+                <div class="panel-heading">微信支付配置</div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">小程序AppID:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="epay[wechat_miniapp_id]" type="text" value="{$epay.wechat_miniapp_id|default=''}" placeholder="请输入小程序AppID">
+                            <span class="help-block">微信小程序的AppID</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">商户号:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="epay[wechat_mch_id]" type="text" value="{$epay.wechat_mch_id|default=''}" placeholder="请输入商户号">
+                            <span class="help-block">微信支付商户号</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">API密钥(V2):</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="epay[wechat_key]" type="password" value="{$epay.wechat_key|default=''}" autocomplete="new-password" placeholder="请输入API密钥">
+                            <span class="help-block">微信支付V2 API密钥（32位）</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">证书路径(cert):</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="epay[wechat_cert_client]" type="text" value="{$epay.wechat_cert_client|default='/addons/epay/certs/apiclient_cert.pem'}" placeholder="/addons/epay/certs/apiclient_cert.pem">
+                            <span class="help-block">apiclient_cert.pem证书路径</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">证书路径(key):</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="epay[wechat_cert_key]" type="text" value="{$epay.wechat_cert_key|default='/addons/epay/certs/apiclient_key.pem'}" placeholder="/addons/epay/certs/apiclient_key.pem">
+                            <span class="help-block">apiclient_key.pem证书路径</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel panel-default">
+                <div class="panel-heading">支付宝配置</div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">应用AppID:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="epay[alipay_app_id]" type="text" value="{$epay.alipay_app_id|default=''}" placeholder="请输入支付宝应用AppID">
+                            <span class="help-block">支付宝应用的AppID</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">应用私钥:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <textarea class="form-control" name="epay[alipay_private_key]" rows="3" placeholder="请输入应用私钥">{$epay.alipay_private_key|default=''}</textarea>
+                            <span class="help-block">支付宝应用私钥</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">支付宝公钥:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <textarea class="form-control" name="epay[alipay_public_key]" rows="3" placeholder="请输入支付宝公钥">{$epay.alipay_public_key|default=''}</textarea>
+                            <span class="help-block">支付宝公钥（非应用公钥）</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 充值配置 -->
+        <div role="tabpanel" class="tab-pane" id="tab-recharge">
+            <div class="panel panel-default">
+                <div class="panel-heading">充值设置</div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">充值提示文字:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <textarea class="form-control" name="recharge[tips]" rows="2" placeholder="请输入充值提示文字">{$recharge.tips|default='余额可用于购买商品或用于商城消费'}</textarea>
+                            <span class="help-block">充值页面显示的提示文字</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">充值金额列表:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="recharge[money_list]" type="text" value="{$recharge.money_list|default='10,20,30,50,100'}" placeholder="10,20,30,50,100">
+                            <span class="help-block">充值金额选项，多个用英文逗号分隔</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">默认充值金额:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="recharge[default_money]" type="text" value="{$recharge.default_money|default='10'}" placeholder="10">
+                            <span class="help-block">默认选中的充值金额</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">最低充值金额:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input class="form-control" name="recharge[min_money]" type="text" value="{$recharge.min_money|default='0.1'}" placeholder="0.1">
+                            <span class="help-block">允许充值的最低金额</span>
+                        </div>
+                    </div>
+                    <!-- 是否开启任意金额（已注释）
+                    <!--
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">是否开启任意金额:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <select class="form-control selectpicker" name="recharge[is_custom_money]">
+                                <option value="1" {if condition="$recharge.is_custom_money eq '1'"}selected{/if}>开启</option>
+                                <option value="0" {if condition="$recharge.is_custom_money eq '0'"}selected{/if}>关闭</option>
+                            </select>
+                            <span class="help-block">是否允许用户输入任意金额</span>
+                        </div>
+                    </div>
+                    -->
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">默认支付方式:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <select class="form-control selectpicker" name="recharge[default_pay_type]">
+                                <option value="wechat" {if condition="$recharge.default_pay_type eq 'wechat'"}selected{/if}>微信支付</option>
+                                <option value="alipay" {if condition="$recharge.default_pay_type eq 'alipay'"}selected{/if}>支付宝支付</option>
+                            </select>
+                            <span class="help-block">默认选中的支付方式</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 点单端配置 -->
+        <div role="tabpanel" class="tab-pane" id="tab-client">
+            <div class="panel panel-default">
+                <div class="panel-heading">点单端小程序配置</div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">小程序AppID:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input id="c-client_wxappid" class="form-control" name="row[client_wxappid]" type="text" value="{$row.client_wxappid|htmlentities}" placeholder="请输入点单端小程序AppID">
+                            <span class="help-block">点单端微信小程序的AppID，用于点单端小程序登录</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">小程序AppSecret:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <input id="c-client_wxappsecret" class="form-control" name="row[client_wxappsecret]" type="password" value="{$row.client_wxappsecret|htmlentities}" autocomplete="new-password" placeholder="请输入点单端小程序AppSecret">
+                            <span class="help-block">点单端小程序AppSecret（密钥），用于点单端小程序登录</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">推广海报图片:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <div class="input-group">
+                                <input id="c-client_poster_image" class="form-control" name="row[client_poster_image]" type="text" value="{$row.client_poster_image|htmlentities}">
+                                <div class="input-group-addon no-border no-padding">
+                                    <span><button type="button" id="faupload-client_poster_image" class="btn btn-danger faupload" data-input-id="c-client_poster_image" data-mimetype="image/*" data-multiple="false" data-preview-id="p-client_poster_image"><i class="fa fa-upload"></i> 上传</button></span>
+                                </div>
+                            </div>
+                            <ul class="row list-inline faupload-preview" id="p-client_poster_image"></ul>
+                            <span class="help-block">点单端推广海报的背景图片，用于生成带二维码的推广海报。建议尺寸：750x1334像素，右下角留出二维码位置。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 登录页配置 -->
+        <div role="tabpanel" class="tab-pane" id="tab-login">
+            <div class="panel panel-default">
+                <div class="panel-heading">登录页配置</div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label col-xs-12 col-sm-2">登录页提示文字:</label>
+                        <div class="col-xs-12 col-sm-8">
+                            <textarea id="c-login_page_text" class="form-control" name="row[login_page_text]" rows="5" placeholder="请输入登录页提示文字，支持换行">{$row.login_page_text|htmlentities}</textarea>
+                            <span class="help-block">登录页完成注册按钮下方显示的提示文字，支持换行显示</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>
