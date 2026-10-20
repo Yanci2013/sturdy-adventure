@@ -1770,7 +1770,7 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 		align-items: flex-start;
 		padding: 24rpx 22rpx;
 		border-radius: 24rpx;
-		background: linear-gradient(150deg, #3A4050 0%, #2B303B 100%);
+		background: linear-gradient(150deg, #F8D14E 0%, #EEB63A 100%);
 		overflow: hidden;
 		transition: transform 0.2s ease;
 	}
@@ -1791,7 +1791,8 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	.entry-tile__icon {
 		width: 48rpx;
 		height: 48rpx;
-		color: #E08A5F;
+		color: #FFFFFF;
+		filter: drop-shadow(0 1rpx 2rpx rgba(180, 120, 10, 0.35));
 	}
 
 	.entry-tile__icon svg {
@@ -1803,15 +1804,15 @@ import { openCustomerServiceChat, resolveCustomerService } from '../../utils/cus
 	.entry-tile__title {
 		margin-top: 20rpx;
 		font-size: 26rpx;
-		font-weight: 500;
-		color: #FFFFFF;
+		font-weight: 600;
+		color: #5C3A10;
 		line-height: 1.3;
 	}
 
 	.entry-tile__sub {
 		margin-top: 6rpx;
 		font-size: 20rpx;
-		color: rgba(255, 255, 255, 0.55);
+		color: rgba(92, 58, 16, 0.7);
 		line-height: 1.3;
 	}
 
